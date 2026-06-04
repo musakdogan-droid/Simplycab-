@@ -702,7 +702,7 @@ tr:last-child td{border-bottom:none}
         <div class="fld"><label>N° Vol</label><input type="text" id="fc-vol" placeholder="Ex: AF1234"></div>
       </div>
       <div class="fg3">
-        <div class="fld"><label>Véhicule</label><select id="fc-veh" onchange="onVehChange()"><option value="berline">🚗 Berline</option><option value="van">🚐 Van</option></select></div>
+        <div class="fld"><label>Véhicule</label><select id="fc-veh" onchange="onVehChange()"><option value="berline">🚗 Berline</option><option value="van">🚐 Van</option><option value="sprinter">🚌 Sprinter</option><option value="bus">🚍 Bus</option></select></div>
         <div class="fld"><label>Passagers</label><input type="number" id="fc-pax" value="1" min="1" max="7" oninput="checkCap()"></div>
         <div class="fld"><label>Bagages</label><input type="number" id="fc-bags" value="0" min="0" max="10" oninput="checkCap()"></div>
       </div>
@@ -741,7 +741,7 @@ tr:last-child td{border-bottom:none}
       </div>
       <div class="fg2">
         <div class="fld"><label>PIN (4 chiffres) *</label><input type="password" id="ch-pin" placeholder="****" maxlength="4"></div>
-        <div class="fld"><label>Véhicule principal</label><select id="ch-veh"><option value="berline">🚗 Berline</option><option value="van">🚐 Van</option></select></div>
+        <div class="fld"><label>Véhicule principal</label><select id="ch-veh"><option value="berline">🚗 Berline</option><option value="van">🚐 Van</option><option value="sprinter">🚌 Sprinter</option><option value="bus">🚍 Bus</option></select></div>
       </div>
       <div class="fld"><label>Statut</label><select id="ch-statut"><option value="disponible">Disponible</option><option value="indisponible">Indisponible</option></select></div>
     </div>
@@ -763,7 +763,7 @@ tr:last-child td{border-bottom:none}
         <div class="fld"><label>Année</label><input type="number" id="vh-annee" placeholder="2024" min="2010" max="2030"></div>
       </div>
       <div class="fg2">
-        <div class="fld"><label>Type</label><select id="vh-type"><option value="berline">Berline</option><option value="van">Van / SUV</option><option value="electrique">Électrique</option></select></div>
+        <div class="fld"><label>Type</label><select id="vh-type"><option value="berline">Berline</option><option value="van">Van / SUV</option><option value="sprinter">Sprinter</option><option value="bus">Bus</option><option value="electrique">Électrique</option></select></div>
         <div class="fld"><label>Kilométrage</label><input type="number" id="vh-km" placeholder="0"></div>
       </div>
       <div class="fld"><label>Chauffeur assigné</label><select id="vh-chauff"><option value="">— Non assigné —</option></select></div>
@@ -800,6 +800,10 @@ tr:last-child td{border-bottom:none}
       <div class="fg2">
         <div class="fld"><label>Prix Berline (€)</label><input type="number" id="tf-berline" placeholder="0"></div>
         <div class="fld"><label>Prix Van (€)</label><input type="number" id="tf-van" placeholder="0"></div>
+      </div>
+      <div class="fg2">
+        <div class="fld"><label>Prix Sprinter (€)</label><input type="number" id="tf-sprinter" placeholder="0"></div>
+        <div class="fld"><label>Prix Bus (€)</label><input type="number" id="tf-bus" placeholder="0"></div>
       </div>
       <div class="fg2">
         <div class="fld"><label>Catégorie</label><select id="tf-cat"><option value="cdg">CDG</option><option value="orly">Orly</option><option value="disney">Disneyland Paris</option><option value="paris">Paris</option><option value="autre">Autre</option></select></div>
@@ -1010,7 +1014,12 @@ function statutBadge(s){
   return`<span class="bdg ${cls}">${lbl}</span>`;
 }
 
-function vehIcon(v){return v==='van'?'🚐 Van':'🚗 Berline';}
+function vehIcon(v){
+  if(v==='van') return'🚐 Van';
+  if(v==='sprinter') return'🚌 Sprinter';
+  if(v==='bus') return'🚍 Bus';
+  return'🚗 Berline';
+}
 
 function conflictCheck(driver,datetime,excludeId){
   if(!driver||!datetime) return null;
@@ -1215,7 +1224,7 @@ window.onVehChange = window.checkCap = function(){
   const v=document.getElementById('fc-veh').value;
   const pax=parseInt(document.getElementById('fc-pax').value)||0;
   const bags=parseInt(document.getElementById('fc-bags').value)||0;
-  const cap=v==='van'?{pax:7,bags:10}:{pax:3,bags:2};
+  const cap=v==='van'?{pax:7,bags:10}:v==='sprinter'?{pax:16,bags:20}:v==='bus'?{pax:35,bags:30}:{pax:3,bags:2};
   document.getElementById('cap-warn').style.display=(pax>cap.pax||bags>cap.bags)?'block':'none';
   suggestPrice();
 };
@@ -1226,7 +1235,7 @@ window.suggestPrice = function(){
   const t=S.tarifs.find(x=>x.categorie===cat);
   const el=document.getElementById('price-suggest');
   if(t){
-    const p=v==='van'?t.van:t.berline;
+    const p=v==='van'?t.van:v==='sprinter'?t.sprinter:v==='bus'?t.bus:t.berline;
     if(p){el.style.display='block';document.getElementById('price-suggest-txt').textContent=`Tarif suggéré (${t.route}) : ${p}€`;}
     else el.style.display='none';
   } else el.style.display='none';
@@ -1241,7 +1250,7 @@ window.saveCourse = function(){
   const veh=document.getElementById('fc-veh').value;
   const pax=parseInt(document.getElementById('fc-pax').value)||1;
   const bags=parseInt(document.getElementById('fc-bags').value)||0;
-  const cap=veh==='van'?{pax:7,bags:10}:{pax:3,bags:2};
+  const cap=veh==='van'?{pax:7,bags:10}:veh==='sprinter'?{pax:16,bags:20}:veh==='bus'?{pax:35,bags:30}:{pax:3,bags:2};
   if((pax>cap.pax||bags>cap.bags)&&!confirm(`Capacité dépassée. Continuer quand même ?`)) return;
   const chauffeur=document.getElementById('fc-chauff').value;
   if(chauffeur){
@@ -1365,7 +1374,7 @@ function renderVehicules(){
       </div>
       <div style="font-size:12px;color:var(--muted2);margin-bottom:12px"><i class="fas fa-user" style="color:var(--muted)"></i> ${v.chauffeur||'Non assigné'}</div>
       <div class="ic-foot">
-        <span class="bdg bdg-muted">${v.type==='van'?'🚐 Van':v.type==='electrique'?'⚡ Électrique':'🚗 Berline'}</span>
+        <span class="bdg bdg-muted">${v.type==='van'?'🚐 Van':v.type==='sprinter'?'🚌 Sprinter':v.type==='bus'?'🚍 Bus':v.type==='electrique'?'⚡ Électrique':'🚗 Berline'}</span>
         <button class="btn btn-d btn-xs" style="margin-left:auto" onclick="delVehicule('${v._id}')"><i class="fas fa-trash"></i></button>
       </div>
     </div>`).join('');
@@ -1454,6 +1463,8 @@ function renderTarifs(){
           <div class="text-gold fw7 ff-syne" style="font-size:20px">${t.van||'—'}€</div>
           <div style="font-size:10px;color:var(--muted);margin-top:2px">🚐 Van</div>
         </div>
+        ${t.sprinter?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:12px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:20px">${t.sprinter}€</div><div style="font-size:10px;color:var(--muted);margin-top:2px">🚌 Sprinter</div></div>`:''}
+        ${t.bus?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:12px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:20px">${t.bus}€</div><div style="font-size:10px;color:var(--muted);margin-top:2px">🚍 Bus</div></div>`:''}
       </div>
       ${t.nuit?`<div style="font-size:11px;color:var(--orange)"><i class="fas fa-moon"></i> Supplément nuit : +${t.nuit}€</div>`:''}
       <div class="ic-foot" style="margin-top:12px">
@@ -1463,13 +1474,13 @@ function renderTarifs(){
 }
 
 window.openTarifModal = function(){
-  ['tf-route','tf-berline','tf-van','tf-nuit'].forEach(id=>document.getElementById(id).value='');
+  ['tf-route','tf-berline','tf-van','tf-sprinter','tf-bus','tf-nuit'].forEach(id=>document.getElementById(id).value='');
   openMo('tarif');
 };
 window.saveTarif = function(){
   const route=document.getElementById('tf-route').value.trim();
   if(!route){showToast('Route obligatoire',true);return;}
-  push(ref(db,'tarifs'),{route,berline:document.getElementById('tf-berline').value,van:document.getElementById('tf-van').value,categorie:document.getElementById('tf-cat').value,nuit:document.getElementById('tf-nuit').value,createdAt:new Date().toISOString()});
+  push(ref(db,'tarifs'),{route,berline:document.getElementById('tf-berline').value,van:document.getElementById('tf-van').value,sprinter:document.getElementById('tf-sprinter').value,bus:document.getElementById('tf-bus').value,categorie:document.getElementById('tf-cat').value,nuit:document.getElementById('tf-nuit').value,createdAt:new Date().toISOString()});
   closeMo('tarif');
   showToast('Tarif ajouté ✓');
 };
@@ -1517,7 +1528,7 @@ window.printFac = function(id,num){
   <div class="row"><span><strong>Date</strong></span><span>${fdt(c.datetime)}</span></div>
   <div class="row"><span><strong>Départ</strong></span><span>${c.depart||'—'}</span></div>
   <div class="row"><span><strong>Arrivée</strong></span><span>${c.arrivee||'—'}</span></div>
-  <div class="row"><span><strong>Véhicule</strong></span><span>${c.vehicule==='van'?'Van / SUV':'Berline'}</span></div>
+  <div class="row"><span><strong>Véhicule</strong></span><span>${c.vehicule==='van'?'Van / SUV':c.vehicule==='sprinter'?'Sprinter':c.vehicule==='bus'?'Bus':'Berline'}</span></div>
   <div class="row"><span><strong>Chauffeur</strong></span><span>${c.chauffeur||'—'}</span></div>
   ${c.vol?`<div class="row"><span><strong>N° Vol</strong></span><span>${c.vol}</span></div>`:''}
   ${c.pax?`<div class="row"><span><strong>Passagers</strong></span><span>${c.pax}</span></div>`:''}
@@ -1752,7 +1763,14 @@ function drawRapportCharts(){
     ctx.clearRect(0,0,c3.width,c3.height);
     const berline=S.courses.filter(c=>c.vehicule==='berline').length;
     const van=S.courses.filter(c=>c.vehicule==='van').length;
-    drawPieChartOn(ctx,c3.width,c3.height,['Berline','Van'],[berline,van],['#c9a84c','#5b9cf6']);
+    const sprinter=S.courses.filter(c=>c.vehicule==='sprinter').length;
+    const bus=S.courses.filter(c=>c.vehicule==='bus').length;
+    const vehLabels=[]; const vehData=[]; const vehColors=[];
+    if(berline){vehLabels.push('Berline');vehData.push(berline);vehColors.push('#c9a84c');}
+    if(van){vehLabels.push('Van');vehData.push(van);vehColors.push('#5b9cf6');}
+    if(sprinter){vehLabels.push('Sprinter');vehData.push(sprinter);vehColors.push('#2ecc8a');}
+    if(bus){vehLabels.push('Bus');vehData.push(bus);vehColors.push('#f0934a');}
+    drawPieChartOn(ctx,c3.width,c3.height,vehLabels,vehData,vehColors);
   }
 }
 
