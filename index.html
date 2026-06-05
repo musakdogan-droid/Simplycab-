@@ -426,6 +426,7 @@ tr:last-child td{border-bottom:none}
         <div class="tb-clock" id="clock">--:--</div>
         <div id="fb-status" style="font-size:11px;color:var(--muted)"><i class="fas fa-circle-notch fa-spin" style="font-size:10px"></i></div>
         <div class="tb-btn" onclick="showToast('Aucune nouvelle notification','info')"><i class="fas fa-bell"></i><span class="tb-dot"></span></div>
+        <div class="tb-btn" onclick="forceReload().then(()=>showToast('Données actualisées ✓'))" title="Actualiser les données"><i class="fas fa-sync-alt"></i></div>
         <button class="btn btn-p btn-sm" id="btn-new" onclick="openCourseModal()" style="display:none"><i class="fas fa-plus"></i> Nouvelle course</button>
       </div>
     </div>
@@ -2121,6 +2122,8 @@ function goPage(name,btn){
   const titles={dashboard:'Tableau de bord',dispatch:'Dispatch',planning:'Planning',chauffeurs:'Chauffeurs',vehicules:'Véhicules',clients:'Clients',tarifs:'Tarifs',facturation:'Facturation',rapports:'Rapports',comptes:'Comptes Dispatch',historique:'Historique',parametres:'Paramètres',mescourses:'Mes courses'};
   document.getElementById('page-title').textContent=titles[name]||name;
   closeMob();
+  // Reload data on every page change
+  if(typeof forceReload === 'function') forceReload();
 }
 window.goPage=goPage;
 
