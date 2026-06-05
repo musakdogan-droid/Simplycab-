@@ -1077,6 +1077,7 @@ function initApp(){
   }
 
   bindDB();
+  forceReload();
   startClock();
 }
 
@@ -1092,6 +1093,18 @@ function bindDB(){
   listen('clients','clients'); listen('tarifs','tarifs');
   listen('vehicules','vehicules'); listen('logs','logs');
   listen('dispatch_accounts','dispatchAccounts');
+}
+
+async function forceReload(){
+  const paths=[['courses','courses'],['chauffeurs','chauffeurs'],['clients','clients'],['tarifs','tarifs'],['vehicules','vehicules'],['logs','logs'],['dispatch_accounts','dispatchAccounts']];
+  for(const [path,key] of paths){
+    const snap=await get(ref(db,path));
+    S[key]=[];
+    if(snap.exists()) snap.forEach(c=>S[key].push({_id:c.key,...c.val()}));
+    if(key==='courses') S.courses.sort((a,b)=>new Date(b.datetime)-new Date(a.datetime));
+    if(key==='logs') S.logs.sort((a,b)=>new Date(b.at)-new Date(a.at));
+  }
+  renderAll();
 }
 
 function renderAll(){
@@ -1504,6 +1517,7 @@ window.saveCourse = async function(){
   addLog(`Nouvelle ${type==='mad'?'MAD':'course'} : ${client}${chauffeur?' ('+chauffeur+')':''}`);
   closeMo('course');
   showToast(`${type==='mad'?'Mise à disposition':'Course'} créée ✓`);
+  await forceReload();
 };
 
 // ── CHAUFFEURS ──
@@ -1553,16 +1567,18 @@ window.openChaufModal = function(){
   ['ch-prenom','ch-nom','ch-tel','ch-email','ch-pin'].forEach(id=>document.getElementById(id).value='');
   openMo('chauffeur');
 };
-window.saveChauffeur = function(){
+window.saveChauffeur = async function(){
   const prenom=document.getElementById('ch-prenom').value.trim();
   const pin=document.getElementById('ch-pin').value.trim();
   if(!prenom){showToast('Prénom obligatoire',true);return;}
   if(pin&&pin.length!==4){showToast('PIN doit faire 4 chiffres',true);return;}
   if(pin&&S.chauffeurs.find(c=>c.pin===pin)){showToast('Ce PIN est déjà utilisé',true);return;}
-  push(ref(db,'chauffeurs'),{prenom,nom:document.getElementById('ch-nom').value,tel:document.getElementById('ch-tel').value,email:document.getElementById('ch-email').value,pin,vehicule:document.getElementById('ch-veh').value,statut:document.getElementById('ch-statut').value,createdAt:new Date().toISOString()});
+  await push(ref(db,'chauffeurs'),{prenom,nom:document.getElementById('ch-nom').value,tel:document.getElementById('ch-tel').value,email:document.getElementById('ch-email').value,pin,vehicule:document.getElementById('ch-veh').value,statut:document.getElementById('ch-statut').value,createdAt:new Date().toISOString()});
   addLog(`Chauffeur ajouté : ${prenom}`);
   closeMo('chauffeur');
   showToast('Chauffeur ajouté ✓');
+  // Force reload
+  await forceReload();
 };
 window.updChauffStatut = function(id,statut){update(ref(db,'chauffeurs/'+id),{statut});showToast('Statut mis à jour');};
 window.delChauffeur = function(id){
@@ -1592,11 +1608,12 @@ function renderVehicules(){
     </div>`).join('');
 }
 window.openVehModal = function(){['vh-marque','vh-modele','vh-immat','vh-annee','vh-km'].forEach(id=>document.getElementById(id).value='');buildDriverSelects();openMo('vehicule');};
-window.saveVehicule = function(){
+window.saveVehicule = async function(){
   const marque=document.getElementById('vh-marque').value.trim();
   if(!marque){showToast('Marque obligatoire',true);return;}
-  push(ref(db,'vehicules'),{marque,modele:document.getElementById('vh-modele').value,immat:document.getElementById('vh-immat').value,annee:document.getElementById('vh-annee').value,type:document.getElementById('vh-type').value,km:document.getElementById('vh-km').value,chauffeur:document.getElementById('vh-chauff').value,statut:'actif',createdAt:new Date().toISOString()});
+  await push(ref(db,'vehicules'),{marque,modele:document.getElementById('vh-modele').value,immat:document.getElementById('vh-immat').value,annee:document.getElementById('vh-annee').value,type:document.getElementById('vh-type').value,km:document.getElementById('vh-km').value,chauffeur:document.getElementById('vh-chauff').value,statut:'actif',createdAt:new Date().toISOString()});
   closeMo('vehicule');showToast('Véhicule ajouté ✓');
+  await forceReload();
 };
 window.delVehicule = function(id){showConfirm('Supprimer ce véhicule ?','',()=>{remove(ref(db,'vehicules/'+id));showToast('Véhicule supprimé');});};
 
@@ -1628,11 +1645,12 @@ function renderClients(){
   }).join('');
 }
 window.openClientModal = function(){['cl-nom','cl-tel','cl-email','cl-notes'].forEach(id=>document.getElementById(id).value='');openMo('client');};
-window.saveClient = function(){
+window.saveClient = async function(){
   const nom=document.getElementById('cl-nom').value.trim();
   if(!nom){showToast('Nom obligatoire',true);return;}
-  push(ref(db,'clients'),{nom,tel:document.getElementById('cl-tel').value,email:document.getElementById('cl-email').value,type:document.getElementById('cl-type').value,notes:document.getElementById('cl-notes').value,createdAt:new Date().toISOString()});
+  await push(ref(db,'clients'),{nom,tel:document.getElementById('cl-tel').value,email:document.getElementById('cl-email').value,type:document.getElementById('cl-type').value,notes:document.getElementById('cl-notes').value,createdAt:new Date().toISOString()});
   closeMo('client');showToast('Client ajouté ✓');
+  await forceReload();
 };
 window.delClient = function(id){showConfirm('Supprimer ?','',()=>{remove(ref(db,'clients/'+id));showToast('Client supprimé');});};
 
@@ -1658,11 +1676,12 @@ function renderTarifs(){
     </div>`).join('');
 }
 window.openTarifModal = function(){['tf-route','tf-berline','tf-van','tf-sprinter','tf-bus','tf-nuit'].forEach(id=>document.getElementById(id).value='');openMo('tarif');};
-window.saveTarif = function(){
+window.saveTarif = async function(){
   const route=document.getElementById('tf-route').value.trim();
   if(!route){showToast('Route obligatoire',true);return;}
-  push(ref(db,'tarifs'),{route,berline:document.getElementById('tf-berline').value,van:document.getElementById('tf-van').value,sprinter:document.getElementById('tf-sprinter').value,bus:document.getElementById('tf-bus').value,categorie:document.getElementById('tf-cat').value,nuit:document.getElementById('tf-nuit').value,createdAt:new Date().toISOString()});
+  await push(ref(db,'tarifs'),{route,berline:document.getElementById('tf-berline').value,van:document.getElementById('tf-van').value,sprinter:document.getElementById('tf-sprinter').value,bus:document.getElementById('tf-bus').value,categorie:document.getElementById('tf-cat').value,nuit:document.getElementById('tf-nuit').value,createdAt:new Date().toISOString()});
   closeMo('tarif');showToast('Tarif ajouté ✓');
+  await forceReload();
 };
 window.delTarif = function(id){showConfirm('Supprimer ?','',()=>{remove(ref(db,'tarifs/'+id));showToast('Tarif supprimé');});};
 
