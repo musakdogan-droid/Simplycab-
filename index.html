@@ -2034,52 +2034,270 @@ async function assignGroupe() {
 window.onChkChange=onChkChange;window.toggleAll=toggleAll;window.clearSelection=clearSelection;window.assignGroupe=assignGroupe;
 
 // ── VOIR PASSAGERS ──
-window.viewPax = function(id) {
+// ── GESTION COURSE COMPLÈTE ──
+let currentEditCourse = null;
+
+window.viewPax = function(id) { editCourse(id); };
+
+window.editCourse = function(id) {
   const c = D.courses.find(x=>x._id===id);
-  if(!c||!c.passagers||!c.passagers.length){showToast('Aucun passager enregistré',true);return;}
-  const rows = c.passagers.map((p,i)=>`
-    <tr style="background:${p.present===false?'var(--red-dim)':''}">
+  if(!c){showToast('Course introuvable',true);return;}
+  currentEditCourse = id;
+
+  const present = (c.passagers||[]).filter(p=>p.present!==false).length;
+  const absent = (c.passagers||[]).length - present;
+
+  // Build passenger rows
+  const paxRows = (c.passagers||[]).map((p,i)=>{
+    const copyText = `${p.prenom||''}/${p.nom||''}/${p.tel||''}/${p.vol||''}/${p.terminal||''}/${p.harrivee||''}/${p.refClient||''}`;
+    return `<tr id="edit-pax-row-${i}" style="background:${p.present===false?'var(--red-dim)':''};transition:background 0.2s">
       <td style="font-size:12px;font-weight:600">${p.prenom||''} ${p.nom||''}</td>
       <td style="font-size:11px">${p.tel||'—'}</td>
       <td style="font-size:11px">${p.vol||'—'}</td>
       <td style="font-size:11px">${p.terminal||'—'}</td>
       <td style="font-size:11px">${p.harrivee||'—'}</td>
-      <td style="font-size:11px">${p.refClient||'—'}</td>
+      <td style="font-size:11px;color:var(--gold)">${p.refClient||'—'}</td>
       <td>
-        <button onclick="togglePaxPresence('${id}',${i})" style="background:${p.present===false?'var(--red-dim)':'var(--green-dim)'};border:1px solid ${p.present===false?'rgba(224,92,92,0.3)':'rgba(46,204,138,0.3)'};color:${p.present===false?'var(--red)':'var(--green)'};border-radius:var(--r-xs);padding:4px 10px;cursor:pointer;font-size:11px;font-weight:600">
-          ${p.present===false?'✗ Absent':'✓ Présent'}
-        </button>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button onclick="togglePaxPresence('${id}',${i})" style="background:${p.present===false?'var(--red-dim)':'var(--green-dim)'};border:1px solid ${p.present===false?'rgba(224,92,92,0.3)':'rgba(46,204,138,0.3)'};color:${p.present===false?'var(--red)':'var(--green)'};border-radius:var(--r-xs);padding:3px 8px;cursor:pointer;font-size:10px;font-weight:600">
+            ${p.present===false?'✗ Absent':'✓ Présent'}
+          </button>
+          <button onclick="copyPaxInfo('${copyText}')" title="Copier infos" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-xs);padding:3px 7px;cursor:pointer;font-size:10px;color:var(--muted2)">📋</button>
+          <button onclick="transferPax('${id}',${i})" title="Transférer" style="background:var(--blue-dim);border:1px solid rgba(91,156,246,0.3);border-radius:var(--r-xs);padding:3px 7px;cursor:pointer;font-size:10px;color:var(--blue)">➡️ Transférer</button>
+        </div>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
-  const present = c.passagers.filter(p=>p.present!==false).length;
-  const absent = c.passagers.length - present;
+  // Other courses for merge/transfer
+  const otherCourses = D.courses.filter(x=>x._id!==id&&!['terminee','annulee','payee'].includes(x.statut));
 
   const html = `
-    <div style="margin-bottom:12px;display:flex;gap:10px;align-items:center">
-      <span class="bdg bdg-green">✓ ${present} présent(s)</span>
-      ${absent>0?`<span class="bdg bdg-red">✗ ${absent} absent(s)</span>`:''}
-      <span style="font-size:11px;color:var(--gold);font-weight:600">${c.ref||''}</span>
+    <!-- INFOS COURSE -->
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;margin-bottom:16px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">RÉFÉRENCE</div><div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--gold)">${c.ref||'—'}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">DATE / HEURE</div><div style="font-size:13px;font-weight:600">${fdt(c.datetime)}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">CHAUFFEUR</div><div style="font-size:13px;font-weight:600;color:var(--blue)">${c.chauffeur||'Non assigné'}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">DÉPART</div><div style="font-size:12px">${c.depart||c.lieu||'—'}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">ARRIVÉE</div><div style="font-size:12px">${c.arrivee||c.duree||'—'}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">VÉHICULE / TERMINAUX</div><div style="font-size:12px">${vI(c.vehicule)} ${c.terminaux?'• '+c.terminaux:''}</div></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${c.statut!=='terminee'?`<button onclick="openAssignFromEdit('${id}')" class="btn btn-b btn-sm"><i class="fas fa-user-check"></i> Changer chauffeur</button>`:''}
+        <button onclick="mergeCourse('${id}')" class="btn btn-s btn-sm" style="color:var(--purple);border-color:rgba(155,127,240,0.3)"><i class="fas fa-object-group"></i> Fusionner avec une autre course</button>
+      </div>
     </div>
-    <div class="tw">
+
+    <!-- PASSAGERS -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">
+        <i class="fas fa-users" style="color:var(--gold)"></i> Passagers
+        <span class="bdg bdg-green" style="margin-left:6px">✓ ${present}</span>
+        ${absent>0?`<span class="bdg bdg-red" style="margin-left:4px">✗ ${absent}</span>`:''}
+      </div>
+      <button onclick="addPaxToExistingCourse('${id}')" class="btn btn-p btn-sm"><i class="fas fa-plus"></i> Ajouter passager</button>
+    </div>
+
+    <div class="tw" style="margin-bottom:14px">
       <table>
-        <thead><tr><th>Nom</th><th>Téléphone</th><th>Vol</th><th>Terminal</th><th>H. Arrivée</th><th>Réf. client</th><th>Présence</th></tr></thead>
-        <tbody>${rows}</tbody>
+        <thead><tr><th>Nom</th><th>Tél</th><th>Vol</th><th>Terminal</th><th>H. Arr.</th><th>Réf. client</th><th>Actions</th></tr></thead>
+        <tbody id="edit-pax-tbody">${paxRows||'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Aucun passager</td></tr>'}</tbody>
       </table>
+    </div>
+
+    <!-- AJOUTER PAX RAPIDE (copier-coller) -->
+    <div style="background:var(--dark);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px">
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:8px"><i class="fas fa-paste"></i> Ajout rapide par copier-coller (format: <span style="color:var(--gold)">Prénom/Nom/Tel/Vol/Terminal/H.Arrivée/Réf</span>)</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="quick-pax-input" placeholder="Jean/Dupont/0612345678/AF1234/CDG2F/07:30/REF-001" style="flex:1;background:var(--card2);border:1px solid var(--border2);border-radius:var(--r-xs);padding:8px 12px;color:var(--white);font-size:12px;outline:none">
+        <button onclick="quickAddPax('${id}')" class="btn btn-p btn-sm"><i class="fas fa-plus"></i> Ajouter</button>
+      </div>
     </div>`;
 
-  // Show in a simple overlay
   const ov = document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)';
-  ov.innerHTML=`<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);width:800px;max-width:100%;max-height:90vh;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column">
-    <div style="padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700"><i class="fas fa-users" style="color:var(--gold)"></i> Passagers — ${c.client}</div>
-      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);width:30px;height:30px;color:var(--muted2);cursor:pointer;font-size:12px">✕</button>
+  ov.id = 'edit-course-ov';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)';
+  ov.innerHTML=`<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);width:860px;max-width:100%;max-height:92vh;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column">
+    <div style="padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700"><i class="fas fa-route" style="color:var(--gold)"></i> ${c.client} <span style="font-size:12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400">— ${fdt(c.datetime)}</span></div>
+      <button onclick="document.getElementById('edit-course-ov').remove()" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);width:30px;height:30px;color:var(--muted2);cursor:pointer;font-size:12px">✕</button>
     </div>
-    <div style="padding:18px 22px;overflow-y:auto">${html}</div>
+    <div style="padding:18px 22px;overflow-y:auto;flex:1">${html}</div>
   </div>`;
   ov.addEventListener('click', function(e){if(e.target===this)this.remove();});
   document.body.appendChild(ov);
+};
+
+window.copyPaxInfo = function(text) {
+  navigator.clipboard.writeText(text).then(()=>showToast('Copié ✓')).catch(()=>{
+    // fallback
+    const el = document.createElement('textarea');
+    el.value = text; document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+    showToast('Copié ✓');
+  });
+};
+
+window.quickAddPax = async function(courseId) {
+  const input = document.getElementById('quick-pax-input');
+  const val = input.value.trim();
+  if(!val){showToast('Entrez les infos du passager',true);return;}
+  const parts = val.split('/').map(s=>s.trim());
+  const newPax = {
+    prenom: parts[0]||'',
+    nom: parts[1]||'',
+    tel: parts[2]||'',
+    vol: parts[3]||'',
+    terminal: parts[4]||'',
+    harrivee: parts[5]||'',
+    refClient: parts[6]||'',
+    present: true
+  };
+  const c = D.courses.find(x=>x._id===courseId);
+  if(!c){showToast('Course introuvable',true);return;}
+  const passagers = [...(c.passagers||[]), newPax];
+  await fbUpdate('courses', courseId, {passagers, pax:passagers.length, updatedAt:new Date().toISOString()});
+  await addLog(`Passager ajouté : ${newPax.prenom} ${newPax.nom} → ${c.client}`);
+  input.value = '';
+  await loadAll();
+  document.getElementById('edit-course-ov')?.remove();
+  setTimeout(()=>editCourse(courseId), 400);
+  showToast(`${newPax.prenom} ${newPax.nom} ajouté ✓`);
+};
+
+window.addPaxToExistingCourse = function(courseId) {
+  // Show quick add form focus
+  const input = document.getElementById('quick-pax-input');
+  if(input){input.focus();input.style.borderColor='var(--gold)';}
+};
+
+window.transferPax = function(courseId, paxIndex) {
+  const c = D.courses.find(x=>x._id===courseId);
+  if(!c||!c.passagers) return;
+  const pax = c.passagers[paxIndex];
+  const otherCourses = D.courses.filter(x=>x._id!==courseId&&!['terminee','annulee','payee'].includes(x.statut));
+
+  const ov2 = document.createElement('div');
+  ov2.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)';
+  ov2.innerHTML=`<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);width:520px;max-width:100%;box-shadow:var(--shadow)">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">➡️ Transférer ${pax.prenom} ${pax.nom}</div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);width:28px;height:28px;color:var(--muted2);cursor:pointer;font-size:11px">✕</button>
+    </div>
+    <div style="padding:18px 20px">
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:12px">Le passager sera marqué <strong style="color:var(--red)">Absent</strong> dans la course actuelle et ajouté à la course choisie.</div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Vers une course existante</div>
+        <select id="transfer-dest" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px 12px;color:var(--white);font-size:13px;outline:none">
+          <option value="">— Choisir une course —</option>
+          ${otherCourses.map(x=>`<option value="${x._id}">${fdt(x.datetime)} — ${x.client} (${vI(x.vehicule)}) ${x.chauffeur?'→ '+x.chauffeur:''}</option>`).join('')}
+        </select>
+      </div>
+      <div style="margin-bottom:16px;text-align:center;color:var(--muted);font-size:12px">— ou —</div>
+      <button onclick="createNewCourseForPax('${courseId}',${paxIndex})" class="btn btn-p btn-sm" style="width:100%;justify-content:center"><i class="fas fa-plus"></i> Créer une nouvelle course pour ce passager</button>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="this.closest('div[style*=fixed]').remove()" class="btn btn-ghost btn-sm">Annuler</button>
+      <button onclick="doTransferPax('${courseId}',${paxIndex})" class="btn btn-p btn-sm"><i class="fas fa-check"></i> Confirmer</button>
+    </div>
+  </div>`;
+  ov2.addEventListener('click', function(e){if(e.target===this)this.remove();});
+  document.body.appendChild(ov2);
+};
+
+window.doTransferPax = async function(fromId, paxIndex) {
+  const destId = document.getElementById('transfer-dest').value;
+  if(!destId){showToast('Sélectionner une course de destination',true);return;}
+  const fromCourse = D.courses.find(x=>x._id===fromId);
+  const toCourse = D.courses.find(x=>x._id===destId);
+  if(!fromCourse||!toCourse){showToast('Course introuvable',true);return;}
+  const pax = fromCourse.passagers[paxIndex];
+  // Mark absent in source
+  const fromPax = [...fromCourse.passagers];
+  fromPax[paxIndex] = {...fromPax[paxIndex], present:false};
+  await fbUpdate('courses', fromId, {passagers:fromPax, updatedAt:new Date().toISOString()});
+  // Add to destination
+  const toPax = [...(toCourse.passagers||[]), {...pax, present:true}];
+  await fbUpdate('courses', destId, {passagers:toPax, pax:toPax.length, updatedAt:new Date().toISOString()});
+  await addLog(`${pax.prenom} ${pax.nom} transféré de "${fromCourse.client}" vers "${toCourse.client}"`);
+  // Close overlays
+  document.querySelectorAll('div[style*="position:fixed"]').forEach(el=>el.remove());
+  await loadAll();
+  setTimeout(()=>editCourse(fromId), 400);
+  showToast(`${pax.prenom} ${pax.nom} transféré ✓`);
+};
+
+window.createNewCourseForPax = function(fromId, paxIndex) {
+  // Close transfer overlay, open course modal pre-filled
+  document.querySelectorAll('div[style*="z-index:400"]').forEach(el=>el.remove());
+  const fromCourse = D.courses.find(x=>x._id===fromId);
+  const pax = fromCourse?.passagers?.[paxIndex];
+  openCourseModal();
+  // Pre-fill with same route
+  if(fromCourse){
+    setTimeout(()=>{
+      document.getElementById('fc-dep').value = fromCourse.depart||'';
+      document.getElementById('fc-arr').value = fromCourse.arrivee||'';
+      document.getElementById('fc-cat').value = fromCourse.cat||'cdg';
+    }, 100);
+  }
+  // Store pax to auto-add after save
+  window._pendingTransferPax = {fromId, paxIndex};
+  showToast('Créez la nouvelle course — le passager sera transféré automatiquement');
+};
+
+window.mergeCourse = function(id) {
+  const c = D.courses.find(x=>x._id===id);
+  if(!c) return;
+  const others = D.courses.filter(x=>x._id!==id&&!['terminee','annulee','payee'].includes(x.statut));
+  if(!others.length){showToast('Aucune autre course disponible pour fusion',true);return;}
+
+  const ov = document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)';
+  ov.innerHTML=`<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);width:560px;max-width:100%;box-shadow:var(--shadow)">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700"><i class="fas fa-object-group" style="color:var(--purple)"></i> Fusionner avec une autre course</div>
+    </div>
+    <div style="padding:18px 20px">
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:12px">Les passagers de la course sélectionnée seront ajoutés à <strong style="color:var(--white)">${c.client}</strong>. La course fusionnée sera marquée comme annulée.</div>
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 13px;margin-bottom:12px;font-size:12px">
+        <div style="color:var(--muted);margin-bottom:4px">Course principale :</div>
+        <div style="font-weight:600">${c.ref||c.client} — ${fdt(c.datetime)} — ${vI(c.vehicule)} — ${(c.passagers||[]).length} pax</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Course à fusionner</div>
+        <select id="merge-dest" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px 12px;color:var(--white);font-size:13px;outline:none">
+          <option value="">— Choisir —</option>
+          ${others.map(x=>`<option value="${x._id}">${fdt(x.datetime)} — ${x.client} — ${(x.passagers||[]).length} pax — ${vI(x.vehicule)} ${x.chauffeur?'→ '+x.chauffeur:''}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="this.closest('div[style*=fixed]').remove()" class="btn btn-ghost btn-sm">Annuler</button>
+      <button onclick="doMerge('${id}')" class="btn btn-p btn-sm" style="background:linear-gradient(135deg,var(--purple),#7c5de8)"><i class="fas fa-object-group"></i> Fusionner</button>
+    </div>
+  </div>`;
+  ov.addEventListener('click', function(e){if(e.target===this)this.remove();});
+  document.body.appendChild(ov);
+};
+
+window.doMerge = async function(mainId) {
+  const destId = document.getElementById('merge-dest').value;
+  if(!destId){showToast('Sélectionner une course',true);return;}
+  const main = D.courses.find(x=>x._id===mainId);
+  const other = D.courses.find(x=>x._id===destId);
+  if(!main||!other){showToast('Course introuvable',true);return;}
+  // Merge passengers
+  const merged = [...(main.passagers||[]), ...(other.passagers||[])];
+  await fbUpdate('courses', mainId, {passagers:merged, pax:merged.length, updatedAt:new Date().toISOString()});
+  // Mark other as annulée
+  await fbUpdate('courses', destId, {statut:'annulee', notes:(other.notes||'')+` [Fusionnée avec ${main.ref||main.client}]`, updatedAt:new Date().toISOString()});
+  await addLog(`Courses fusionnées : "${other.client}" → "${main.client}" (${(other.passagers||[]).length} pax transférés)`);
+  document.querySelectorAll('div[style*="position:fixed"]').forEach(el=>el.remove());
+  await loadAll();
+  setTimeout(()=>editCourse(mainId), 400);
+  showToast(`Fusion réussie — ${merged.length} passagers au total ✓`);
 };
 
 window.togglePaxPresence = async function(courseId, paxIndex) {
@@ -2089,11 +2307,17 @@ window.togglePaxPresence = async function(courseId, paxIndex) {
   passagers[paxIndex] = {...passagers[paxIndex], present: passagers[paxIndex].present===false ? true : false};
   await fbUpdate('courses', courseId, {passagers, updatedAt:new Date().toISOString()});
   await loadAll();
-  // Re-open the view
-  document.querySelectorAll('div[style*="position:fixed"][style*="300"]').forEach(el=>el.remove());
-  setTimeout(()=>viewPax(courseId), 300);
+  document.getElementById('edit-course-ov')?.remove();
+  setTimeout(()=>editCourse(courseId), 300);
   showToast('Présence mise à jour ✓');
 };
+
+window.openAssignFromEdit = function(id) {
+  document.getElementById('edit-course-ov')?.remove();
+  openAssign(id);
+};
+
+
 
 
 window.importExcel = async function(input) {
