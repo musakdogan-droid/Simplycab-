@@ -426,6 +426,7 @@ tr:last-child td{border-bottom:none}
           </select>
           <span class="bdg bdg-muted" id="ds-cnt">0 courses</span>
           <button class="btn btn-g btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+          <label class="btn btn-s btn-sm" style="cursor:pointer"><i class="fas fa-file-upload"></i> Importer Excel<input type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
         </div>
         <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><select id="groupe-drv" style="background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:7px 12px;color:var(--white);font-size:12px;outline:none"><option value="">— Choisir un chauffeur —</option></select><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th>Réf.</th><th>Date/H</th><th>Client</th><th>Type</th><th>Départ</th><th>Arrivée/Durée</th><th>Term.</th><th>Chauffeur</th><th>Véh</th><th>Pax</th><th>TTC</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
         <div id="dv-kanban" style="display:none"><div class="kb" id="kb-dispatch"></div></div>
@@ -1893,6 +1894,56 @@ async function assignGroupe() {
   showToast(`${ids.length} course(s) assignées à ${drv} ✓`);
 }
 window.onChkChange=onChkChange;window.toggleAll=toggleAll;window.clearSelection=clearSelection;window.assignGroupe=assignGroupe;
+
+// ── IMPORT EXCEL / CSV ──
+window.importExcel = async function(input) {
+  const file = input.files[0];
+  if(!file){return;}
+  input.value = '';
+  showToast('Lecture du fichier...');
+  const text = await file.text();
+  const sep = text.includes(';') ? ';' : ',';
+  const lines = text.split('\n').filter(l=>l.trim());
+  if(lines.length < 2){showToast('Fichier vide ou invalide',true);return;}
+  const rows = lines.slice(1);
+  let count = 0, errors = 0;
+  for(const row of rows) {
+    const cols = row.split(sep).map(c=>c.replace(/^"|"$/g,'').trim());
+    if(cols.length < 3) continue;
+    const [dateStr, heure, client, tel, depart, arrivee, chauffeur, vehicule, pax, prix, notes] = cols;
+    if(!client || !dateStr) continue;
+    let datetime = '';
+    try {
+      let d;
+      if(dateStr.includes('/')) {
+        const p = dateStr.split('/');
+        d = new Date(`${p[2]||new Date().getFullYear()}-${(p[1]||'01').padStart(2,'0')}-${p[0].padStart(2,'0')}`);
+      } else { d = new Date(dateStr); }
+      const h = (heure||'08:00').replace('h',':').trim();
+      datetime = `${d.toISOString().split('T')[0]}T${h.includes(':')?h:'08:00'}`;
+    } catch(e) { errors++; continue; }
+    const vehMap = {'b':'berline','berline':'berline','v':'van','van':'van','sp':'sprinter','sprinter':'sprinter','bu':'bus','bus':'bus'};
+    const vehCode = vehMap[(vehicule||'').toLowerCase().trim()] || 'berline';
+    const vehLetter = {berline:'B',van:'V',sprinter:'SP',bus:'BU'}[vehCode]||'B';
+    const chName = (chauffeur||'NC').split(' ')[0].toUpperCase();
+    const ref = `IMP/${vehLetter}/D${count+1}/${chName}`;
+    await fbPush('courses', {
+      type:'transfert', client:client.trim(), tel:(tel||'').trim(),
+      depart:(depart||'').trim(), arrivee:(arrivee||'').trim(),
+      datetime, vehicule:vehCode, pax:parseInt(pax)||1, bags:0,
+      chauffeur:(chauffeur||'').trim(),
+      prix:parseFloat((prix||'0').replace(',','.'))||0,
+      cat:'autre', ref, notes:(notes||'').trim(),
+      statut:(chauffeur||'').trim()?'attribuee':'nouvelle',
+      createdAt:new Date().toISOString(), importedFrom:file.name
+    });
+    count++;
+  }
+  await addLog(`Import Excel : ${count} course(s) depuis ${file.name}`);
+  await loadAll();
+  showToast(`✓ ${count} course(s) importée(s)${errors>0?' ('+errors+' ignorées)':''}`);
+};
+
 
 </script>
 </body>
