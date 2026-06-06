@@ -393,7 +393,10 @@ tr:last-child td{border-bottom:none}
         <div class="sec">
           <div class="sec-h">
             <div class="sec-t"><i class="fas fa-route"></i> Courses actives</div>
-            <button class="btn btn-p btn-sm" onclick="openCourseModal()"><i class="fas fa-plus"></i> Nouvelle course</button>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-g btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+              <button class="btn btn-p btn-sm" onclick="openCourseModal()"><i class="fas fa-plus"></i> Nouvelle course</button>
+            </div>
           </div>
           <div class="tw"><table><thead><tr><th>Client</th><th>Type</th><th>Trajet</th><th>Chauffeur</th><th>Statut</th><th>TTC</th><th>Action</th></tr></thead><tbody id="tb-dash"></tbody></table></div>
         </div>
@@ -422,8 +425,9 @@ tr:last-child td{border-bottom:none}
             <option value="table">Liste</option><option value="kanban">Kanban</option>
           </select>
           <span class="bdg bdg-muted" id="ds-cnt">0 courses</span>
+          <button class="btn btn-g btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
         </div>
-        <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><select id="groupe-drv" style="background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:7px 12px;color:var(--white);font-size:12px;outline:none"><option value="">— Choisir un chauffeur —</option></select><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th>Date/H</th><th>Client</th><th>Type</th><th>Départ</th><th>Arrivée/Durée</th><th>Chauffeur</th><th>Véh</th><th>Pax</th><th>TTC</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
+        <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><select id="groupe-drv" style="background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:7px 12px;color:var(--white);font-size:12px;outline:none"><option value="">— Choisir un chauffeur —</option></select><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th>Réf.</th><th>Date/H</th><th>Client</th><th>Type</th><th>Départ</th><th>Arrivée/Durée</th><th>Term.</th><th>Chauffeur</th><th>Véh</th><th>Pax</th><th>TTC</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
         <div id="dv-kanban" style="display:none"><div class="kb" id="kb-dispatch"></div></div>
       </div>
 
@@ -605,8 +609,28 @@ tr:last-child td{border-bottom:none}
         <div class="fld"><label>Téléphone</label><input type="tel" id="fc-tel" placeholder="+33 6 00 00 00 00"></div>
       </div>
       <div id="f-transfert">
-        <div class="fld"><label>Départ *</label><input type="text" id="fc-dep" placeholder="CDG Terminal 2E, 95700 Roissy"></div>
-        <div class="fld"><label>Arrivée *</label><input type="text" id="fc-arr" placeholder="15 rue de Rivoli, 75001 Paris"></div>
+        <div class="fld"><label>Départ *</label><input type="text" id="fc-dep" placeholder="Ex: 15 rue de Rivoli, Paris"></div>
+        <div class="fld"><label>Arrivée *</label><input type="text" id="fc-arr" placeholder="Ex: CDG Terminal 2E, Roissy"></div>
+        <!-- TERMINAUX -->
+        <div class="fld">
+          <label>Terminaux supplémentaires (CDG / Orly)</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm)">
+            <span style="font-size:10px;color:var(--muted);width:100%;margin-bottom:4px">CDG :</span>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2A"> 2A</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2B"> 2B</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2D"> 2D</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2E"> 2E</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2F"> 2F</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2G"> 2G</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG1"> T1</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG3"> T3</label>
+            <span style="font-size:10px;color:var(--muted);width:100%;margin-top:6px;margin-bottom:4px">Orly :</span>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY1"> ORY1</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY2"> ORY2</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY3"> ORY3</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY4"> ORY4</label>
+          </div>
+        </div>
       </div>
       <div id="f-mad" style="display:none">
         <div class="fld"><label>Lieu de prise en charge *</label><input type="text" id="fc-lieu" placeholder="Hôtel Le Marais, Paris"></div>
@@ -636,14 +660,18 @@ tr:last-child td{border-bottom:none}
         <div class="fld"><label>Bagages</label><input type="number" id="fc-bags" value="0" min="0" max="60"></div>
       </div>
       <div class="fg2">
-        <div class="fld"><label>Chauffeur</label><select id="fc-ch"><option value="">— Assigner plus tard —</option></select></div>
+        <div class="fld"><label>Chauffeur</label><select id="fc-ch" onchange="genRef()"><option value="">— Assigner plus tard —</option></select></div>
         <div class="fld"><label>Catégorie</label>
-          <select id="fc-cat">
+          <select id="fc-cat" onchange="genRef()">
             <option value="cdg">✈️ CDG</option><option value="orly">✈️ Orly</option>
             <option value="disney">🏰 Disneyland</option><option value="paris">🗼 Paris</option>
-            <option value="corporate">🏢 Corporate</option><option value="autre">📍 Autre</option>
+            <option value="gare">🚉 Gare</option><option value="corporate">🏢 Corporate</option><option value="autre">📍 Autre</option>
           </select>
         </div>
+      </div>
+      <div class="fg2">
+        <div class="fld"><label>N° Véhicule du jour</label><input type="text" id="fc-numveh" placeholder="B1, V2, SP1..." oninput="genRef()"></div>
+        <div class="fld"><label>Référence (auto)</label><input type="text" id="fc-ref" readonly style="opacity:0.7;background:var(--dark);font-weight:600;color:var(--gold)" placeholder="Auto-générée"></div>
       </div>
       <div class="fg2">
         <div class="fld"><label>Prix TTC (€)</label><input type="number" id="fc-prix" placeholder="0" oninput="calcHT()"></div>
@@ -1042,11 +1070,13 @@ function renderDispatch() {
     if(!list.length){tb.innerHTML=`<tr><td colspan="11" class="t-empty"><i class="fas fa-inbox"></i><p>Aucune course</p></td></tr>`;}
     else tb.innerHTML=list.map(c=>`<tr>
       <td><input type="checkbox" class="row-chk" data-id="${c._id}" onchange="onChkChange()" style="cursor:pointer;width:14px;height:14px"></td>
+      <td style="font-size:10px;color:var(--gold);font-family:'Syne',sans-serif;font-weight:600;white-space:nowrap">${c.ref||'—'}</td>
       <td style="font-size:10px;white-space:nowrap">${fdt(c.datetime)}</td>
       <td><strong style="font-size:12px">${c.client||'—'}</strong><br><span style="color:var(--muted);font-size:10px">${c.tel||''}</span></td>
       <td>${tBdg(c.type)}</td>
       <td style="font-size:11px;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.depart||c.lieu||'—'}</td>
       <td style="font-size:11px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.arrivee||c.duree||'—'}</td>
+      <td style="font-size:10px;color:var(--blue)">${c.terminaux||'—'}</td>
       <td style="font-size:11px">${c.chauffeur||'<span style="color:var(--muted)">—</span>'}</td>
       <td style="font-size:11px">${vI(c.vehicule)}</td>
       <td style="font-size:11px">${c.pax||1}</td>
@@ -1125,7 +1155,8 @@ window.doAssign = async function() {
 window.openCourseModal = function() {
   const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
   document.getElementById('fc-dt').value = now.toISOString().slice(0,16);
-  ['fc-client','fc-tel','fc-dep','fc-arr','fc-lieu','fc-vol','fc-notes','fc-prix','fc-ht','fc-prix-mad'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fc-client','fc-tel','fc-dep','fc-arr','fc-lieu','fc-vol','fc-notes','fc-prix','fc-ht','fc-prix-mad','fc-numveh','fc-ref'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('.term-chk').forEach(c=>c.checked=false);
   document.getElementById('fc-pax').value=1; document.getElementById('fc-bags').value=0;
   document.getElementById('prix-suggest').style.display='none';
   selType('transfert');
@@ -1175,6 +1206,9 @@ window.saveCourse = async function() {
   if(type==='mad'&&!lieu){showToast('Lieu de prise en charge obligatoire',true);return;}
   const prix = type==='mad' ? parseFloat(document.getElementById('fc-prix-mad').value)||0 : parseFloat(document.getElementById('fc-prix').value)||0;
   const ch = document.getElementById('fc-ch').value;
+  const terminaux = [...document.querySelectorAll('.term-chk:checked')].map(c=>c.value).join('-');
+  const numveh = document.getElementById('fc-numveh').value.trim();
+  const ref = document.getElementById('fc-ref').value || genRefVal();
   const data = {
     type, client, datetime:document.getElementById('fc-dt').value,
     tel:document.getElementById('fc-tel').value,
@@ -1185,6 +1219,7 @@ window.saveCourse = async function() {
     pax:parseInt(document.getElementById('fc-pax').value)||1,
     bags:parseInt(document.getElementById('fc-bags').value)||0,
     chauffeur:ch, prix, cat:document.getElementById('fc-cat').value,
+    terminaux, numveh, ref,
     notes:document.getElementById('fc-notes').value,
     statut:ch?'attribuee':'nouvelle', createdAt:new Date().toISOString()
   };
@@ -1713,7 +1748,104 @@ function toggleMob(){document.getElementById('sidebar').classList.toggle('on');d
 function closeMob(){document.getElementById('sidebar').classList.remove('on');document.getElementById('mob-ov').classList.remove('on');}
 window.toggleMob=toggleMob;window.closeMob=closeMob;
 
-// ── SÉLECTION MULTIPLE ──
+// ── RÉFÉRENCE AUTO ──
+function genRefVal() {
+  const cat = document.getElementById('fc-cat')?.value || 'autre';
+  const veh = document.getElementById('fc-veh')?.value || 'berline';
+  const ch = document.getElementById('fc-ch')?.value || '';
+  const numveh = document.getElementById('fc-numveh')?.value || '';
+  const terminaux = [...(document.querySelectorAll('.term-chk:checked')||[])].map(c=>c.value).join('-');
+
+  // Code destination
+  const catCode = {cdg:'RCDG',orly:'RORY',disney:'DIS',paris:'PAR',gare:'G',corporate:'COR',autre:'AUT'}[cat]||'AUT';
+  const termCode = terminaux ? catCode+'-'+terminaux : catCode;
+
+  // Code véhicule
+  const vehCode = {berline:'B',van:'V',sprinter:'SP',bus:'BU'}[veh]||'B';
+
+  // Numéro du jour
+  const today = new Date();
+  const dayNum = D.courses.filter(c=>{
+    if(!c.datetime)return false;
+    const d=new Date(c.datetime);
+    return d.toDateString()===today.toDateString();
+  }).length + 1;
+  const dayCode = 'D'+dayNum;
+
+  // Nom chauffeur (prénom seulement)
+  const chName = ch ? ch.split(' ')[0].toUpperCase() : 'NC';
+
+  // Numéro véhicule
+  const numVehCode = numveh || vehCode+'1';
+
+  return `${termCode}/${vehCode}/${numVehCode}/${dayCode}/${chName}`;
+}
+
+window.genRef = function() {
+  const el = document.getElementById('fc-ref');
+  if(el) el.value = genRefVal();
+};
+
+// ── EXPORT EXCEL ──
+window.exportExcel = function() {
+  const list = D.courses;
+  if(!list.length){showToast('Aucune course à exporter',true);return;}
+
+  let csv = '\uFEFF'; // BOM for Excel UTF-8
+  const headers = [
+    'Référence','Date','Heure','Client','Téléphone','Type',
+    'Départ','Arrivée/Lieu','Durée MAD','Terminaux',
+    'Véhicule','N° Véhicule','Chauffeur','Passagers','Bagages',
+    'N° Vol','Catégorie','Prix HT (€)','TVA 10% (€)','Prix TTC (€)',
+    'Statut','Notes','Créé le'
+  ];
+  csv += headers.join(';') + '\n';
+
+  list.forEach(c => {
+    const ttc = parseFloat(c.prix)||0;
+    const htv = ht(ttc);
+    const tva = ttc - htv;
+    const dt = c.datetime ? new Date(c.datetime) : null;
+    const date = dt ? dt.toLocaleDateString('fr-FR') : '';
+    const heure = dt ? dt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
+    const row = [
+      c.ref||'',
+      date, heure,
+      c.client||'',
+      c.tel||'',
+      c.type==='mad'?'Mise à disposition':'Transfert',
+      c.depart||c.lieu||'',
+      c.arrivee||'',
+      c.duree||'',
+      c.terminaux||'',
+      {berline:'Berline',van:'Van',sprinter:'Sprinter',bus:'Bus'}[c.vehicule]||'',
+      c.numveh||'',
+      c.chauffeur||'',
+      c.pax||1,
+      c.bags||0,
+      c.vol||'',
+      c.cat||'',
+      htv.toFixed(2),
+      tva.toFixed(2),
+      ttc.toFixed(2),
+      c.statut||'',
+      (c.notes||'').replace(/;/g,','),
+      c.createdAt ? new Date(c.createdAt).toLocaleDateString('fr-FR') : ''
+    ];
+    csv += row.map(v=>`"${v}"`).join(';') + '\n';
+  });
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `black-limousine-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`Export Excel — ${list.length} courses ✓`);
+};
+
+
 function getSelectedIds() {
   return [...document.querySelectorAll('.row-chk:checked')].map(c=>c.dataset.id);
 }
