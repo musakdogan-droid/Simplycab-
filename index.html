@@ -239,6 +239,17 @@ tr:last-child td{border-bottom:none}
 .col-toggle input{cursor:pointer}
 .col-hidden{display:none!important}
 
+/* AUTOCOMPLETE CHAUFFEUR */
+.drv-wrap{position:relative}
+.drv-input{width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:9px 12px;color:var(--white);font-size:13px;outline:none;font-family:'DM Sans',sans-serif;transition:var(--tr)}
+.drv-input:focus{border-color:var(--gold)}
+.drv-drop{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border2);border-radius:var(--r-xs);margin-top:3px;max-height:200px;overflow-y:auto;z-index:500;box-shadow:var(--shadow);display:none}
+.drv-drop.on{display:block}
+.drv-opt{padding:9px 12px;font-size:13px;cursor:pointer;color:var(--white2);transition:background 0.15s;display:flex;align-items:center;gap:8px}
+.drv-opt:hover,.drv-opt.sel{background:var(--gold-dim);color:var(--gold)}
+.drv-opt .av{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--orange));display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--black);flex-shrink:0;font-family:'Syne',sans-serif}
+.drv-empty{padding:12px;font-size:12px;color:var(--muted);text-align:center}
+
 /* KANBAN */
 .kb{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px}
 .kb-col{background:var(--card2);border-radius:var(--r-sm);border:1px solid var(--border)}
@@ -453,7 +464,7 @@ tr:last-child td{border-bottom:none}
             </div>
           </div>
         </div>
-        <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><select id="groupe-drv" style="background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:7px 12px;color:var(--white);font-size:12px;outline:none"><option value="">— Choisir un chauffeur —</option></select><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th class="col-ref">Réf.</th><th class="col-dt">Date/H</th><th class="col-client">Client</th><th class="col-type">Type</th><th class="col-dep">Départ</th><th class="col-arr">Arrivée/Durée</th><th class="col-term">Term.</th><th class="col-chauff">Chauffeur</th><th class="col-veh">Véh</th><th class="col-pax">Pax</th><th class="col-ttc">TTC</th><th class="col-statut">Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
+        <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><div class="drv-wrap" style="min-width:220px"><input type="text" id="groupe-drv-input" class="drv-input" placeholder="Rechercher un chauffeur..." autocomplete="off" oninput="filterDrv('groupe-drv',this.value)" onfocus="openDrv('groupe-drv')" onblur="setTimeout(()=>closeDrv('groupe-drv'),200)"><input type="hidden" id="groupe-drv" value=""><div class="drv-drop" id="drv-drop-groupe-drv"></div></div><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th class="col-ref">Réf.</th><th class="col-dt">Date/H</th><th class="col-client">Client</th><th class="col-type">Type</th><th class="col-dep">Départ</th><th class="col-arr">Arrivée/Durée</th><th class="col-term">Term.</th><th class="col-chauff">Chauffeur</th><th class="col-veh">Véh</th><th class="col-pax">Pax</th><th class="col-ttc">TTC</th><th class="col-statut">Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
         <div id="dv-kanban" style="display:none"><div class="kb" id="kb-dispatch"></div></div>
       </div>
 
@@ -644,7 +655,13 @@ tr:last-child td{border-bottom:none}
             <option value="bus">🚍 Bus (35 pax)</option>
           </select>
         </div>
-        <div class="fld"><label>Chauffeur</label><select id="fc-ch" onchange="genRef()"><option value="">— Assigner plus tard —</option></select></div>
+        <div class="fld"><label>Chauffeur</label>
+          <div class="drv-wrap">
+            <input type="text" id="fc-ch-input" class="drv-input" placeholder="Rechercher un chauffeur..." autocomplete="off" oninput="filterDrv('fc-ch',this.value)" onfocus="openDrv('fc-ch')" onblur="setTimeout(()=>closeDrv('fc-ch'),200)" onchange="genRef()">
+            <input type="hidden" id="fc-ch" value="">
+            <div class="drv-drop" id="drv-drop-fc-ch"></div>
+          </div>
+        </div>
       </div>
 
       <div id="f-transfert">
@@ -790,7 +807,13 @@ tr:last-child td{border-bottom:none}
     <div class="mo-h"><div class="mo-t"><i class="fas fa-user-check" style="color:var(--gold)"></i> Assigner chauffeur</div><div class="mo-x" onclick="closeMo('assign')"><i class="fas fa-times"></i></div></div>
     <div class="mo-b">
       <input type="hidden" id="assign-id">
-      <div class="fld"><label>Chauffeur</label><select id="assign-drv"><option value="">— Sélectionner —</option></select></div>
+      <div class="fld"><label>Chauffeur</label>
+        <div class="drv-wrap">
+          <input type="text" id="assign-drv-input" class="drv-input" placeholder="Rechercher un chauffeur..." autocomplete="off" oninput="filterDrv('assign-drv',this.value)" onfocus="openDrv('assign-drv')" onblur="setTimeout(()=>closeDrv('assign-drv'),200)">
+          <input type="hidden" id="assign-drv" value="">
+          <div class="drv-drop" id="drv-drop-assign-drv"></div>
+        </div>
+      </div>
     </div>
     <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('assign')">Annuler</button><button class="btn btn-p" onclick="doAssign()"><i class="fas fa-check"></i> Assigner</button></div>
   </div>
@@ -1061,9 +1084,69 @@ function updateBadges() {
 }
 
 function buildDriverSelects() {
-  const opts = '<option value="">— Non assigné —</option>' + D.chauffeurs.map(d=>`<option value="${d.prenom+(d.nom?' '+d.nom:'')}">${d.prenom} ${d.nom||''}</option>`).join('');
-  ['fc-ch','assign-drv','vh-ch'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=opts;});
+  // Refresh all autocomplete dropdowns with current driver list
+  ['fc-ch','assign-drv','groupe-drv','vh-ch'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.tagName==='SELECT'){
+      el.innerHTML='<option value="">— Non assigné —</option>'+D.chauffeurs.map(d=>`<option value="${d.prenom+(d.nom?' '+d.nom:'')}">${d.prenom} ${d.nom||''}</option>`).join('');
+    }
+  });
 }
+
+// ── AUTOCOMPLETE CHAUFFEUR ──
+function getDrvName(id) {
+  const inp = document.getElementById(id+'-input');
+  return inp ? inp.value.trim() : (document.getElementById(id)?.value||'');
+}
+
+function buildDrvDrop(dropId, filter) {
+  const drop = document.getElementById('drv-drop-'+dropId);
+  if(!drop) return;
+  const list = filter
+    ? D.chauffeurs.filter(d=>(d.prenom+' '+(d.nom||'')).toLowerCase().includes(filter.toLowerCase()))
+    : D.chauffeurs;
+  if(!list.length){
+    drop.innerHTML=`<div class="drv-empty">Aucun chauffeur trouvé</div>`;
+    return;
+  }
+  drop.innerHTML = [
+    `<div class="drv-opt" onmousedown="selDrv('${dropId}','')"><div class="av" style="background:var(--card3);color:var(--muted)">—</div> Non assigné</div>`,
+    ...list.map(d=>{
+      const name=d.prenom+(d.nom?' '+d.nom:'');
+      const av=name.slice(0,2).toUpperCase();
+      const statut=d.statut==='disponible'?'<span style="font-size:9px;color:var(--green)">●</span>':'<span style="font-size:9px;color:var(--red)">●</span>';
+      return `<div class="drv-opt" onmousedown="selDrv('${dropId}','${name}')"><div class="av">${av}</div>${statut} ${name} <span style="font-size:10px;color:var(--muted);margin-left:4px">${{berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[d.vehicule]||''}</span></div>`;
+    })
+  ].join('');
+}
+
+window.openDrv = function(id) {
+  buildDrvDrop(id, '');
+  const drop = document.getElementById('drv-drop-'+id);
+  if(drop) drop.classList.add('on');
+};
+
+window.closeDrv = function(id) {
+  const drop = document.getElementById('drv-drop-'+id);
+  if(drop) drop.classList.remove('on');
+};
+
+window.filterDrv = function(id, val) {
+  buildDrvDrop(id, val);
+  const drop = document.getElementById('drv-drop-'+id);
+  if(drop) drop.classList.add('on');
+  // Clear hidden value if input changed
+  document.getElementById(id).value = '';
+};
+
+window.selDrv = function(id, name) {
+  const inp = document.getElementById(id+'-input');
+  const hid = document.getElementById(id);
+  if(inp) inp.value = name;
+  if(hid) hid.value = name;
+  closeDrv(id);
+  if(id==='fc-ch') genRef();
+};
 
 async function addLog(text) {
   await fbPush('logs', {text, at:new Date().toISOString(), by:SESSION.name||'admin'});
@@ -1178,6 +1261,10 @@ async function delCourse(id) {
 
 window.openAssign = function(id) {
   document.getElementById('assign-id').value = id;
+  const inp = document.getElementById('assign-drv-input');
+  const hid = document.getElementById('assign-drv');
+  if(inp) inp.value = '';
+  if(hid) hid.value = '';
   buildDriverSelects();
   openMo('assign');
 };
@@ -1203,6 +1290,11 @@ window.openCourseModal = function() {
   document.getElementById('prix-suggest').style.display='none';
   document.getElementById('pax-notes').value='';
   document.getElementById('pax-count').textContent='';
+  // Reset chauffeur autocomplete
+  const fcInp = document.getElementById('fc-ch-input');
+  const fcHid = document.getElementById('fc-ch');
+  if(fcInp) fcInp.value='';
+  if(fcHid) fcHid.value='';
   selType('transfert');
   buildDriverSelects();
   openMo('course');
