@@ -645,6 +645,16 @@ tr:last-child td{border-bottom:none}
       </div>
 
       <!-- INFOS GÉNÉRALES -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="fld"><label>Client</label>
+          <div class="drv-wrap">
+            <input type="text" id="fc-client-input" class="drv-input" placeholder="Rechercher ou nouveau client..." autocomplete="off" oninput="filterClient(this.value)" onfocus="openClientDrop()" onblur="setTimeout(closeClientDrop,200)" style="font-size:13px">
+            <input type="hidden" id="fc-client" value="">
+            <div class="drv-drop" id="drv-drop-client"></div>
+          </div>
+        </div>
+        <div class="fld"><label>Téléphone client</label><input type="tel" id="fc-tel" placeholder="+33 6 00 00 00 00"></div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <div class="fld"><label>Date & Heure *</label><input type="datetime-local" id="fc-dt"></div>
         <div class="fld"><label>Véhicule</label>
@@ -1148,6 +1158,43 @@ window.selDrv = function(id, name) {
   if(id==='fc-ch') genRef();
 };
 
+// ── AUTOCOMPLETE CLIENT ──
+window.openClientDrop = function() {
+  buildClientDrop('');
+  document.getElementById('drv-drop-client')?.classList.add('on');
+};
+window.closeClientDrop = function() {
+  document.getElementById('drv-drop-client')?.classList.remove('on');
+};
+window.filterClient = function(val) {
+  buildClientDrop(val);
+  document.getElementById('drv-drop-client')?.classList.add('on');
+  document.getElementById('fc-client').value = val; // allow free text
+};
+function buildClientDrop(filter) {
+  const drop = document.getElementById('drv-drop-client');
+  if(!drop) return;
+  const list = filter
+    ? D.clients.filter(c=>(c.nom||'').toLowerCase().includes(filter.toLowerCase()))
+    : D.clients;
+  const rows = list.slice(0,8).map(c=>{
+    const av=(c.nom||'?').slice(0,2).toUpperCase();
+    return `<div class="drv-opt" onmousedown="selClient('${c.nom}','${c.tel||''}')">
+      <div class="av" style="background:linear-gradient(135deg,var(--blue),var(--purple))">${av}</div>
+      ${c.nom} ${c.tel?`<span style="font-size:10px;color:var(--muted);margin-left:4px">${c.tel}</span>`:''}
+      <span class="bdg bdg-muted" style="margin-left:auto;font-size:9px">${c.type||'standard'}</span>
+    </div>`;
+  }).join('');
+  const newBtn = filter ? `<div class="drv-opt" style="color:var(--green);border-top:1px solid var(--border)" onmousedown="selClient('${filter}','')"><i class="fas fa-plus"></i> Créer "${filter}"</div>` : '';
+  drop.innerHTML = rows + newBtn || `<div class="drv-empty">Aucun client — tapez un nom</div>`;
+}
+window.selClient = function(nom, tel) {
+  document.getElementById('fc-client-input').value = nom;
+  document.getElementById('fc-client').value = nom;
+  if(tel) document.getElementById('fc-tel').value = tel;
+  closeClientDrop();
+};
+
 async function addLog(text) {
   await fbPush('logs', {text, at:new Date().toISOString(), by:SESSION.name||'admin'});
 }
@@ -1285,11 +1332,14 @@ window.doAssign = async function() {
 window.openCourseModal = function() {
   const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
   document.getElementById('fc-dt').value = now.toISOString().slice(0,16);
-  ['fc-dep','fc-arr','fc-lieu','fc-notes','fc-prix','fc-prix-mad','fc-numveh','fc-ref'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fc-dep','fc-arr','fc-lieu','fc-notes','fc-prix','fc-prix-mad','fc-numveh','fc-ref','fc-tel'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.querySelectorAll('.term-chk').forEach(c=>c.checked=false);
   document.getElementById('prix-suggest').style.display='none';
   document.getElementById('pax-notes').value='';
   document.getElementById('pax-count').textContent='';
+  // Reset client autocomplete
+  const fcClientInp=document.getElementById('fc-client-input');const fcClientHid=document.getElementById('fc-client');
+  if(fcClientInp)fcClientInp.value='';if(fcClientHid)fcClientHid.value='';
   // Reset chauffeur autocomplete
   const fcInp = document.getElementById('fc-ch-input');
   const fcHid = document.getElementById('fc-ch');
@@ -1438,9 +1488,10 @@ window.saveCourse = async function() {
   const numveh = document.getElementById('fc-numveh').value.trim();
   const ref = document.getElementById('fc-ref').value || genRefVal();
 
-  // Client = premier passager ou départ
+  // Client = champ client ou premier passager
+  const fcClient = document.getElementById('fc-client')?.value?.trim();
   const firstPax = passagers.find(p=>p.present!==false) || passagers[0];
-  const clientName = firstPax ? `${firstPax.prenom} ${firstPax.nom}`.trim() : (dep.split(',')[0]||'Course');
+  const clientName = fcClient || (firstPax ? `${firstPax.prenom} ${firstPax.nom}`.trim() : (dep.split(',')[0]||'Course'));
 
   const data = {
     type,
