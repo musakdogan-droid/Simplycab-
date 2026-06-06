@@ -682,17 +682,16 @@ tr:last-child td{border-bottom:none}
       <!-- LISTE PASSAGERS -->
       <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div>
-            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700"><i class="fas fa-users" style="color:var(--gold)"></i> Passagers <span id="pax-count" style="color:var(--muted);font-size:11px">(0)</span></div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px">Format : <span style="color:var(--gold)">H.Arrivée / Vol / Terminal / Réf / Nom Prénom / Téléphone</span></div>
-          </div>
-            <span id="pax-cap-warn" style="font-size:11px;color:var(--red);display:none"><i class="fas fa-exclamation-triangle"></i> Capacité max atteinte</span>
-            <button class="btn btn-p btn-sm" onclick="addPax()"><i class="fas fa-plus"></i> Ajouter passager</button>
-          </div>
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700"><i class="fas fa-users" style="color:var(--gold)"></i> Passagers <span id="pax-count" style="color:var(--muted);font-size:11px"></span></div>
+          <span id="pax-cap-warn" style="font-size:11px;color:var(--red);display:none"><i class="fas fa-exclamation-triangle"></i> Capacité max atteinte</span>
         </div>
-        <div id="pax-list" style="max-height:280px;overflow-y:auto">
-          <!-- passagers ajoutés dynamiquement -->
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">
+          Une ligne par passager — format libre. Exemple : <span style="color:var(--gold)">12:00 / AF0456 / CDG2F / REF-001 / Jean Dupont / +33612345678</span>
         </div>
+        <textarea id="pax-notes" rows="6" placeholder="Colle tes passagers ici, une ligne par personne :&#10;12:00 / AF0456 / CDG2F / REF-001 / Jean Dupont / +33612345678&#10;14:30 / BA1234 / ORY4 / REF-002 / Marie Martin / +33698765432&#10;..."
+          style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px;color:var(--white);font-size:12px;outline:none;resize:vertical;font-family:'DM Sans',sans-serif;line-height:1.7"
+          oninput="updatePaxCount()"></textarea>
+        <div id="pax-list" style="display:none"></div>
       </div>
 
     </div>
@@ -1177,8 +1176,8 @@ window.openCourseModal = function() {
   ['fc-dep','fc-arr','fc-lieu','fc-notes','fc-prix','fc-prix-mad','fc-numveh','fc-ref'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.querySelectorAll('.term-chk').forEach(c=>c.checked=false);
   document.getElementById('prix-suggest').style.display='none';
-  document.getElementById('pax-list').innerHTML='';
-  document.getElementById('pax-count').textContent='(0)';
+  document.getElementById('pax-notes').value='';
+  document.getElementById('pax-count').textContent='';
   selType('transfert');
   buildDriverSelects();
   openMo('course');
@@ -1262,17 +1261,16 @@ window.removePax = function(id) {
   updatePaxMax();
 };
 
+window.updatePaxCount = function() {
+  const lines = (document.getElementById('pax-notes')?.value||'').split('\n').filter(l=>l.trim());
+  const cnt = document.getElementById('pax-count');
+  if(cnt) cnt.textContent = lines.length ? `(${lines.length} passager${lines.length>1?'s':''})` : '';
+};
+
 function getPaxList() {
-  const rows = document.querySelectorAll('.pax-row');
-  const list = [];
-  rows.forEach(row => {
-    const id = row.id.replace('pax-','');
-    const line = document.getElementById('pax-line-'+id)?.value||'';
-    const p = parsePaxLine(line);
-    p.present = document.getElementById('pax-present-'+id)?.checked !== false;
-    if(line.trim()) list.push(p);
-  });
-  return list;
+  const text = document.getElementById('pax-notes')?.value||'';
+  const lines = text.split('\n').filter(l=>l.trim());
+  return lines.map(line => parsePaxLine(line));
 }
 
 
@@ -1315,21 +1313,17 @@ window.saveCourse = async function() {
   if(type==='transfert'&&(!dep||!arr)){showToast('Départ et arrivée obligatoires',true);return;}
   if(type==='mad'&&!lieu){showToast('Lieu de prise en charge obligatoire',true);return;}
 
-  // Get passengers
+  // Get passengers from textarea
   const passagers = getPaxList();
-  if(passagers.length === 0){showToast('Ajoutez au moins un passager',true);return;}
-  const invalidPax = passagers.find(p=>!p.prenom&&!p.nom);
-  if(invalidPax){showToast('Chaque passager doit avoir un prénom ou un nom',true);return;}
-
   const prix = type==='mad' ? parseFloat(document.getElementById('fc-prix-mad').value)||0 : parseFloat(document.getElementById('fc-prix').value)||0;
   const ch = document.getElementById('fc-ch').value;
   const terminaux = [...document.querySelectorAll('.term-chk:checked')].map(c=>c.value).join('-');
   const numveh = document.getElementById('fc-numveh').value.trim();
   const ref = document.getElementById('fc-ref').value || genRefVal();
 
-  // Client = premier passager présent
-  const firstPax = passagers.find(p=>p.present) || passagers[0];
-  const clientName = `${firstPax.prenom} ${firstPax.nom}`.trim();
+  // Client = premier passager ou départ
+  const firstPax = passagers.find(p=>p.present!==false) || passagers[0];
+  const clientName = firstPax ? `${firstPax.prenom} ${firstPax.nom}`.trim() : (dep.split(',')[0]||'Course');
 
   const data = {
     type,
