@@ -234,6 +234,10 @@ tr:last-child td{border-bottom:none}
 @media(max-width:480px){.sg{grid-template-columns:1fr}}
 .text-gold{color:var(--gold)}.fw7{font-weight:700}.ff-syne{font-family:'Syne',sans-serif}
 .hidden{display:none!important}
+.col-toggle{display:flex;align-items:center;gap:7px;font-size:12px;padding:4px 0;cursor:pointer;color:var(--white2)}
+.col-toggle:hover{color:var(--white)}
+.col-toggle input{cursor:pointer}
+.col-hidden{display:none!important}
 
 /* KANBAN */
 .kb{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px}
@@ -427,8 +431,29 @@ tr:last-child td{border-bottom:none}
           <span class="bdg bdg-muted" id="ds-cnt">0 courses</span>
           <button class="btn btn-g btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
           <label class="btn btn-s btn-sm" style="cursor:pointer"><i class="fas fa-file-upload"></i> Importer Excel<input type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
+          <div style="position:relative">
+            <button class="btn btn-s btn-sm" onclick="toggleColMenu()" id="col-btn"><i class="fas fa-columns"></i> Colonnes</button>
+            <div id="col-menu" style="display:none;position:absolute;top:36px;right:0;background:var(--card);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px;z-index:200;min-width:180px;box-shadow:var(--shadow)">
+              <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Afficher / Masquer</div>
+              <label class="col-toggle" data-col="col-ref"><input type="checkbox" checked onchange="toggleCol('col-ref',this.checked)"> Référence</label>
+              <label class="col-toggle" data-col="col-dt"><input type="checkbox" checked onchange="toggleCol('col-dt',this.checked)"> Date / Heure</label>
+              <label class="col-toggle" data-col="col-client"><input type="checkbox" checked onchange="toggleCol('col-client',this.checked)"> Client</label>
+              <label class="col-toggle" data-col="col-type"><input type="checkbox" checked onchange="toggleCol('col-type',this.checked)"> Type</label>
+              <label class="col-toggle" data-col="col-dep"><input type="checkbox" checked onchange="toggleCol('col-dep',this.checked)"> Départ</label>
+              <label class="col-toggle" data-col="col-arr"><input type="checkbox" checked onchange="toggleCol('col-arr',this.checked)"> Arrivée</label>
+              <label class="col-toggle" data-col="col-term"><input type="checkbox" checked onchange="toggleCol('col-term',this.checked)"> Terminaux</label>
+              <label class="col-toggle" data-col="col-chauff"><input type="checkbox" checked onchange="toggleCol('col-chauff',this.checked)"> Chauffeur</label>
+              <label class="col-toggle" data-col="col-veh"><input type="checkbox" checked onchange="toggleCol('col-veh',this.checked)"> Véhicule</label>
+              <label class="col-toggle" data-col="col-pax"><input type="checkbox" checked onchange="toggleCol('col-pax',this.checked)"> Pax</label>
+              <label class="col-toggle" data-col="col-ttc"><input type="checkbox" checked onchange="toggleCol('col-ttc',this.checked)"> Prix TTC</label>
+              <label class="col-toggle" data-col="col-statut"><input type="checkbox" checked onchange="toggleCol('col-statut',this.checked)"> Statut</label>
+              <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
+                <button onclick="resetCols()" style="background:none;border:none;color:var(--gold);font-size:11px;cursor:pointer;padding:0"><i class="fas fa-redo"></i> Tout afficher</button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><select id="groupe-drv" style="background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:7px 12px;color:var(--white);font-size:12px;outline:none"><option value="">— Choisir un chauffeur —</option></select><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th>Réf.</th><th>Date/H</th><th>Client</th><th>Type</th><th>Départ</th><th>Arrivée/Durée</th><th>Term.</th><th>Chauffeur</th><th>Véh</th><th>Pax</th><th>TTC</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
+        <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><select id="groupe-drv" style="background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:7px 12px;color:var(--white);font-size:12px;outline:none"><option value="">— Choisir un chauffeur —</option></select><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th class="col-ref">Réf.</th><th class="col-dt">Date/H</th><th class="col-client">Client</th><th class="col-type">Type</th><th class="col-dep">Départ</th><th class="col-arr">Arrivée/Durée</th><th class="col-term">Term.</th><th class="col-chauff">Chauffeur</th><th class="col-veh">Véh</th><th class="col-pax">Pax</th><th class="col-ttc">TTC</th><th class="col-statut">Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
         <div id="dv-kanban" style="display:none"><div class="kb" id="kb-dispatch"></div></div>
       </div>
 
@@ -1086,20 +1111,20 @@ function renderDispatch() {
     if(!list.length){tb.innerHTML=`<tr><td colspan="11" class="t-empty"><i class="fas fa-inbox"></i><p>Aucune course</p></td></tr>`;}
     else tb.innerHTML=list.map(c=>`<tr>
       <td><input type="checkbox" class="row-chk" data-id="${c._id}" onchange="onChkChange()" style="cursor:pointer;width:14px;height:14px"></td>
-      <td style="font-size:10px;color:var(--gold);font-family:'Syne',sans-serif;font-weight:600;white-space:nowrap">${c.ref||'—'}</td>
-      <td style="font-size:10px;white-space:nowrap">${fdt(c.datetime)}</td>
-      <td><strong style="font-size:12px">${c.client||'—'}</strong><br>
+      <td class="col-ref" style="font-size:10px;color:var(--gold);font-family:'Syne',sans-serif;font-weight:600;white-space:nowrap">${c.ref||'—'}</td>
+      <td class="col-dt" style="font-size:10px;white-space:nowrap">${fdt(c.datetime)}</td>
+      <td class="col-client"><strong style="font-size:12px">${c.client||'—'}</strong><br>
         <span style="color:var(--muted);font-size:10px">${c.tel||''}</span>
         ${c.passagers&&c.passagers.length?`<br><span style="font-size:10px;color:var(--blue)">${c.passagers.filter(p=>p.present!==false).length}/${c.passagers.length} pax <button onclick="viewPax('${c._id}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:10px;padding:0">👥 voir</button></span>`:''}</td>
-      <td>${tBdg(c.type)}</td>
-      <td style="font-size:11px;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.depart||c.lieu||'—'}</td>
-      <td style="font-size:11px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.arrivee||c.duree||'—'}</td>
-      <td style="font-size:10px;color:var(--blue)">${c.terminaux||'—'}</td>
-      <td style="font-size:11px">${c.chauffeur||'<span style="color:var(--muted)">—</span>'}</td>
-      <td style="font-size:11px">${vI(c.vehicule)}</td>
-      <td style="font-size:11px">${c.pax||1}</td>
-      <td class="text-gold fw7" style="font-size:11px">${fp(c.prix)}</td>
-      <td>${sBdg(c.statut)}</td>
+      <td class="col-type">${tBdg(c.type)}</td>
+      <td class="col-dep" style="font-size:11px;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.depart||c.lieu||'—'}</td>
+      <td class="col-arr" style="font-size:11px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.arrivee||c.duree||'—'}</td>
+      <td class="col-term" style="font-size:10px;color:var(--blue)">${c.terminaux||'—'}</td>
+      <td class="col-chauff" style="font-size:11px">${c.chauffeur||'<span style="color:var(--muted)">—</span>'}</td>
+      <td class="col-veh" style="font-size:11px">${vI(c.vehicule)}</td>
+      <td class="col-pax" style="font-size:11px">${c.pax||1}</td>
+      <td class="col-ttc text-gold fw7" style="font-size:11px">${fp(c.prix)}</td>
+      <td class="col-statut">${sBdg(c.statut)}</td>
       <td>
         <div style="display:flex;gap:3px;flex-wrap:wrap">
           <select onchange="updStatut('${c._id}',this.value);this.value=''" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);padding:3px 5px;color:var(--white);font-size:9px;outline:none;cursor:pointer">
@@ -2026,6 +2051,29 @@ async function assignGroupe() {
   showToast(`${ids.length} course(s) assignées à ${drv} ✓`);
 }
 window.onChkChange=onChkChange;window.toggleAll=toggleAll;window.clearSelection=clearSelection;window.assignGroupe=assignGroupe;
+
+// ── COLONNES VISIBILITÉ ──
+window.toggleColMenu = function() {
+  const m = document.getElementById('col-menu');
+  if(m) m.style.display = m.style.display==='none'?'block':'none';
+  document.addEventListener('click', function closeMenu(e){
+    if(!e.target.closest('#col-menu')&&!e.target.closest('#col-btn')){
+      if(m) m.style.display='none';
+      document.removeEventListener('click',closeMenu);
+    }
+  });
+};
+
+window.toggleCol = function(cls, visible) {
+  document.querySelectorAll('.'+cls).forEach(el=>{
+    el.classList.toggle('col-hidden', !visible);
+  });
+};
+
+window.resetCols = function() {
+  document.querySelectorAll('.col-hidden').forEach(el=>el.classList.remove('col-hidden'));
+  document.querySelectorAll('#col-menu input[type=checkbox]').forEach(cb=>cb.checked=true);
+};
 
 // ── VOIR PASSAGERS ──
 // ── GESTION COURSE COMPLÈTE ──
