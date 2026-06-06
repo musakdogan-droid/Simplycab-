@@ -423,7 +423,7 @@ tr:last-child td{border-bottom:none}
           </select>
           <span class="bdg bdg-muted" id="ds-cnt">0 courses</span>
         </div>
-        <div id="dv-table"><div class="sec"><div class="tw"><table><thead><tr><th>Date/H</th><th>Client</th><th>Type</th><th>Départ</th><th>Arrivée/Durée</th><th>Chauffeur</th><th>Véh</th><th>Pax</th><th>TTC</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
+        <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><select id="groupe-drv" style="background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:7px 12px;color:var(--white);font-size:12px;outline:none"><option value="">— Choisir un chauffeur —</option></select><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th>Date/H</th><th>Client</th><th>Type</th><th>Départ</th><th>Arrivée/Durée</th><th>Chauffeur</th><th>Véh</th><th>Pax</th><th>TTC</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
         <div id="dv-kanban" style="display:none"><div class="kb" id="kb-dispatch"></div></div>
       </div>
 
@@ -1041,6 +1041,7 @@ function renderDispatch() {
   if(tb){
     if(!list.length){tb.innerHTML=`<tr><td colspan="11" class="t-empty"><i class="fas fa-inbox"></i><p>Aucune course</p></td></tr>`;}
     else tb.innerHTML=list.map(c=>`<tr>
+      <td><input type="checkbox" class="row-chk" data-id="${c._id}" onchange="onChkChange()" style="cursor:pointer;width:14px;height:14px"></td>
       <td style="font-size:10px;white-space:nowrap">${fdt(c.datetime)}</td>
       <td><strong style="font-size:12px">${c.client||'—'}</strong><br><span style="color:var(--muted);font-size:10px">${c.tel||''}</span></td>
       <td>${tBdg(c.type)}</td>
@@ -1711,6 +1712,56 @@ window.showConfirm=showConfirm;window.closeConf=closeConf;
 function toggleMob(){document.getElementById('sidebar').classList.toggle('on');document.getElementById('mob-ov').classList.toggle('on');}
 function closeMob(){document.getElementById('sidebar').classList.remove('on');document.getElementById('mob-ov').classList.remove('on');}
 window.toggleMob=toggleMob;window.closeMob=closeMob;
+
+// ── SÉLECTION MULTIPLE ──
+function getSelectedIds() {
+  return [...document.querySelectorAll('.row-chk:checked')].map(c=>c.dataset.id);
+}
+
+function onChkChange() {
+  const ids = getSelectedIds();
+  const bar = document.getElementById('groupe-bar');
+  const cnt = document.getElementById('sel-count');
+  if(ids.length > 0) {
+    bar.style.display = 'flex';
+    cnt.textContent = ids.length;
+    // update groupe-drv options
+    const sel = document.getElementById('groupe-drv');
+    sel.innerHTML = '<option value="">— Choisir un chauffeur —</option>' +
+      D.chauffeurs.map(d=>`<option value="${d.prenom+(d.nom?' '+d.nom:'')}">${d.prenom} ${d.nom||''}</option>`).join('');
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function toggleAll(chk) {
+  document.querySelectorAll('.row-chk').forEach(c=>c.checked=chk.checked);
+  onChkChange();
+}
+
+function clearSelection() {
+  document.querySelectorAll('.row-chk').forEach(c=>c.checked=false);
+  const chkAll = document.getElementById('chk-all');
+  if(chkAll) chkAll.checked = false;
+  document.getElementById('groupe-bar').style.display = 'none';
+}
+
+async function assignGroupe() {
+  const ids = getSelectedIds();
+  const drv = document.getElementById('groupe-drv').value;
+  if(!drv) { showToast('Sélectionner un chauffeur', true); return; }
+  if(!ids.length) { showToast('Sélectionner au moins une course', true); return; }
+  showToast(`Assignation de ${ids.length} course(s)...`);
+  for(const id of ids) {
+    await fbUpdate('courses', id, {chauffeur:drv, statut:'attribuee', updatedAt:new Date().toISOString()});
+  }
+  await addLog(`${ids.length} course(s) assignées en groupe à ${drv}`);
+  clearSelection();
+  await loadAll();
+  showToast(`${ids.length} course(s) assignées à ${drv} ✓`);
+}
+window.onChkChange=onChkChange;window.toggleAll=toggleAll;window.clearSelection=clearSelection;window.assignGroupe=assignGroupe;
+
 </script>
 </body>
 </html>
