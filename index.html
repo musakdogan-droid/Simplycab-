@@ -435,12 +435,19 @@ tr:last-child td{border-bottom:none}
           <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="ds-q" oninput="renderDispatch()"></div>
           <select class="fsel" id="ds-s" onchange="renderDispatch()">
             <option value="">Tous statuts</option>
-            <option value="nouvelle">Nouvelle</option><option value="en_attente">En attente</option>
-            <option value="attribuee">Attribuée</option><option value="acceptee">Acceptée</option>
-            <option value="en_route">En route</option><option value="onboard">Onboard</option>
-            <option value="en_cours">En cours</option><option value="terminee">Terminée</option>
-            <option value="facturee">Facturée</option><option value="payee">Payée</option>
-            <option value="annulee">Annulée</option><option value="noshow">No-show</option>
+            <option value="nouvelle">🆕 Nouvelle</option>
+            <option value="en_attente">⏳ En attente</option>
+            <option value="attribuee">👤 Attribuée</option>
+            <option value="acceptee">✅ Accepté</option>
+            <option value="en_route">🚗 En route</option>
+            <option value="sur_place">📍 Sur place</option>
+            <option value="onboard">👤 Client à bord</option>
+            <option value="depose">🏁 Déposé</option>
+            <option value="terminee">✔ Terminée</option>
+            <option value="facturee">📄 Facturée</option>
+            <option value="payee">💚 Payée</option>
+            <option value="annulee">✗ Annulée</option>
+            <option value="noshow">👻 No-show</option>
           </select>
           <select class="fsel" id="ds-t" onchange="renderDispatch()">
             <option value="">Tous types</option>
@@ -1102,9 +1109,10 @@ function vI(v) { return {berline:'🚗 Berline',van:'🚐 Van',sprinter:'🚌 Sp
 function sBdg(s) {
   const m = {
     nouvelle:['bdg-purple','🆕 Nouvelle'],en_attente:['bdg-orange','⏳ En attente'],
-    attribuee:['bdg-blue','👤 Attribuée'],acceptee:['bdg-blue','✓ Acceptée'],
-    en_route:['bdg-green','🚗 En route'],onboard:['bdg-green','👤 Onboard'],
-    en_cours:['bdg-gold','▶ En cours'],terminee:['bdg-muted','✅ Terminée'],
+    attribuee:['bdg-blue','👤 Attribuée'],acceptee:['bdg-green','✅ Accepté'],
+    en_route:['bdg-green','🚗 En route'],sur_place:['bdg-gold','📍 Sur place'],
+    onboard:['bdg-green','👤 Client à bord'],depose:['bdg-blue','🏁 Déposé'],
+    en_cours:['bdg-gold','▶ En cours'],terminee:['bdg-muted','✔ Terminée'],
     facturee:['bdg-blue','📄 Facturée'],payee:['bdg-green','💚 Payée'],
     annulee:['bdg-red','✗ Annulée'],noshow:['bdg-red','👻 No-show'],
     disponible:['bdg-green','● Disponible'],indisponible:['bdg-red','● Indisponible'],
@@ -1390,11 +1398,12 @@ function renderDispatch() {
         <div style="display:flex;gap:3px;flex-wrap:wrap">
           <select onchange="updStatut('${c._id}',this.value);this.value=''" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);padding:3px 5px;color:var(--white);font-size:9px;outline:none;cursor:pointer">
             <option value="">Statut...</option>
-            <option value="en_attente">En attente</option><option value="attribuee">Attribuée</option>
-            <option value="acceptee">Acceptée</option><option value="en_route">En route</option>
-            <option value="onboard">Onboard</option><option value="en_cours">En cours</option>
-            <option value="terminee">Terminée</option><option value="facturee">Facturée</option>
-            <option value="payee">Payée</option><option value="annulee">Annulée</option><option value="noshow">No-show</option>
+            <option value="en_attente">⏳ En attente</option><option value="attribuee">👤 Attribuée</option>
+            <option value="acceptee">✅ Accepté</option><option value="en_route">🚗 En route</option>
+            <option value="sur_place">📍 Sur place</option><option value="onboard">👤 Client à bord</option>
+            <option value="depose">🏁 Déposé</option><option value="terminee">✔ Terminée</option>
+            <option value="facturee">📄 Facturée</option><option value="payee">💚 Payée</option>
+            <option value="annulee">✗ Annulée</option><option value="noshow">👻 No-show</option>
           </select>
           <button class="btn btn-ghost btn-xs" onclick="openAssign('${c._id}')"><i class="fas fa-user-check"></i></button>
           <button class="btn btn-d btn-xs" onclick="delCourse('${c._id}')"><i class="fas fa-trash"></i></button>
@@ -2017,24 +2026,42 @@ function renderMesCourses() {
     <td style="font-size:10px;color:var(--muted2)">${c.notes||'—'}</td>
     <td>${sBdg(c.statut)}</td>
     <td>
-      <select onchange="driverUpd('${c._id}',this.value);this.value=''" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);padding:4px 6px;color:var(--white);font-size:10px;outline:none;cursor:pointer">
-        <option value="">Mettre à jour...</option>
-        <option value="acceptee">✓ Accepter</option>
-        <option value="en_route">🚗 En route</option>
-        <option value="onboard">👤 Onboard</option>
-        <option value="en_cours">▶ En cours</option>
-        <option value="terminee">✅ Terminée</option>
-      </select>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <select onchange="driverUpd('${c._id}',this.value,null);this.value=''" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);padding:4px 6px;color:var(--white);font-size:10px;outline:none;cursor:pointer">
+          <option value="">Statut...</option>
+          <option value="acceptee">✅ Accepté</option>
+          <option value="en_route">🚗 En route</option>
+          <option value="sur_place">📍 Sur place</option>
+          <option value="onboard">👤 Client à bord</option>
+          <option value="depose">🏁 Déposé</option>
+          <option value="terminee">✔ Terminée</option>
+          <option value="noshow">👻 No-show</option>
+        </select>
+        <div style="display:flex;gap:3px">
+          <input type="text" placeholder="Note dispatch..." id="note-${c._id}"
+            style="flex:1;background:var(--dark);border:1px solid var(--border);border-radius:var(--r-xs);padding:3px 7px;color:var(--white);font-size:10px;outline:none"
+            onkeydown="if(event.key==='Enter')driverUpd('${c._id}',null,this.value)">
+          <button onclick="driverUpd('${c._id}',null,document.getElementById('note-${c._id}').value)" style="background:var(--gold-dim);border:1px solid rgba(201,168,76,0.3);border-radius:var(--r-xs);padding:3px 7px;cursor:pointer;color:var(--gold);font-size:10px">✓</button>
+        </div>
+      </div>
     </td>
   </tr>`).join('');
 }
 
-window.driverUpd = async function(id, statut) {
-  if(!statut)return;
-  await fbUpdate('courses', id, {statut, updatedAt:new Date().toISOString()});
-  await addLog(`${SESSION.name} → ${statut}`);
+window.driverUpd = async function(id, statut, note) {
+  const update = {updatedAt:new Date().toISOString()};
+  if(statut) update.statut = statut;
+  if(note && note.trim()) {
+    const c = D.courses.find(x=>x._id===id);
+    const existing = c?.notes||'';
+    const ts = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    update.notes = existing ? existing+'\n'+ts+' — '+note.trim() : ts+' — '+note.trim();
+  }
+  await fbUpdate('courses', id, update);
+  if(statut) await addLog(`${SESSION.name} → ${statut}${note?' ('+note+')':''}`);
+  if(note && note.trim()) { const el=document.getElementById('note-'+id); if(el)el.value=''; }
   await loadAll();
-  showToast('Statut mis à jour ✓');
+  showToast(statut?'Statut mis à jour ✓':'Note ajoutée ✓');
 };
 
 // ── COMPTES DISPATCH ──
