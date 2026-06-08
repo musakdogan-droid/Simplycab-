@@ -624,14 +624,47 @@ tr:last-child td{border-bottom:none}
 
       <!-- MES COURSES (chauffeur) -->
       <div class="page" id="page-mescourses">
-        <div class="sg" style="grid-template-columns:repeat(3,1fr)">
+        <div class="sg" style="grid-template-columns:repeat(4,1fr)">
           <div class="sc cg"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-route"></i></div><div class="sc-val" id="mc-today">0</div><div class="sc-lbl">Aujourd'hui</div></div>
           <div class="sc cgr"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-check"></i></div><div class="sc-val" id="mc-month">0</div><div class="sc-lbl">Ce mois</div></div>
-          <div class="sc cb"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-euro-sign"></i></div><div class="sc-val" id="mc-ca">0€</div><div class="sc-lbl">CA TTC</div></div>
+          <div class="sc cb"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-history"></i></div><div class="sc-val" id="mc-total">0</div><div class="sc-lbl">Total courses</div></div>
+          <div class="sc co"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-euro-sign"></i></div><div class="sc-val" id="mc-ca">0€</div><div class="sc-lbl">CA ce mois</div></div>
         </div>
-        <div class="sec">
-          <div class="sec-h"><div class="sec-t"><i class="fas fa-route"></i> Mes courses</div></div>
-          <div class="tw"><table><thead><tr><th>Date/H</th><th>Client / Passagers</th><th>Type</th><th>Départ</th><th>Arrivée/Durée</th><th>Terminaux</th><th>Notes</th><th>Statut</th><th>Action</th></tr></thead><tbody id="tb-mc"></tbody></table></div>
+
+        <!-- TABS -->
+        <div style="display:flex;gap:3px;background:var(--dark);border-radius:var(--r-xs);padding:4px;margin-bottom:14px;width:fit-content">
+          <button id="mc-tab-active" onclick="mcTab('active')" style="padding:8px 16px;border:none;border-radius:var(--r-xs);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:var(--card2);color:var(--gold)">🚗 En cours</button>
+          <button id="mc-tab-history" onclick="mcTab('history')" style="padding:8px 16px;border:none;border-radius:var(--r-xs);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted2)">📋 Tout l'historique</button>
+        </div>
+
+        <!-- EN COURS -->
+        <div id="mc-pane-active">
+          <div class="sec">
+            <div class="sec-h"><div class="sec-t"><i class="fas fa-route"></i> Courses actives</div></div>
+            <div class="tw"><table><thead><tr><th>Date/H</th><th>Client / Passagers</th><th>Type</th><th>Départ</th><th>Arrivée</th><th>Terminaux</th><th>Notes</th><th>Statut</th><th>Action</th></tr></thead><tbody id="tb-mc"></tbody></table></div>
+          </div>
+        </div>
+
+        <!-- HISTORIQUE COMPLET -->
+        <div id="mc-pane-history" style="display:none">
+          <div class="sec">
+            <div class="sec-h">
+              <div class="sec-t"><i class="fas fa-history"></i> Tout l'historique</div>
+              <div class="sec-a">
+                <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="mc-hist-q" oninput="renderHistMC()"></div>
+                <select class="fsel" id="mc-hist-s" onchange="renderHistMC()">
+                  <option value="">Tous statuts</option>
+                  <option value="terminee">✔ Terminée</option>
+                  <option value="noshow">👻 No-show</option>
+                  <option value="annulee">✗ Annulée</option>
+                </select>
+                <select class="fsel" id="mc-hist-m" onchange="renderHistMC()">
+                  <option value="">Tous les mois</option>
+                </select>
+              </div>
+            </div>
+            <div class="tw"><table><thead><tr><th>Réf.</th><th>Date/H</th><th>Client</th><th>Type</th><th>Départ</th><th>Arrivée</th><th>Pax</th><th>Statut</th><th>Notes</th></tr></thead><tbody id="tb-mc-hist"></tbody></table></div>
+          </div>
         </div>
       </div>
 
@@ -2005,9 +2038,10 @@ function renderMesCourses() {
   const mine=D.courses.filter(c=>c.chauffeur===name);
   const today=new Date().toDateString();
   const mois=new Date().getMonth();
-  const e1=document.getElementById('mc-today');const e2=document.getElementById('mc-month');const e3=document.getElementById('mc-ca');
+  const e1=document.getElementById('mc-today');const e2=document.getElementById('mc-month');const e3=document.getElementById('mc-ca');const e4=document.getElementById('mc-total');
   if(e1)e1.textContent=mine.filter(c=>new Date(c.datetime).toDateString()===today).length;
   if(e2)e2.textContent=mine.filter(c=>c.statut==='terminee'&&new Date(c.datetime).getMonth()===mois).length;
+  if(e4)e4.textContent=mine.length;
   const ca=mine.filter(c=>c.statut==='terminee'&&new Date(c.datetime).getMonth()===mois).reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
   if(e3)e3.textContent=ca.toFixed(0)+'€';
   const active=mine.filter(c=>!['terminee','annulee','noshow','payee','facturee'].includes(c.statut));
@@ -2045,6 +2079,67 @@ function renderMesCourses() {
         </div>
       </div>
     </td>
+  </tr>`).join('');
+}
+
+// ── ONGLETS MES COURSES ──
+window.mcTab = function(tab) {
+  const isActive = tab === 'active';
+  document.getElementById('mc-pane-active').style.display = isActive ? 'block' : 'none';
+  document.getElementById('mc-pane-history').style.display = isActive ? 'none' : 'block';
+  const btnA = document.getElementById('mc-tab-active');
+  const btnH = document.getElementById('mc-tab-history');
+  if(btnA){btnA.style.background=isActive?'var(--card2)':'transparent';btnA.style.color=isActive?'var(--gold)':'var(--muted2)';}
+  if(btnH){btnH.style.background=isActive?'transparent':'var(--card2)';btnH.style.color=isActive?'var(--muted2)':'var(--gold)';}
+  if(!isActive) renderHistMC();
+};
+
+function renderHistMC() {
+  if(SESSION.role!=='chauffeur') return;
+  const name = SESSION.name;
+  const mine = D.courses.filter(c=>c.chauffeur===name);
+
+  // Populate month filter
+  const mSel = document.getElementById('mc-hist-m');
+  if(mSel && mSel.options.length <= 1) {
+    const months = [...new Set(mine.filter(c=>c.datetime).map(c=>c.datetime.slice(0,7)))].sort().reverse();
+    months.forEach(m=>{
+      const opt=document.createElement('option');
+      opt.value=m;
+      const d=new Date(m+'-01');
+      opt.textContent=d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+      mSel.appendChild(opt);
+    });
+  }
+
+  const q = (document.getElementById('mc-hist-q')?.value||'').toLowerCase();
+  const s = document.getElementById('mc-hist-s')?.value||'';
+  const m = document.getElementById('mc-hist-m')?.value||'';
+
+  let list = mine.filter(c=>{
+    const ms = !s || c.statut===s;
+    const mm = !m || (c.datetime&&c.datetime.startsWith(m));
+    const mq = !q || (c.client||'').toLowerCase().includes(q) || (c.ref||'').toLowerCase().includes(q) || (c.depart||'').toLowerCase().includes(q);
+    return ms && mm && mq;
+  });
+
+  // Update total
+  const el=document.getElementById('mc-total');
+  if(el) el.textContent=mine.length;
+
+  const tb = document.getElementById('tb-mc-hist');
+  if(!tb) return;
+  if(!list.length){tb.innerHTML=`<tr><td colspan="9" class="t-empty"><i class="fas fa-history"></i><p>Aucune course</p></td></tr>`;return;}
+  tb.innerHTML = list.map(c=>`<tr>
+    <td style="font-size:10px;color:var(--gold);font-family:'Syne',sans-serif;font-weight:600">${c.ref||'—'}</td>
+    <td style="font-size:11px;white-space:nowrap">${fdt(c.datetime)}</td>
+    <td><strong style="font-size:12px">${c.client||'—'}</strong></td>
+    <td>${tBdg(c.type)}</td>
+    <td style="font-size:11px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.depart||c.lieu||'—'}</td>
+    <td style="font-size:11px;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.arrivee||c.duree||'—'}</td>
+    <td style="font-size:11px;text-align:center">${c.pax||1}</td>
+    <td>${sBdg(c.statut)}</td>
+    <td style="font-size:10px;color:var(--muted2);max-width:150px">${(c.notes||'—').replace(/\n/g,'<br>')}</td>
   </tr>`).join('');
 }
 
