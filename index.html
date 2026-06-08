@@ -2200,23 +2200,25 @@ let leafletMarkers = {};
 
 function initLeafletMap() {
   if(leafletMap) return;
-  // Load Leaflet JS dynamically
   if(!window.L) {
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    script.onload = () => {
-      leafletMap = window.L.map('live-map').setView([48.9606, 2.5889], 11);
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-      }).addTo(leafletMap);
-    };
+    script.onload = () => createMap();
     document.head.appendChild(script);
   } else {
-    leafletMap = window.L.map('live-map').setView([48.9606, 2.5889], 11);
-    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(leafletMap);
+    createMap();
   }
+}
+
+function createMap() {
+  leafletMap = window.L.map('live-map', {zoomControl:true, attributionControl:false}).setView([48.9606, 2.5889], 11);
+  // Dark tile style — CartoDB Dark Matter
+  window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    subdomains: 'abcd'
+  }).addTo(leafletMap);
+  // Attribution petite
+  window.L.control.attribution({prefix:'© CartoDB © OSM'}).addTo(leafletMap);
 }
 
 window.refreshLiveMap = async function() {
@@ -2245,12 +2247,13 @@ window.refreshLiveMap = async function() {
     const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
     const course = D.courses.find(x=>x.chauffeur===name&&['en_route','sur_place','onboard','acceptee'].includes(x.statut));
     const statusColor = c.statut==='disponible'?'#2ecc8a':'#f0934a';
+    const vehSize = {berline:'32px',van:'36px',sprinter:'40px',bus:'44px'}[c.vehicule]||'32px';
 
     const iconHtml = `
-      <div style="text-align:center;position:relative">
-        <div style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))">${vehIcon}</div>
-        <div style="background:${statusColor};color:#000;font-size:10px;font-weight:700;font-family:'Syne',sans-serif;padding:2px 7px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.4);margin-top:-4px">${c.prenom}</div>
-        ${course?`<div style="background:#1a1c20;color:#c9a84c;font-size:8px;padding:1px 5px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);white-space:nowrap;margin-top:2px">${course.client}</div>`:''}
+      <div style="text-align:center;position:relative;filter:drop-shadow(0 0 8px ${statusColor}88)">
+        <div style="font-size:${vehSize};line-height:1">${vehIcon}</div>
+        <div style="background:${statusColor};color:#000;font-size:10px;font-weight:800;font-family:'Syne',sans-serif;padding:2px 8px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.6);margin-top:2px;letter-spacing:0.3px">${c.prenom.toUpperCase()}</div>
+        ${course?`<div style="background:#c9a84c;color:#000;font-size:8px;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;margin-top:2px;max-width:90px;overflow:hidden;text-overflow:ellipsis">${course.client}</div>`:''}
       </div>`;
 
     const icon = window.L.divIcon({
