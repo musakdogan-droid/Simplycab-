@@ -625,7 +625,26 @@ tr:last-child td{border-bottom:none}
 <!-- COURSE -->
 <div class="mo" id="mo-course">
   <div class="mo-box" style="width:720px;max-width:98vw">
-    <div class="mo-h"><div class="mo-t"><i class="fas fa-route" style="color:var(--gold)"></i> Nouvelle course</div><div class="mo-x" onclick="closeMo('course')"><i class="fas fa-times"></i></div></div>
+    <div class="mo-h">
+      <div class="mo-t"><i class="fas fa-route" style="color:var(--gold)"></i> Nouvelle course</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="position:relative">
+          <button class="btn btn-s btn-sm" onclick="toggleClientSearch()" id="btn-client-search"><i class="fas fa-user-circle"></i> Choisir un client</button>
+          <div id="client-search-drop" style="display:none;position:absolute;top:36px;right:0;width:300px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r-sm);box-shadow:var(--shadow);z-index:500;overflow:hidden">
+            <div style="padding:10px 12px;border-bottom:1px solid var(--border)">
+              <div style="position:relative">
+                <i class="fas fa-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:11px"></i>
+                <input type="text" id="client-search-input" placeholder="Rechercher un client..." autocomplete="off"
+                  style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:8px 10px 8px 28px;color:var(--white);font-size:12px;outline:none"
+                  oninput="searchClientDrop(this.value)">
+              </div>
+            </div>
+            <div id="client-search-results" style="max-height:220px;overflow-y:auto"></div>
+          </div>
+        </div>
+        <div class="mo-x" onclick="closeMo('course')"><i class="fas fa-times"></i></div>
+      </div>
+    </div>
     <div class="mo-b">
 
       <!-- TYPE -->
@@ -1158,7 +1177,83 @@ window.selDrv = function(id, name) {
   if(id==='fc-ch') genRef();
 };
 
-// ── AUTOCOMPLETE CLIENT ──
+// ── CHOISIR CLIENT DANS MODAL COURSE ──
+window.toggleClientSearch = function() {
+  const drop = document.getElementById('client-search-drop');
+  const isOpen = drop.style.display !== 'none';
+  drop.style.display = isOpen ? 'none' : 'block';
+  if(!isOpen) {
+    searchClientDrop('');
+    setTimeout(()=>document.getElementById('client-search-input')?.focus(), 100);
+  }
+  if(!isOpen) {
+    document.addEventListener('click', function closeCS(e){
+      if(!e.target.closest('#client-search-drop')&&!e.target.closest('#btn-client-search')){
+        drop.style.display='none';
+        document.removeEventListener('click',closeCS);
+      }
+    });
+  }
+};
+
+window.searchClientDrop = function(val) {
+  const res = document.getElementById('client-search-results');
+  if(!res) return;
+  const list = val
+    ? D.clients.filter(c=>(c.nom||'').toLowerCase().includes(val.toLowerCase())||(c.tel||'').includes(val))
+    : D.clients;
+  if(!list.length) {
+    res.innerHTML = `<div style="padding:16px;text-align:center;color:var(--muted);font-size:12px">
+      <i class="fas fa-user-plus" style="display:block;font-size:24px;margin-bottom:8px;color:var(--border3)"></i>
+      Aucun client trouvé
+      ${val?`<br><button onclick="quickCreateClient('${val}')" class="btn btn-p btn-sm" style="margin-top:8px"><i class="fas fa-plus"></i> Créer "${val}"</button>`:''}
+    </div>`;
+    return;
+  }
+  res.innerHTML = list.slice(0,10).map(c=>{
+    const av=(c.nom||'?').split(' ').map(n=>n[0]||'').join('').slice(0,2).toUpperCase();
+    const courses = D.courses.filter(x=>x.client===c.nom).length;
+    return `<div onclick="pickClient('${c._id}')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);transition:background 0.15s" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background=''">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Syne',sans-serif;color:#fff;flex-shrink:0">${av}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600">${c.nom}</div>
+        <div style="font-size:10px;color:var(--muted2)">${c.tel||'—'} ${c.email?'• '+c.email:''}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <span class="bdg bdg-muted" style="font-size:9px">${courses} course${courses!==1?'s':''}</span>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+window.pickClient = function(id) {
+  const c = D.clients.find(x=>x._id===id);
+  if(!c) return;
+  // Fill client fields
+  const inp = document.getElementById('fc-client-input');
+  const hid = document.getElementById('fc-client');
+  const tel = document.getElementById('fc-tel');
+  if(inp) inp.value = c.nom;
+  if(hid) hid.value = c.nom;
+  if(tel && c.tel) tel.value = c.tel;
+  // Close dropdown
+  document.getElementById('client-search-drop').style.display = 'none';
+  // Visual feedback
+  const btn = document.getElementById('btn-client-search');
+  if(btn) { btn.innerHTML = `<i class="fas fa-check-circle" style="color:var(--green)"></i> ${c.nom}`; btn.style.borderColor='var(--green)'; }
+  showToast(`Client "${c.nom}" sélectionné ✓`);
+};
+
+window.quickCreateClient = async function(nom) {
+  if(!nom) return;
+  await fbPush('clients',{nom,tel:'',email:'',type:'standard',createdAt:new Date().toISOString()});
+  await loadAll();
+  document.getElementById('client-search-input').value = '';
+  searchClientDrop('');
+  showToast(`Client "${nom}" créé ✓`);
+};
+
+
 window.openClientDrop = function() {
   buildClientDrop('');
   document.getElementById('drv-drop-client')?.classList.add('on');
@@ -1337,9 +1432,10 @@ window.openCourseModal = function() {
   document.getElementById('prix-suggest').style.display='none';
   document.getElementById('pax-notes').value='';
   document.getElementById('pax-count').textContent='';
-  // Reset client autocomplete
-  const fcClientInp=document.getElementById('fc-client-input');const fcClientHid=document.getElementById('fc-client');
-  if(fcClientInp)fcClientInp.value='';if(fcClientHid)fcClientHid.value='';
+  // Reset client button
+  const btnCS = document.getElementById('btn-client-search');
+  if(btnCS){btnCS.innerHTML='<i class="fas fa-user-circle"></i> Choisir un client';btnCS.style.borderColor='';}
+  document.getElementById('client-search-drop').style.display='none';
   // Reset chauffeur autocomplete
   const fcInp = document.getElementById('fc-ch-input');
   const fcHid = document.getElementById('fc-ch');
