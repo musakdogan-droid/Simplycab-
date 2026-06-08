@@ -262,6 +262,17 @@ tr:last-child td{border-bottom:none}
 @media(max-width:900px){.kb{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.kb{grid-template-columns:1fr}}
 </style>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "b6b59fc8-629b-4161-b436-97798bdc9f3c",
+      safari_web_id: "web.onesignal.auto.064b44a8-1dd7-4e10-9d87-452ef5b9c9dd",
+      notifyButton: { enable: true },
+    });
+  });
+</script>
 </head>
 <body>
 
@@ -1177,7 +1188,32 @@ window.selDrv = function(id, name) {
   if(id==='fc-ch') genRef();
 };
 
-// ── CHOISIR CLIENT DANS MODAL COURSE ──
+// ── NOTIFICATIONS PUSH ONESIGNAL ──
+async function sendPushNotification(title, message, url) {
+  try {
+    if(window.OneSignal) {
+      // Notification via OneSignal REST API
+      await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic os_v2_app_w22z7sdctnawdnbws54yxxe7hrbruukst7bua5njbxiipyawwiebpset3gji6i55tfkifry3wu5xrd4blvmmbpdrhmjvl5anj4y3bwq'
+        },
+        body: JSON.stringify({
+          app_id: 'b6b59fc8-629b-4161-b436-97798bdc9f3c',
+          included_segments: ['All'],
+          headings: { fr: title, en: title },
+          contents: { fr: message, en: message },
+          url: url || 'https://musakdogan-droid.github.io/Simplycab-'
+        })
+      });
+    }
+  } catch(e) {
+    console.log('Notification non envoyée:', e);
+  }
+}
+
+
 window.toggleClientSearch = function() {
   const drop = document.getElementById('client-search-drop');
   const isOpen = drop.style.display !== 'none';
@@ -1418,6 +1454,12 @@ window.doAssign = async function() {
   await fbUpdate('courses', id, {chauffeur:drv, statut:'attribuee', updatedAt:new Date().toISOString()});
   const c = D.courses.find(x=>x._id===id);
   await addLog(`Course "${c?.client||id}" assignée à ${drv}`);
+  // Notification push
+  await sendPushNotification(
+    `🚗 Nouvelle course — ${drv}`,
+    `${c?.ref||''} | ${c?.client||''} | ${fdt(c?.datetime)} | ${c?.depart||c?.lieu||''} → ${c?.arrivee||c?.duree||''}`,
+    'https://musakdogan-droid.github.io/Simplycab-'
+  );
   closeMo('assign');
   await loadAll();
   showToast(`Assigné à ${drv} ✓`);
@@ -1613,6 +1655,14 @@ window.saveCourse = async function() {
   showToast('Enregistrement...');
   await fbPush('courses', data);
   await addLog(`Nouvelle ${type==='mad'?'MAD':'course'} : ${clientName} (${passagers.length} pax)${ch?' → '+ch:''}`);
+  // Notification push si chauffeur assigné
+  if(ch) {
+    await sendPushNotification(
+      `🚗 Course assignée — ${ch}`,
+      `${ref} | ${clientName} | ${data.datetime?.slice(11,16)||''} | ${dep||lieu} → ${arr||data.duree||''}`,
+      'https://musakdogan-droid.github.io/Simplycab-'
+    );
+  }
   await loadAll();
   showToast(`Course créée — ${passagers.length} passager(s) ✓`);
 };
