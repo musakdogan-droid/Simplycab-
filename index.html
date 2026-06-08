@@ -314,8 +314,14 @@ tr:last-child td{border-bottom:none}
         </div>
         <div id="pane-chauffeur" style="display:none">
           <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px">Connexion Chauffeur</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Code PIN à 4 chiffres</div>
-          <div class="pin-disp" id="pin-disp">·  ·  ·  ·</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Prénom + code à 6 chiffres</div>
+          <div class="fld" style="margin-bottom:12px">
+            <label>Prénom *</label>
+            <input type="text" id="ch-login-prenom" placeholder="Votre prénom" autocomplete="off"
+              style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;text-transform:capitalize"
+              oninput="this.value=this.value.charAt(0).toUpperCase()+this.value.slice(1)">
+          </div>
+          <div class="pin-disp" id="pin-disp">· · · · · ·</div>
           <div class="pgrid">
             <button class="pkey" onclick="pp('1')">1</button><button class="pkey" onclick="pp('2')">2</button><button class="pkey" onclick="pp('3')">3</button>
             <button class="pkey" onclick="pp('4')">4</button><button class="pkey" onclick="pp('5')">5</button><button class="pkey" onclick="pp('6')">6</button>
@@ -857,7 +863,7 @@ tr:last-child td{border-bottom:none}
       <div class="fg2"><div class="fld"><label>Prénom *</label><input type="text" id="ch-prenom" placeholder="Prénom"></div><div class="fld"><label>Nom</label><input type="text" id="ch-nom" placeholder="Nom"></div></div>
       <div class="fg2"><div class="fld"><label>Téléphone</label><input type="tel" id="ch-tel" placeholder="+33 6 00 00 00 00"></div><div class="fld"><label>Email</label><input type="email" id="ch-email" placeholder="email@exemple.com"></div></div>
       <div class="fg2">
-        <div class="fld"><label>PIN (4 chiffres) *</label><input type="password" id="ch-pin" placeholder="****" maxlength="4"></div>
+        <div class="fld"><label>Code à 6 chiffres *</label><input type="password" id="ch-pin" placeholder="••••••" maxlength="6" pattern="[0-9]{6}"></div>
         <div class="fld"><label>Véhicule</label><select id="ch-veh"><option value="berline">🚗 Berline</option><option value="van">🚐 Van</option><option value="sprinter">🚌 Sprinter</option><option value="bus">🚍 Bus</option></select></div>
       </div>
     </div>
@@ -1099,22 +1105,36 @@ window.pp = function(k) {
   e.textContent = '';
   if (k === 'del') pinBuf = pinBuf.slice(0,-1);
   else if (k === 'ok') { checkPin(); return; }
-  else if (pinBuf.length < 4) pinBuf += k;
-  d.textContent = ('●'.repeat(pinBuf.length) + '·'.repeat(4-pinBuf.length)).split('').join('  ');
-  if (pinBuf.length === 4) checkPin();
+  else if (pinBuf.length < 6) pinBuf += k;
+  // Display: 6 dots
+  const filled = '●'.repeat(pinBuf.length);
+  const empty = '·'.repeat(6-pinBuf.length);
+  d.textContent = (filled+empty).split('').join(' ');
+  if (pinBuf.length === 6) checkPin();
 };
 
 async function checkPin() {
+  const prenom = (document.getElementById('ch-login-prenom')?.value||'').trim();
+  const e = document.getElementById('pin-err');
+  if(!prenom) {
+    e.textContent = 'Entrez votre prénom';
+    pinBuf = '';
+    document.getElementById('pin-disp').textContent = '· · · · · ·';
+    return;
+  }
   const chauf = await fbGet('chauffeurs');
-  const found = chauf.find(c => c.pin === pinBuf);
+  const found = chauf.find(c =>
+    c.pin === pinBuf &&
+    c.prenom.toLowerCase() === prenom.toLowerCase()
+  );
   if (found) {
     SESSION = { role:'chauffeur', name:found.prenom+(found.nom?' '+found.nom:''), uid:'driver_'+found._id };
     localStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
     startApp();
   } else {
-    document.getElementById('pin-err').textContent = 'PIN incorrect';
+    e.textContent = 'Prénom ou code incorrect';
     pinBuf = '';
-    document.getElementById('pin-disp').textContent = '·  ·  ·  ·';
+    document.getElementById('pin-disp').textContent = '· · · · · ·';
   }
 }
 
@@ -1783,7 +1803,8 @@ window.saveChauffeur = async function() {
   const prenom = document.getElementById('ch-prenom').value.trim();
   const pin = document.getElementById('ch-pin').value.trim();
   if(!prenom){showToast('Prénom obligatoire',true);return;}
-  if(pin && pin.length!==4){showToast('PIN = 4 chiffres',true);return;}
+  if(pin && pin.length!==6){showToast('Le code doit faire 6 chiffres',true);return;}
+  if(pin && !/^\d{6}$/.test(pin)){showToast('Le code doit contenir uniquement des chiffres',true);return;}
   if(pin && D.chauffeurs.find(c=>c.pin===pin)){showToast('PIN déjà utilisé',true);return;}
   closeMo('chauffeur');
   showToast('Enregistrement...');
