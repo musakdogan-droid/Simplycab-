@@ -5,7 +5,3063 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Black Limousine — Système VTC</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.co<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Black Limousine — Système VTC</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{
+  --black:#07080a;--dark:#0d0f12;--card:#141618;--card2:#1a1c20;--card3:#202328;
+  --border:#242629;--border2:#2d3035;--border3:#383c42;
+  --gold:#c9a84c;--gold2:#e4c36a;--gold-dim:rgba(201,168,76,0.12);--gold-glow:rgba(201,168,76,0.06);
+  --white:#ece8e1;--white2:#cdc9c2;--muted:#5a5d65;--muted2:#83868f;
+  --green:#2ecc8a;--green2:#5ee0a8;--green-dim:rgba(46,204,138,0.1);
+  --red:#e05c5c;--red-dim:rgba(224,92,92,0.1);
+  --blue:#5b9cf6;--blue2:#8dbdff;--blue-dim:rgba(91,156,246,0.1);
+  --orange:#f0934a;--orange-dim:rgba(240,147,74,0.1);
+  --purple:#9b7ff0;--purple-dim:rgba(155,127,240,0.1);
+  --shadow:0 8px 32px rgba(0,0,0,0.5);--shadow-sm:0 2px 12px rgba(0,0,0,0.3);
+  --r:12px;--r-sm:8px;--r-xs:6px;--tr:all 0.2s ease;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;font-size:14px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+h1,h2,h3,h4{font-family:'Syne',sans-serif}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--black);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#loading.out{display:none}
+.ld-ring{width:48px;height:48px;border:3px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* LOGIN */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(ellipse at 25% 45%,rgba(201,168,76,0.07),transparent 55%),var(--black)}
+.lbox{width:400px;max-width:100%}
+.llogo{text-align:center;margin-bottom:32px}
+.llogo .brand{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--gold);letter-spacing:3px}
+.llogo .sub{font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;text-transform:uppercase}
+.lcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.lcard::before{content:'';display:block;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold))}
+.lbody{padding:28px}
+.ltabs{display:flex;gap:3px;background:var(--dark);border-radius:var(--r-xs);padding:4px;margin-bottom:20px}
+.ltab{flex:1;padding:9px;border:none;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;border-radius:var(--r-xs);transition:var(--tr)}
+.ltab.on{background:var(--card2);color:var(--gold)}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;font-weight:600}
+.fld input,.fld select,.fld textarea{width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:var(--tr)}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--gold)}
+.fld select option{background:var(--dark)}
+.fld input::placeholder{color:var(--muted)}
+.btn-login{width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);border:none;border-radius:var(--r-sm);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:var(--tr)}
+.btn-login:hover{opacity:0.9}
+.lerr{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:16px}
+.pin-disp{background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:13px;text-align:center;font-family:'Syne',sans-serif;font-size:22px;letter-spacing:14px;margin-bottom:12px;color:var(--gold);min-height:52px;font-weight:700}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.pkey{background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);padding:14px;font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--white);cursor:pointer;transition:var(--tr);text-align:center}
+.pkey:hover{border-color:var(--gold);color:var(--gold)}
+.pkey:active{transform:scale(0.93)}
+
+/* APP */
+#app{display:none;min-height:100vh}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:248px;background:var(--dark);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;transition:transform 0.3s}
+.sb-top{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.sb-brand{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--gold);letter-spacing:1px}
+.sb-sub{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:1px}
+.sb-role{display:inline-block;margin-top:7px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600}
+.role-admin{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,0.2)}
+.role-dispatch{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(91,156,246,0.2)}
+.role-chauffeur{background:var(--green-dim);color:var(--green);border:1px solid rgba(46,204,138,0.2)}
+.nav{flex:1;padding:12px 8px;overflow-y:auto}
+.nsec{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 12px 4px;font-weight:600;margin-top:4px}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r-xs);cursor:pointer;font-size:13px;color:var(--muted2);margin-bottom:2px;transition:var(--tr);border:none;background:none;width:100%;text-align:left;font-family:'DM Sans',sans-serif;font-weight:500;position:relative}
+.ni:hover{color:var(--white);background:rgba(255,255,255,0.04)}
+.ni.on{color:var(--gold);background:var(--gold-dim);font-weight:600}
+.ni.on::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--gold);border-radius:0 3px 3px 0}
+.nb{margin-left:auto;background:var(--red);color:#fff;font-size:9px;padding:2px 6px;border-radius:10px;font-weight:700;min-width:18px;text-align:center}
+.nb.g{background:var(--green)}.nb.b{background:var(--blue)}
+.sb-bot{padding:12px 8px;border-top:1px solid var(--border)}
+.sb-user{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--r-xs);cursor:pointer;transition:var(--tr)}
+.sb-user:hover{background:var(--card)}
+.sb-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--orange));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:var(--black);flex-shrink:0}
+.sb-logout{width:28px;height:28px;border-radius:var(--r-xs);background:var(--card2);border:1px solid var(--border);color:var(--muted2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--tr);flex-shrink:0;font-size:11px}
+.sb-logout:hover{color:var(--red);border-color:var(--red)}
+
+.main{margin-left:248px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{padding:13px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--dark);position:sticky;top:0;z-index:50;gap:12px}
+.tbl{display:flex;align-items:center;gap:12px}
+.mob-btn{display:none;width:34px;height:34px;border-radius:var(--r-xs);background:var(--card);border:1px solid var(--border);color:var(--white);align-items:center;justify-content:center;cursor:pointer;font-size:14px}
+.tb-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700}
+.tbr{display:flex;align-items:center;gap:8px}
+.tb-clock{font-size:12px;color:var(--muted2);font-weight:500}
+.tb-ico{width:34px;height:34px;border-radius:var(--r-xs);background:var(--card);border:1px solid var(--border);color:var(--muted2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--tr);font-size:12px}
+.tb-ico:hover{color:var(--white);border-color:var(--border3)}
+.content{padding:22px;flex:1}
+
+/* STATS */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:22px}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;position:relative;overflow:hidden;transition:var(--tr);cursor:pointer}
+.sc:hover{border-color:var(--border3);transform:translateY(-2px)}
+.sc::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;border-radius:var(--r) 0 0 var(--r)}
+.sc.cg::before{background:linear-gradient(180deg,var(--gold),var(--gold2))}
+.sc.cgr::before{background:linear-gradient(180deg,var(--green),var(--green2))}
+.sc.cb::before{background:linear-gradient(180deg,var(--blue),var(--blue2))}
+.sc.co::before{background:linear-gradient(180deg,var(--orange),#ffb87a)}
+.sc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sc-ico{width:38px;height:38px;border-radius:var(--r-xs);display:flex;align-items:center;justify-content:center;font-size:16px}
+.sc.cg .sc-ico{background:var(--gold-dim);color:var(--gold)}
+.sc.cgr .sc-ico{background:var(--green-dim);color:var(--green)}
+.sc.cb .sc-ico{background:var(--blue-dim);color:var(--blue)}
+.sc.co .sc-ico{background:var(--orange-dim);color:var(--orange)}
+.sc-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;margin-bottom:3px}
+.sc-lbl{font-size:11px;color:var(--muted)}
+.sc-sub{font-size:11px;color:var(--muted2);margin-top:4px}
+
+/* SEC */
+.sec{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:18px;overflow:hidden}
+.sec-h{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sec-t{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.sec-t i{color:var(--gold);font-size:14px}
+.sec-a{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* BTNS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 15px;border-radius:var(--r-xs);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:var(--tr);white-space:nowrap}
+.btn-p{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black)}
+.btn-p:hover{opacity:0.9}
+.btn-s{background:var(--card2);color:var(--white);border:1px solid var(--border2)}
+.btn-s:hover{background:var(--card3)}
+.btn-d{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.2)}
+.btn-g{background:var(--green-dim);color:var(--green);border:1px solid rgba(46,204,138,0.2)}
+.btn-ghost{background:transparent;color:var(--muted2);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--white)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 8px;font-size:11px}
+
+/* TABLE */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid var(--border);font-weight:600;white-space:nowrap}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle;color:var(--white2)}
+tbody tr:hover td{background:rgba(255,255,255,0.02)}
+tr:last-child td{border-bottom:none}
+.t-empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.t-empty i{font-size:36px;color:var(--border3);display:block;margin-bottom:10px}
+
+/* BADGES */
+.bdg{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.bdg::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.bdg-gold{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,0.15)}.bdg-gold::before{background:var(--gold)}
+.bdg-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(46,204,138,0.15)}.bdg-green::before{background:var(--green)}
+.bdg-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,92,0.15)}.bdg-red::before{background:var(--red)}
+.bdg-blue{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(91,156,246,0.15)}.bdg-blue::before{background:var(--blue)}
+.bdg-orange{background:var(--orange-dim);color:var(--orange);border:1px solid rgba(240,147,74,0.15)}.bdg-orange::before{background:var(--orange)}
+.bdg-purple{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(155,127,240,0.15)}.bdg-purple::before{background:var(--purple)}
+.bdg-muted{background:rgba(90,93,101,0.15);color:var(--muted2);border:1px solid rgba(90,93,101,0.2)}.bdg-muted::before{background:var(--muted2)}
+
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(6px);padding:16px}
+.mo.on{display:flex}
+.mo-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--r);width:560px;max-width:100%;max-height:90vh;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;animation:fadeUp 0.25s ease}
+.mo-box.wide{width:640px}
+.mo-h{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mo-t{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+.mo-x{width:30px;height:30px;border-radius:var(--r-xs);background:var(--card2);border:1px solid var(--border);color:var(--muted2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px}
+.mo-x:hover{color:var(--red);border-color:var(--red)}
+.mo-b{padding:20px 22px;overflow-y:auto;flex:1}
+.mo-f{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.fg2 .fld,.fg3 .fld{margin-bottom:0}
+@media(max-width:520px){.fg2,.fg3{grid-template-columns:1fr}}
+
+/* SEARCH */
+.sbw{position:relative;min-width:180px}
+.sbw input{width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:8px 12px 8px 32px;color:var(--white);font-size:12px;outline:none}
+.sbw input:focus{border-color:var(--gold)}
+.sbw i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:11px}
+.fsel{background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:8px 12px;color:var(--white);font-size:12px;outline:none;cursor:pointer}
+.fsel option{background:var(--dark)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--green);color:var(--green);padding:11px 16px;border-radius:var(--r-sm);font-size:12px;z-index:9999;transform:translateY(100px);opacity:0;transition:all 0.3s ease;display:flex;align-items:center;gap:9px;box-shadow:var(--shadow);font-weight:500;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.err{border-color:var(--red);color:var(--red)}
+.toast.info{border-color:var(--blue);color:var(--blue)}
+.toast.warn{border-color:var(--orange);color:var(--orange)}
+
+/* PAGES */
+.page{display:none}.page.on{display:block;animation:fadeUp 0.25s ease}
+
+/* TIMELINE */
+.tl{padding:16px 20px;position:relative}
+.tl::before{content:'';position:absolute;left:28px;top:16px;bottom:16px;width:2px;background:var(--border)}
+.tl-item{position:relative;padding-left:40px;margin-bottom:14px}
+.tl-dot{position:absolute;left:21px;top:4px;width:13px;height:13px;border-radius:50%;border:2px solid var(--card);z-index:1}
+.tl-dot.g{background:var(--gold)}.tl-dot.gr{background:var(--green)}.tl-dot.b{background:var(--blue)}.tl-dot.r{background:var(--red)}.tl-dot.o{background:var(--orange)}
+.tl-time{font-size:10px;color:var(--muted);margin-bottom:2px}
+.tl-text{font-size:12px;color:var(--white2)}
+
+/* CARDS */
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:13px;padding:18px}
+.ic{background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:16px;transition:var(--tr)}
+.ic:hover{border-color:var(--border3);transform:translateY(-2px)}
+.ic-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.ic-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+.ic-s{font-size:11px;color:var(--muted);margin-top:1px}
+.ic-foot{display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+
+/* PROG */
+.prog{height:4px;background:var(--dark);border-radius:3px;overflow:hidden;margin-top:7px}
+.prog-fill{height:100%;border-radius:3px}
+
+/* CONFIRM */
+.conf-ov{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+.conf-ov.on{display:flex}
+.conf-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:24px;width:340px;max-width:100%;text-align:center;box-shadow:var(--shadow)}
+.conf-box i{font-size:36px;color:var(--orange);margin-bottom:12px;display:block}
+.conf-box h3{font-family:'Syne',sans-serif;font-size:16px;margin-bottom:7px}
+.conf-box p{color:var(--muted2);font-size:12px;margin-bottom:20px}
+.conf-btns{display:flex;gap:8px;justify-content:center}
+
+/* MOBILE */
+.mob-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:90}
+.mob-ov.on{display:block}
+@media(max-width:1024px){.sg{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-248px)}.sidebar.on{transform:translateX(0)}
+  .main{margin-left:0}.mob-btn{display:flex}.sg{grid-template-columns:1fr 1fr}
+  .content{padding:13px}.topbar{padding:11px 14px}.cg{grid-template-columns:1fr}
+  .sec-h{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:480px){.sg{grid-template-columns:1fr}}
+.text-gold{color:var(--gold)}.fw7{font-weight:700}.ff-syne{font-family:'Syne',sans-serif}
+.hidden{display:none!important}
+.col-toggle{display:flex;align-items:center;gap:7px;font-size:12px;padding:4px 0;cursor:pointer;color:var(--white2)}
+.col-toggle:hover{color:var(--white)}
+.col-toggle input{cursor:pointer}
+.col-hidden{display:none!important}
+
+/* AUTOCOMPLETE CHAUFFEUR */
+.drv-wrap{position:relative}
+.drv-input{width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:9px 12px;color:var(--white);font-size:13px;outline:none;font-family:'DM Sans',sans-serif;transition:var(--tr)}
+.drv-input:focus{border-color:var(--gold)}
+.drv-drop{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border2);border-radius:var(--r-xs);margin-top:3px;max-height:200px;overflow-y:auto;z-index:500;box-shadow:var(--shadow);display:none}
+.drv-drop.on{display:block}
+.drv-opt{padding:9px 12px;font-size:13px;cursor:pointer;color:var(--white2);transition:background 0.15s;display:flex;align-items:center;gap:8px}
+.drv-opt:hover,.drv-opt.sel{background:var(--gold-dim);color:var(--gold)}
+.drv-opt .av{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--orange));display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--black);flex-shrink:0;font-family:'Syne',sans-serif}
+.drv-empty{padding:12px;font-size:12px;color:var(--muted);text-align:center}
+
+/* KANBAN */
+.kb{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px}
+.kb-col{background:var(--card2);border-radius:var(--r-sm);border:1px solid var(--border)}
+.kb-ch{padding:11px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.kb-ct{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px}
+.kb-cc{font-size:10px;padding:2px 6px;border-radius:10px;background:var(--dark);color:var(--muted)}
+.kb-items{padding:8px;min-height:120px}
+.kb-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xs);padding:10px;margin-bottom:7px;cursor:pointer;transition:var(--tr)}
+.kb-card:hover{border-color:var(--border3)}
+@media(max-width:900px){.kb{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.kb{grid-template-columns:1fr}}
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "b6b59fc8-629b-4161-b436-97798bdc9f3c",
+      safari_web_id: "web.onesignal.auto.064b44a8-1dd7-4e10-9d87-452ef5b9c9dd",
+      notifyButton: { enable: true },
+    });
+  });
+</script>
+</head>
+<body>
+
+<div id="loading">
+  <div class="ld-ring"></div>
+  <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--gold);letter-spacing:2px">BLACK LIMOUSINE</div>
+  <div style="font-size:11px;color:var(--muted);letter-spacing:2px">by SimplyCab</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lbox">
+    <div class="llogo">
+      <div class="brand">BLACK LIMOUSINE</div>
+      <div class="sub">by SimplyCab — Système VTC Pro</div>
+    </div>
+    <div class="lcard">
+      <div class="lbody">
+        <div class="ltabs">
+          <button class="ltab on" id="lt-admin" onclick="switchTab('admin')">Administrateur</button>
+          <button class="ltab" id="lt-dispatch" onclick="switchTab('dispatch')">Dispatch</button>
+          <button class="ltab" id="lt-chauffeur" onclick="switchTab('chauffeur')">Chauffeur PIN</button>
+        </div>
+        <div id="pane-admin">
+          <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px">Connexion Admin</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Accès complet — Mustafa Akdogan</div>
+          <div class="fld"><label>Mot de passe admin</label><input type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
+          <button class="btn-login" onclick="doAdminLogin()">Se connecter →</button>
+          <div class="lerr" id="l-err"></div>
+        </div>
+        <div id="pane-dispatch" style="display:none">
+          <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px">Connexion Dispatch</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Accès dispatch</div>
+          <div class="fld"><label>Identifiant</label><input type="text" id="d-user" placeholder="dispatch01"></div>
+          <div class="fld"><label>Mot de passe</label><input type="password" id="d-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doDispatchLogin()"></div>
+          <button class="btn-login" onclick="doDispatchLogin()">Se connecter →</button>
+          <div class="lerr" id="d-err"></div>
+        </div>
+        <div id="pane-chauffeur" style="display:none">
+          <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px">Connexion Chauffeur</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Code PIN à 4 chiffres</div>
+          <div class="pin-disp" id="pin-disp">·  ·  ·  ·</div>
+          <div class="pgrid">
+            <button class="pkey" onclick="pp('1')">1</button><button class="pkey" onclick="pp('2')">2</button><button class="pkey" onclick="pp('3')">3</button>
+            <button class="pkey" onclick="pp('4')">4</button><button class="pkey" onclick="pp('5')">5</button><button class="pkey" onclick="pp('6')">6</button>
+            <button class="pkey" onclick="pp('7')">7</button><button class="pkey" onclick="pp('8')">8</button><button class="pkey" onclick="pp('9')">9</button>
+            <button class="pkey" onclick="pp('del')" style="color:var(--red)"><i class="fas fa-backspace"></i></button>
+            <button class="pkey" onclick="pp('0')">0</button>
+            <button class="pkey" onclick="pp('ok')" style="background:var(--gold-dim);color:var(--gold)"><i class="fas fa-check"></i></button>
+          </div>
+          <div class="lerr" id="pin-err"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="mob-ov" id="mob-ov" onclick="closeMob()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-top">
+      <div class="sb-brand">BLACK LIMOUSINE</div>
+      <div class="sb-sub">by SimplyCab</div>
+      <div class="sb-role role-admin" id="sb-role">Administrateur</div>
+    </div>
+    <nav class="nav" id="main-nav">
+      <div class="nsec">Principal</div>
+      <button class="ni on" data-p="dashboard" onclick="gp('dashboard',this)"><i style="width:16px;text-align:center" class="fas fa-chart-line"></i> Dashboard</button>
+      <button class="ni" data-p="dispatch" onclick="gp('dispatch',this)"><i style="width:16px;text-align:center" class="fas fa-route"></i> Dispatch <span class="nb" id="nb-d">0</span></button>
+      <button class="ni" data-p="planning" onclick="gp('planning',this)"><i style="width:16px;text-align:center" class="fas fa-calendar-alt"></i> Planning</button>
+      <div class="nsec">Équipe</div>
+      <button class="ni" data-p="chauffeurs" onclick="gp('chauffeurs',this)"><i style="width:16px;text-align:center" class="fas fa-id-card"></i> Chauffeurs <span class="nb g" id="nb-c">0</span></button>
+      <button class="ni" data-p="vehicules" onclick="gp('vehicules',this)"><i style="width:16px;text-align:center" class="fas fa-car"></i> Véhicules</button>
+      <div class="nsec">Gestion</div>
+      <button class="ni" data-p="clients" onclick="gp('clients',this)"><i style="width:16px;text-align:center" class="fas fa-users"></i> Clients</button>
+      <button class="ni" data-p="tarifs" onclick="gp('tarifs',this)"><i style="width:16px;text-align:center" class="fas fa-tags"></i> Tarifs</button>
+      <div class="nsec">Finance</div>
+      <button class="ni" data-p="facturation" onclick="gp('facturation',this)"><i style="width:16px;text-align:center" class="fas fa-file-invoice-dollar"></i> Facturation</button>
+      <button class="ni" data-p="rapports" onclick="gp('rapports',this)"><i style="width:16px;text-align:center" class="fas fa-chart-pie"></i> Rapports</button>
+      <div class="nsec">Système</div>
+      <button class="ni admin-only" data-p="comptes" onclick="gp('comptes',this)"><i style="width:16px;text-align:center" class="fas fa-users-cog"></i> Comptes Dispatch</button>
+      <button class="ni" data-p="historique" onclick="gp('historique',this)"><i style="width:16px;text-align:center" class="fas fa-history"></i> Historique</button>
+      <button class="ni" data-p="parametres" onclick="gp('parametres',this)"><i style="width:16px;text-align:center" class="fas fa-cog"></i> Paramètres</button>
+    </nav>
+    <div class="sb-bot">
+      <div class="sb-user">
+        <div class="sb-av" id="sb-av">M</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="sb-un">Mustafa</div>
+          <div style="font-size:10px;color:var(--muted)" id="sb-ue">Admin</div>
+        </div>
+        <div class="sb-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="tbl">
+        <button class="mob-btn" onclick="toggleMob()"><i class="fas fa-bars"></i></button>
+        <div class="tb-title" id="page-title">Dashboard</div>
+      </div>
+      <div class="tbr">
+        <div class="tb-clock" id="clock">--:--</div>
+        <div id="fb-status" style="font-size:11px;color:var(--muted)">⏳</div>
+        <div class="tb-ico" onclick="loadAll().then(()=>showToast('Actualisé ✓'))" title="Actualiser"><i class="fas fa-sync-alt"></i></div>
+        <button class="btn btn-p btn-sm" id="btn-new" onclick="openCourseModal()" style="display:none"><i class="fas fa-plus"></i> Nouvelle course</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page on" id="page-dashboard">
+        <div class="sg">
+          <div class="sc cg" onclick="gp('dispatch',document.querySelector('[data-p=dispatch]'))">
+            <div class="sc-head"><div class="sc-ico"><i class="fas fa-route"></i></div></div>
+            <div class="sc-val" id="sd-courses">0</div><div class="sc-lbl">Courses ce mois</div><div class="sc-sub">Transferts + MAD</div>
+          </div>
+          <div class="sc cgr" onclick="gp('facturation',document.querySelector('[data-p=facturation]'))">
+            <div class="sc-head"><div class="sc-ico"><i class="fas fa-euro-sign"></i></div></div>
+            <div class="sc-val" id="sd-ca">0€</div><div class="sc-lbl">CA TTC ce mois</div><div class="sc-sub">Terminées uniquement</div>
+          </div>
+          <div class="sc cb" onclick="gp('chauffeurs',document.querySelector('[data-p=chauffeurs]'))">
+            <div class="sc-head"><div class="sc-ico"><i class="fas fa-id-card"></i></div></div>
+            <div class="sc-val" id="sd-chauff">0</div><div class="sc-lbl">Chauffeurs</div><div class="sc-sub">Sur l'équipe</div>
+          </div>
+          <div class="sc co">
+            <div class="sc-head"><div class="sc-ico"><i class="fas fa-clock"></i></div></div>
+            <div class="sc-val" id="sd-wait">0</div><div class="sc-lbl">En attente dispatch</div><div class="sc-sub">À assigner</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px">
+          <div class="sec">
+            <div class="sec-h"><div class="sec-t"><i class="fas fa-chart-bar"></i> CA mensuel (TTC)</div></div>
+            <div style="padding:18px;height:220px"><canvas id="chart-main" style="width:100%;height:100%"></canvas></div>
+          </div>
+          <div class="sec">
+            <div class="sec-h"><div class="sec-t"><i class="fas fa-bell"></i> Activité récente</div></div>
+            <div class="tl" id="tl-dash"></div>
+          </div>
+        </div>
+        <div class="sec">
+          <div class="sec-h">
+            <div class="sec-t"><i class="fas fa-route"></i> Courses actives</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-g btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+              <button class="btn btn-p btn-sm" onclick="openCourseModal()"><i class="fas fa-plus"></i> Nouvelle course</button>
+            </div>
+          </div>
+          <div class="tw"><table><thead><tr><th>Client</th><th>Type</th><th>Trajet</th><th>Chauffeur</th><th>Statut</th><th>TTC</th><th>Action</th></tr></thead><tbody id="tb-dash"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- DISPATCH -->
+      <div class="page" id="page-dispatch">
+        <div class="sec-a" style="margin-bottom:14px;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-p" onclick="openCourseModal()"><i class="fas fa-plus"></i> Nouvelle course</button>
+          <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="ds-q" oninput="renderDispatch()"></div>
+          <select class="fsel" id="ds-s" onchange="renderDispatch()">
+            <option value="">Tous statuts</option>
+            <option value="nouvelle">🆕 Nouvelle</option>
+            <option value="en_attente">⏳ En attente</option>
+            <option value="attribuee">👤 Attribuée</option>
+            <option value="acceptee">✅ Accepté</option>
+            <option value="en_route">🚗 En route</option>
+            <option value="sur_place">📍 Sur place</option>
+            <option value="onboard">👤 Client à bord</option>
+            <option value="depose">🏁 Déposé</option>
+            <option value="terminee">✔ Terminée</option>
+            <option value="facturee">📄 Facturée</option>
+            <option value="payee">💚 Payée</option>
+            <option value="annulee">✗ Annulée</option>
+            <option value="noshow">👻 No-show</option>
+          </select>
+          <select class="fsel" id="ds-t" onchange="renderDispatch()">
+            <option value="">Tous types</option>
+            <option value="transfert">Transfert</option>
+            <option value="mad">Mise à disposition</option>
+          </select>
+          <select class="fsel" id="ds-v" onchange="switchView(this.value)">
+            <option value="table">Liste</option><option value="kanban">Kanban</option>
+          </select>
+          <span class="bdg bdg-muted" id="ds-cnt">0 courses</span>
+          <button class="btn btn-g btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+          <label class="btn btn-s btn-sm" style="cursor:pointer"><i class="fas fa-file-upload"></i> Importer Excel<input type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
+          <div style="position:relative">
+            <button class="btn btn-s btn-sm" onclick="toggleColMenu()" id="col-btn"><i class="fas fa-columns"></i> Colonnes</button>
+            <div id="col-menu" style="display:none;position:absolute;top:36px;right:0;background:var(--card);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px;z-index:200;min-width:180px;box-shadow:var(--shadow)">
+              <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Afficher / Masquer</div>
+              <label class="col-toggle" data-col="col-ref"><input type="checkbox" checked onchange="toggleCol('col-ref',this.checked)"> Référence</label>
+              <label class="col-toggle" data-col="col-dt"><input type="checkbox" checked onchange="toggleCol('col-dt',this.checked)"> Date / Heure</label>
+              <label class="col-toggle" data-col="col-client"><input type="checkbox" checked onchange="toggleCol('col-client',this.checked)"> Client</label>
+              <label class="col-toggle" data-col="col-type"><input type="checkbox" checked onchange="toggleCol('col-type',this.checked)"> Type</label>
+              <label class="col-toggle" data-col="col-dep"><input type="checkbox" checked onchange="toggleCol('col-dep',this.checked)"> Départ</label>
+              <label class="col-toggle" data-col="col-arr"><input type="checkbox" checked onchange="toggleCol('col-arr',this.checked)"> Arrivée</label>
+              <label class="col-toggle" data-col="col-term"><input type="checkbox" checked onchange="toggleCol('col-term',this.checked)"> Terminaux</label>
+              <label class="col-toggle" data-col="col-chauff"><input type="checkbox" checked onchange="toggleCol('col-chauff',this.checked)"> Chauffeur</label>
+              <label class="col-toggle" data-col="col-veh"><input type="checkbox" checked onchange="toggleCol('col-veh',this.checked)"> Véhicule</label>
+              <label class="col-toggle" data-col="col-pax"><input type="checkbox" checked onchange="toggleCol('col-pax',this.checked)"> Pax</label>
+              <label class="col-toggle" data-col="col-ttc"><input type="checkbox" checked onchange="toggleCol('col-ttc',this.checked)"> Prix TTC</label>
+              <label class="col-toggle" data-col="col-statut"><input type="checkbox" checked onchange="toggleCol('col-statut',this.checked)"> Statut</label>
+              <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
+                <button onclick="resetCols()" style="background:none;border:none;color:var(--gold);font-size:11px;cursor:pointer;padding:0"><i class="fas fa-redo"></i> Tout afficher</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><div class="drv-wrap" style="min-width:220px"><input type="text" id="groupe-drv-input" class="drv-input" placeholder="Rechercher un chauffeur..." autocomplete="off" oninput="filterDrv('groupe-drv',this.value)" onfocus="openDrv('groupe-drv')" onblur="setTimeout(()=>closeDrv('groupe-drv'),200)"><input type="hidden" id="groupe-drv" value=""><div class="drv-drop" id="drv-drop-groupe-drv"></div></div><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th class="col-ref">Réf.</th><th class="col-dt">Date/H</th><th class="col-client">Client</th><th class="col-type">Type</th><th class="col-dep">Départ</th><th class="col-arr">Arrivée/Durée</th><th class="col-term">Term.</th><th class="col-chauff">Chauffeur</th><th class="col-veh">Véh</th><th class="col-pax">Pax</th><th class="col-ttc">TTC</th><th class="col-statut">Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
+        <div id="dv-kanban" style="display:none"><div class="kb" id="kb-dispatch"></div></div>
+      </div>
+
+      <!-- PLANNING -->
+      <div class="page" id="page-planning">
+        <div class="sec">
+          <div class="sec-h">
+            <div class="sec-t"><i class="fas fa-calendar-alt"></i> Planning <span id="plan-m" style="color:var(--gold);margin-left:6px"></span></div>
+            <div class="sec-a">
+              <button class="btn btn-ghost btn-sm" onclick="chMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+              <button class="btn btn-ghost btn-sm" onclick="chMonth(1)"><i class="fas fa-chevron-right"></i></button>
+              <button class="btn btn-p btn-sm" onclick="openCourseModal()"><i class="fas fa-plus"></i> Ajouter</button>
+            </div>
+          </div>
+          <div id="cal-wrap" style="padding:16px"></div>
+        </div>
+        <div class="sec" style="margin-top:16px">
+          <div class="sec-h"><div class="sec-t"><i class="fas fa-list"></i> Aujourd'hui par chauffeur</div></div>
+          <div id="plan-drivers" style="padding:16px"></div>
+        </div>
+      </div>
+
+      <!-- CHAUFFEURS -->
+      <div class="page" id="page-chauffeurs">
+        <div class="sec-a" style="margin-bottom:14px;gap:8px;flex-wrap:wrap">
+          <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="ch-q" oninput="renderChauffeurs()"></div>
+          <select class="fsel" id="ch-s" onchange="renderChauffeurs()"><option value="">Tous</option><option value="disponible">Disponible</option><option value="indisponible">Indisponible</option></select>
+          <button class="btn btn-p btn-sm" onclick="openMo('chauffeur')"><i class="fas fa-plus"></i> Ajouter chauffeur</button>
+          <button class="btn btn-s btn-sm" onclick="toggleLiveMap()"><i class="fas fa-map-marked-alt"></i> Carte temps réel</button>
+        </div>
+
+        <!-- CARTE TEMPS RÉEL -->
+        <div id="live-map-wrap" style="display:none;margin-bottom:16px">
+          <div class="sec">
+            <div class="sec-h">
+              <div class="sec-t"><i class="fas fa-map-marked-alt" style="color:var(--green)"></i> Suivi temps réel <span id="live-map-count" class="bdg bdg-green" style="margin-left:6px">0 actif(s)</span></div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:11px;color:var(--muted)" id="live-map-updated"></span>
+                <button class="btn btn-ghost btn-sm" onclick="refreshLiveMap()"><i class="fas fa-sync-alt"></i> Actualiser</button>
+              </div>
+            </div>
+            <div id="live-map-container" style="height:420px;border-radius:0 0 var(--r) var(--r);overflow:hidden;position:relative">
+              <div id="live-map" style="width:100%;height:100%"></div>
+              <div id="live-map-list" style="position:absolute;top:10px;right:10px;background:rgba(13,15,18,0.92);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;min-width:190px;max-height:390px;overflow-y:auto;box-shadow:var(--shadow);z-index:1000"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cg" id="cg-ch"></div>
+      </div>
+
+      <!-- VEHICULES -->
+      <div class="page" id="page-vehicules">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+          <button class="btn btn-p btn-sm" onclick="openMo('vehicule')"><i class="fas fa-plus"></i> Ajouter véhicule</button>
+        </div>
+        <div class="cg" id="cg-vh"></div>
+      </div>
+
+      <!-- CLIENTS -->
+      <div class="page" id="page-clients">
+        <div class="sec">
+          <div class="sec-h">
+            <div class="sec-t"><i class="fas fa-users"></i> Clients</div>
+            <div class="sec-a">
+              <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="cl-q" oninput="renderClients()"></div>
+              <button class="btn btn-p btn-sm" onclick="openMo('client')"><i class="fas fa-plus"></i> Ajouter</button>
+            </div>
+          </div>
+          <div class="tw"><table><thead><tr><th>Client</th><th>Téléphone</th><th>Email</th><th>Type</th><th>Courses</th><th>CA TTC</th><th>Actions</th></tr></thead><tbody id="tb-cl"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- TARIFS -->
+      <div class="page" id="page-tarifs">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+          <button class="btn btn-p btn-sm" onclick="openMo('tarif')"><i class="fas fa-plus"></i> Ajouter tarif</button>
+        </div>
+        <div class="cg" id="cg-tf"></div>
+      </div>
+
+      <!-- FACTURATION -->
+      <div class="page" id="page-facturation">
+        <div class="sec">
+          <div class="sec-h">
+            <div class="sec-t"><i class="fas fa-file-invoice-dollar"></i> Factures</div>
+            <div class="sec-a">
+              <span class="bdg bdg-muted" id="fac-ht">HT : 0€</span>
+              <span class="bdg bdg-gold" id="fac-ttc">TTC : 0€</span>
+              <select class="fsel" id="fac-s" onchange="renderFact()"><option value="">Toutes</option><option value="terminee">Terminée</option><option value="facturee">Facturée</option><option value="payee">Payée</option></select>
+            </div>
+          </div>
+          <div class="tw"><table><thead><tr><th>N° Facture</th><th>Client</th><th>Chauffeur</th><th>Date</th><th>Type</th><th>Trajet</th><th>HT</th><th>TVA 10%</th><th>TTC</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="tb-fac"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- RAPPORTS -->
+      <div class="page" id="page-rapports">
+        <div class="sg" style="grid-template-columns:repeat(3,1fr)">
+          <div class="sc cg"><div class="sc-head"><div class="sc-ico"><i class="fas fa-euro-sign"></i></div></div><div class="sc-val" id="rap-ca">0€</div><div class="sc-lbl">CA TTC total</div></div>
+          <div class="sc cb"><div class="sc-head"><div class="sc-ico"><i class="fas fa-route"></i></div></div><div class="sc-val" id="rap-tot">0</div><div class="sc-lbl">Courses totales</div></div>
+          <div class="sc cgr"><div class="sc-head"><div class="sc-ico"><i class="fas fa-check-circle"></i></div></div><div class="sc-val" id="rap-tx">0%</div><div class="sc-lbl">Taux de complétion</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="sec"><div class="sec-h"><div class="sec-t"><i class="fas fa-chart-bar"></i> CA par mois</div></div><div style="padding:16px;height:200px"><canvas id="chart-ca"></canvas></div></div>
+          <div class="sec"><div class="sec-h"><div class="sec-t"><i class="fas fa-users"></i> Top chauffeurs</div></div><div style="padding:16px" id="rap-ch"></div></div>
+        </div>
+      </div>
+
+      <!-- COMPTES DISPATCH -->
+      <div class="page" id="page-comptes">
+        <div class="sec">
+          <div class="sec-h">
+            <div class="sec-t"><i class="fas fa-users-cog"></i> Comptes Dispatch</div>
+            <button class="btn btn-p btn-sm" onclick="openMo('dispatch-account')"><i class="fas fa-plus"></i> Créer un compte</button>
+          </div>
+          <div class="tw"><table><thead><tr><th>Identifiant</th><th>Nom</th><th>Créé le</th><th>Actions</th></tr></thead><tbody id="tb-comptes"></tbody></table></div>
+        </div>
+        <div style="margin-top:14px;padding:12px 16px;background:var(--blue-dim);border:1px solid rgba(91,156,246,0.2);border-radius:var(--r-sm);font-size:12px;color:var(--blue)">
+          <i class="fas fa-shield-alt"></i> Seul l'admin peut créer des comptes Dispatch. Ils ont accès aux courses et chauffeurs mais pas à la facturation ni aux paramètres.
+        </div>
+      </div>
+
+      <!-- HISTORIQUE -->
+      <div class="page" id="page-historique">
+        <div class="sec">
+          <div class="sec-h"><div class="sec-t"><i class="fas fa-history"></i> Journal</div><button class="btn btn-ghost btn-sm" onclick="if(confirm('Vider ?'))fbDel('logs').then(loadAll)"><i class="fas fa-trash"></i></button></div>
+          <div style="padding:16px" id="log-wrap"></div>
+        </div>
+      </div>
+
+      <!-- PARAMETRES -->
+      <div class="page" id="page-parametres">
+        <div class="sec" style="max-width:600px">
+          <div class="sec-h"><div class="sec-t"><i class="fas fa-cog"></i> Paramètres</div></div>
+          <div style="padding:20px">
+            <div style="background:var(--green-dim);border:1px solid rgba(46,204,138,0.2);border-radius:var(--r-sm);padding:12px;font-size:12px;color:var(--green);margin-bottom:18px">
+              <i class="fas fa-check-circle"></i> Firebase connecté — simplycab-58808
+            </div>
+            <div style="margin-bottom:18px">
+              <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">Mot de passe admin</div>
+              <div class="fg2">
+                <div class="fld"><label>Nouveau mot de passe</label><input type="password" id="new-pass" placeholder="Nouveau mot de passe"></div>
+                <div class="fld"><label>Confirmer</label><input type="password" id="conf-pass" placeholder="Confirmer"></div>
+              </div>
+              <button class="btn btn-p btn-sm" onclick="changeAdminPass()"><i class="fas fa-key"></i> Changer</button>
+            </div>
+            <div style="padding-top:18px;border-top:1px solid var(--border)">
+              <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">Données</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-p" onclick="loadDemoData()"><i class="fas fa-magic"></i> Données démo</button>
+                <button class="btn btn-d" onclick="if(confirm('Tout supprimer ?'))resetAll()"><i class="fas fa-trash"></i> Réinitialiser</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MES COURSES (chauffeur) -->
+      <div class="page" id="page-mescourses">
+        <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+          <div class="sc cg"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-route"></i></div><div class="sc-val" id="mc-today">0</div><div class="sc-lbl">Aujourd'hui</div></div>
+          <div class="sc cgr"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-check"></i></div><div class="sc-val" id="mc-month">0</div><div class="sc-lbl">Ce mois</div></div>
+          <div class="sc cb"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-history"></i></div><div class="sc-val" id="mc-total">0</div><div class="sc-lbl">Total courses</div></div>
+          <div class="sc co"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-euro-sign"></i></div><div class="sc-val" id="mc-ca">0€</div><div class="sc-lbl">CA ce mois</div></div>
+        </div>
+
+        <!-- TABS -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div style="display:flex;gap:3px;background:var(--dark);border-radius:var(--r-xs);padding:4px">
+            <button id="mc-tab-active" onclick="mcTab('active')" style="padding:8px 16px;border:none;border-radius:var(--r-xs);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:var(--card2);color:var(--gold)">🚗 En cours</button>
+            <button id="mc-tab-history" onclick="mcTab('history')" style="padding:8px 16px;border:none;border-radius:var(--r-xs);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted2)">📋 Tout l'historique</button>
+          </div>
+          <!-- BOUTON GPS PARTAGE -->
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="gps-status" style="font-size:11px;color:var(--muted)">Position non partagée</div>
+            <button id="gps-btn" onclick="toggleGPS()" class="btn btn-s btn-sm"><i class="fas fa-map-marker-alt"></i> Partager ma position</button>
+          </div>
+        </div>
+
+        <!-- EN COURS -->
+        <div id="mc-pane-active">
+          <div class="sec">
+            <div class="sec-h"><div class="sec-t"><i class="fas fa-route"></i> Courses actives</div></div>
+            <div class="tw"><table><thead><tr><th>Date/H</th><th>Client / Passagers</th><th>Type</th><th>Départ</th><th>Arrivée</th><th>Terminaux</th><th>Notes</th><th>Statut</th><th>Action</th></tr></thead><tbody id="tb-mc"></tbody></table></div>
+          </div>
+        </div>
+
+        <!-- HISTORIQUE COMPLET -->
+        <div id="mc-pane-history" style="display:none">
+          <div class="sec">
+            <div class="sec-h">
+              <div class="sec-t"><i class="fas fa-history"></i> Tout l'historique</div>
+              <div class="sec-a">
+                <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="mc-hist-q" oninput="renderHistMC()"></div>
+                <select class="fsel" id="mc-hist-s" onchange="renderHistMC()">
+                  <option value="">Tous statuts</option>
+                  <option value="terminee">✔ Terminée</option>
+                  <option value="noshow">👻 No-show</option>
+                  <option value="annulee">✗ Annulée</option>
+                </select>
+                <select class="fsel" id="mc-hist-m" onchange="renderHistMC()">
+                  <option value="">Tous les mois</option>
+                </select>
+              </div>
+            </div>
+            <div class="tw"><table><thead><tr><th>Réf.</th><th>Date/H</th><th>Client</th><th>Type</th><th>Départ</th><th>Arrivée</th><th>Pax</th><th>Statut</th><th>Notes</th></tr></thead><tbody id="tb-mc-hist"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODALS -->
+<!-- COURSE -->
+<div class="mo" id="mo-course">
+  <div class="mo-box" style="width:720px;max-width:98vw">
+    <div class="mo-h">
+      <div class="mo-t"><i class="fas fa-route" style="color:var(--gold)"></i> Nouvelle course</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="position:relative">
+          <button class="btn btn-s btn-sm" onclick="toggleClientSearch()" id="btn-client-search"><i class="fas fa-user-circle"></i> Choisir un client</button>
+          <div id="client-search-drop" style="display:none;position:absolute;top:36px;right:0;width:300px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r-sm);box-shadow:var(--shadow);z-index:500;overflow:hidden">
+            <div style="padding:10px 12px;border-bottom:1px solid var(--border)">
+              <div style="position:relative">
+                <i class="fas fa-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:11px"></i>
+                <input type="text" id="client-search-input" placeholder="Rechercher un client..." autocomplete="off"
+                  style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:8px 10px 8px 28px;color:var(--white);font-size:12px;outline:none"
+                  oninput="searchClientDrop(this.value)">
+              </div>
+            </div>
+            <div id="client-search-results" style="max-height:220px;overflow-y:auto"></div>
+          </div>
+        </div>
+        <div class="mo-x" onclick="closeMo('course')"><i class="fas fa-times"></i></div>
+      </div>
+    </div>
+    <div class="mo-b">
+
+      <!-- TYPE -->
+      <div class="fld">
+        <label>Type de course</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div id="t-transfert" onclick="selType('transfert')" style="padding:11px;background:var(--blue-dim);border:2px solid var(--blue);border-radius:var(--r-sm);cursor:pointer;text-align:center">
+            <div style="font-size:18px;margin-bottom:3px">🚗</div>
+            <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--blue)">Transfert</div>
+          </div>
+          <div id="t-mad" onclick="selType('mad')" style="padding:11px;background:var(--card2);border:2px solid var(--border);border-radius:var(--r-sm);cursor:pointer;text-align:center">
+            <div style="font-size:18px;margin-bottom:3px">⏱</div>
+            <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted2)">Mise à disposition</div>
+          </div>
+        </div>
+        <input type="hidden" id="fc-type" value="transfert">
+      </div>
+
+      <!-- INFOS GÉNÉRALES -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="fld"><label>Client</label>
+          <div class="drv-wrap">
+            <input type="text" id="fc-client-input" class="drv-input" placeholder="Rechercher ou nouveau client..." autocomplete="off" oninput="filterClient(this.value)" onfocus="openClientDrop()" onblur="setTimeout(closeClientDrop,200)" style="font-size:13px">
+            <input type="hidden" id="fc-client" value="">
+            <div class="drv-drop" id="drv-drop-client"></div>
+          </div>
+        </div>
+        <div class="fld"><label>Téléphone client</label><input type="tel" id="fc-tel" placeholder="+33 6 00 00 00 00"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="fld"><label>Date & Heure *</label><input type="datetime-local" id="fc-dt"></div>
+        <div class="fld"><label>Véhicule</label>
+          <select id="fc-veh" onchange="genRef();updatePaxMax()">
+            <option value="berline">🚗 Berline (3 pax)</option>
+            <option value="van">🚐 Van (7 pax)</option>
+            <option value="sprinter">🚌 Sprinter (16 pax)</option>
+            <option value="bus">🚍 Bus (35 pax)</option>
+          </select>
+        </div>
+        <div class="fld"><label>Chauffeur</label>
+          <div class="drv-wrap">
+            <input type="text" id="fc-ch-input" class="drv-input" placeholder="Rechercher un chauffeur..." autocomplete="off" oninput="filterDrv('fc-ch',this.value)" onfocus="openDrv('fc-ch')" onblur="setTimeout(()=>closeDrv('fc-ch'),200)" onchange="genRef()">
+            <input type="hidden" id="fc-ch" value="">
+            <div class="drv-drop" id="drv-drop-fc-ch"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="f-transfert">
+        <div class="fg2">
+          <div class="fld"><label>Départ *</label><input type="text" id="fc-dep" placeholder="Ex: 15 rue de Rivoli, Paris"></div>
+          <div class="fld"><label>Arrivée *</label><input type="text" id="fc-arr" placeholder="Ex: CDG Terminal 2E, Roissy"></div>
+        </div>
+        <!-- TERMINAUX -->
+        <div class="fld">
+          <label>Terminaux (CDG / Orly)</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;padding:9px;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm)">
+            <span style="font-size:9px;color:var(--muted);width:100%;margin-bottom:3px">CDG :</span>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2A"> 2A</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2B"> 2B</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2D"> 2D</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2E"> 2E</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2F"> 2F</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2G"> 2G</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG1"> T1</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG3"> T3</label>
+            <span style="font-size:9px;color:var(--muted);width:100%;margin-top:5px;margin-bottom:3px">Orly :</span>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY1"> ORY1</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY2"> ORY2</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY3"> ORY3</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY4"> ORY4</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="f-mad" style="display:none">
+        <div class="fld"><label>Lieu de prise en charge *</label><input type="text" id="fc-lieu" placeholder="Hôtel Le Marais, Paris"></div>
+        <div class="fg2">
+          <div class="fld"><label>Durée</label>
+            <select id="fc-duree">
+              <option value="1h">1 heure</option><option value="2h">2 heures</option><option value="3h">3 heures</option>
+              <option value="4h">4 heures</option><option value="demi">Demi-journée (4h)</option>
+              <option value="journee">Journée complète (8h)</option>
+            </select>
+          </div>
+          <div class="fld"><label>Prix TTC (€)</label><input type="number" id="fc-prix-mad" placeholder="0"></div>
+        </div>
+      </div>
+
+      <!-- RÉFÉRENCE + PRIX -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+        <div class="fld"><label>Catégorie</label>
+          <select id="fc-cat" onchange="genRef()">
+            <option value="cdg">✈️ CDG</option><option value="orly">✈️ Orly</option>
+            <option value="disney">🏰 Disneyland</option><option value="paris">🗼 Paris</option>
+            <option value="gare">🚉 Gare</option><option value="corporate">🏢 Corporate</option><option value="autre">📍 Autre</option>
+          </select>
+        </div>
+        <div class="fld"><label>N° Véhicule jour</label><input type="text" id="fc-numveh" placeholder="B1, V2..." oninput="genRef()"></div>
+        <div class="fld"><label>Référence (auto)</label><input type="text" id="fc-ref" readonly style="opacity:0.8;background:var(--dark);font-weight:700;color:var(--gold);font-size:11px" placeholder="Auto"></div>
+        <div class="fld"><label>Prix TTC (€)</label><input type="number" id="fc-prix" placeholder="0" oninput="calcHT()"></div>
+      </div>
+      <div id="prix-suggest" style="display:none;padding:7px 10px;background:var(--gold-dim);border-radius:var(--r-xs);font-size:11px;color:var(--gold);margin-bottom:8px"></div>
+      <div class="fld"><label>Notes générales</label><textarea id="fc-notes" rows="1" placeholder="Infos générales sur la course..."></textarea></div>
+
+      <!-- LISTE PASSAGERS -->
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700"><i class="fas fa-users" style="color:var(--gold)"></i> Passagers <span id="pax-count" style="color:var(--muted);font-size:11px"></span></div>
+          <span id="pax-cap-warn" style="font-size:11px;color:var(--red);display:none"><i class="fas fa-exclamation-triangle"></i> Capacité max atteinte</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">
+          Une ligne par passager — format libre. Exemple : <span style="color:var(--gold)">12:00 / AF0456 / CDG2F / REF-001 / Jean Dupont / +33612345678</span>
+        </div>
+        <textarea id="pax-notes" rows="6" placeholder="Colle tes passagers ici, une ligne par personne :&#10;12:00 / AF0456 / CDG2F / REF-001 / Jean Dupont / +33612345678&#10;14:30 / BA1234 / ORY4 / REF-002 / Marie Martin / +33698765432&#10;..."
+          style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px;color:var(--white);font-size:12px;outline:none;resize:vertical;font-family:'DM Sans',sans-serif;line-height:1.7"
+          oninput="updatePaxCount()"></textarea>
+        <div id="pax-list" style="display:none"></div>
+      </div>
+
+    </div>
+    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('course')">Annuler</button><button class="btn btn-p" onclick="saveCourse()"><i class="fas fa-save"></i> Enregistrer la course</button></div>
+  </div>
+</div>
+
+
+<!-- CHAUFFEUR -->
+<div class="mo" id="mo-chauffeur">
+  <div class="mo-box" style="width:460px">
+    <div class="mo-h"><div class="mo-t"><i class="fas fa-id-card" style="color:var(--gold)"></i> Ajouter chauffeur</div><div class="mo-x" onclick="closeMo('chauffeur')"><i class="fas fa-times"></i></div></div>
+    <div class="mo-b">
+      <div class="fg2"><div class="fld"><label>Prénom *</label><input type="text" id="ch-prenom" placeholder="Prénom"></div><div class="fld"><label>Nom</label><input type="text" id="ch-nom" placeholder="Nom"></div></div>
+      <div class="fg2"><div class="fld"><label>Téléphone</label><input type="tel" id="ch-tel" placeholder="+33 6 00 00 00 00"></div><div class="fld"><label>Email</label><input type="email" id="ch-email" placeholder="email@exemple.com"></div></div>
+      <div class="fg2">
+        <div class="fld"><label>PIN (4 chiffres) *</label><input type="password" id="ch-pin" placeholder="****" maxlength="4"></div>
+        <div class="fld"><label>Véhicule</label><select id="ch-veh"><option value="berline">🚗 Berline</option><option value="van">🚐 Van</option><option value="sprinter">🚌 Sprinter</option><option value="bus">🚍 Bus</option></select></div>
+      </div>
+    </div>
+    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('chauffeur')">Annuler</button><button class="btn btn-p" onclick="saveChauffeur()"><i class="fas fa-save"></i> Enregistrer</button></div>
+  </div>
+</div>
+
+<!-- VEHICULE -->
+<div class="mo" id="mo-vehicule">
+  <div class="mo-box" style="width:460px">
+    <div class="mo-h"><div class="mo-t"><i class="fas fa-car" style="color:var(--gold)"></i> Ajouter véhicule</div><div class="mo-x" onclick="closeMo('vehicule')"><i class="fas fa-times"></i></div></div>
+    <div class="mo-b">
+      <div class="fg2"><div class="fld"><label>Marque *</label><input type="text" id="vh-marque" placeholder="Mercedes"></div><div class="fld"><label>Modèle</label><input type="text" id="vh-modele" placeholder="Classe E"></div></div>
+      <div class="fg2"><div class="fld"><label>Immatriculation</label><input type="text" id="vh-immat" placeholder="AB-123-CD"></div><div class="fld"><label>Année</label><input type="number" id="vh-annee" placeholder="2024"></div></div>
+      <div class="fg2">
+        <div class="fld"><label>Type</label><select id="vh-type"><option value="berline">Berline</option><option value="van">Van</option><option value="sprinter">Sprinter</option><option value="bus">Bus</option></select></div>
+        <div class="fld"><label>Km</label><input type="number" id="vh-km" placeholder="0"></div>
+      </div>
+      <div class="fld"><label>Chauffeur</label><select id="vh-ch"><option value="">— Non assigné —</option></select></div>
+    </div>
+    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('vehicule')">Annuler</button><button class="btn btn-p" onclick="saveVehicule()"><i class="fas fa-save"></i> Enregistrer</button></div>
+  </div>
+</div>
+
+<!-- CLIENT -->
+<div class="mo" id="mo-client">
+  <div class="mo-box" style="width:460px">
+    <div class="mo-h"><div class="mo-t"><i class="fas fa-user" style="color:var(--gold)"></i> Ajouter client</div><div class="mo-x" onclick="closeMo('client')"><i class="fas fa-times"></i></div></div>
+    <div class="mo-b">
+      <div class="fg2"><div class="fld"><label>Nom *</label><input type="text" id="cl-nom" placeholder="Nom complet"></div><div class="fld"><label>Téléphone</label><input type="tel" id="cl-tel" placeholder="+33 6 00 00 00 00"></div></div>
+      <div class="fg2"><div class="fld"><label>Email</label><input type="email" id="cl-email" placeholder="email@exemple.com"></div><div class="fld"><label>Type</label><select id="cl-type"><option value="standard">Standard</option><option value="premium">Premium</option><option value="corporate">Corporate</option></select></div></div>
+    </div>
+    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('client')">Annuler</button><button class="btn btn-p" onclick="saveClient()"><i class="fas fa-save"></i> Enregistrer</button></div>
+  </div>
+</div>
+
+<!-- TARIF -->
+<div class="mo" id="mo-tarif">
+  <div class="mo-box" style="width:480px">
+    <div class="mo-h"><div class="mo-t"><i class="fas fa-tag" style="color:var(--gold)"></i> Ajouter tarif</div><div class="mo-x" onclick="closeMo('tarif')"><i class="fas fa-times"></i></div></div>
+    <div class="mo-b">
+      <div class="fld"><label>Route *</label><input type="text" id="tf-route" placeholder="CDG → Paris Centre"></div>
+      <div class="fg2"><div class="fld"><label>Berline TTC (€)</label><input type="number" id="tf-berline" placeholder="0"></div><div class="fld"><label>Van TTC (€)</label><input type="number" id="tf-van" placeholder="0"></div></div>
+      <div class="fg2"><div class="fld"><label>Sprinter TTC (€)</label><input type="number" id="tf-sprinter" placeholder="0"></div><div class="fld"><label>Bus TTC (€)</label><input type="number" id="tf-bus" placeholder="0"></div></div>
+      <div class="fg2"><div class="fld"><label>Catégorie</label><select id="tf-cat"><option value="cdg">CDG</option><option value="orly">Orly</option><option value="disney">Disneyland</option><option value="paris">Paris</option><option value="autre">Autre</option></select></div><div class="fld"><label>Nuit TTC (€)</label><input type="number" id="tf-nuit" placeholder="0"></div></div>
+    </div>
+    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('tarif')">Annuler</button><button class="btn btn-p" onclick="saveTarif()"><i class="fas fa-save"></i> Enregistrer</button></div>
+  </div>
+</div>
+
+<!-- ASSIGNER -->
+<div class="mo" id="mo-assign">
+  <div class="mo-box" style="width:380px">
+    <div class="mo-h"><div class="mo-t"><i class="fas fa-user-check" style="color:var(--gold)"></i> Assigner chauffeur</div><div class="mo-x" onclick="closeMo('assign')"><i class="fas fa-times"></i></div></div>
+    <div class="mo-b">
+      <input type="hidden" id="assign-id">
+      <div class="fld"><label>Chauffeur</label>
+        <div class="drv-wrap">
+          <input type="text" id="assign-drv-input" class="drv-input" placeholder="Rechercher un chauffeur..." autocomplete="off" oninput="filterDrv('assign-drv',this.value)" onfocus="openDrv('assign-drv')" onblur="setTimeout(()=>closeDrv('assign-drv'),200)">
+          <input type="hidden" id="assign-drv" value="">
+          <div class="drv-drop" id="drv-drop-assign-drv"></div>
+        </div>
+      </div>
+    </div>
+    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('assign')">Annuler</button><button class="btn btn-p" onclick="doAssign()"><i class="fas fa-check"></i> Assigner</button></div>
+  </div>
+</div>
+
+<!-- DISPATCH ACCOUNT -->
+<div class="mo" id="mo-dispatch-account">
+  <div class="mo-box" style="width:400px">
+    <div class="mo-h"><div class="mo-t"><i class="fas fa-user-tie" style="color:var(--gold)"></i> Compte Dispatch</div><div class="mo-x" onclick="closeMo('dispatch-account')"><i class="fas fa-times"></i></div></div>
+    <div class="mo-b">
+      <div class="fld"><label>Identifiant *</label><input type="text" id="da-user" placeholder="dispatch01"></div>
+      <div class="fld"><label>Nom complet</label><input type="text" id="da-nom" placeholder="Sophie Martin"></div>
+      <div class="fld"><label>Mot de passe *</label><input type="password" id="da-pass" placeholder="Min. 6 caractères"></div>
+    </div>
+    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('dispatch-account')">Annuler</button><button class="btn btn-p" onclick="saveDispatchAccount()"><i class="fas fa-save"></i> Créer</button></div>
+  </div>
+</div>
+
+<div class="conf-ov" id="conf-ov">
+  <div class="conf-box">
+    <i class="fas fa-exclamation-triangle"></i>
+    <h3 id="conf-t">Confirmer</h3>
+    <p id="conf-m">Cette action est irréversible.</p>
+    <div class="conf-btns"><button class="btn btn-ghost" onclick="closeConf()">Annuler</button><button class="btn btn-d" id="conf-ok">Confirmer</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toast-msg"></span></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// FIREBASE REST API — pas de SDK, fonctionne partout
+// ═══════════════════════════════════════════════════
+const FB_URL = 'https://simplycab-58808-default-rtdb.europe-west1.firebasedatabase.app';
+const TVA = 0.10;
+
+// SOCIETE
+const SOC = {
+  nom:'SIMPLY CAB', brand:'Black Limousine by SimplyCab',
+  adresse:'28 rue Paul Barennes', cp:'77100', ville:'Meaux',
+  siret:'827 574 203 00028', tva_num:'FR55827574203',
+  ape:'4932Z', dirigeant:'Mustafa AKDOGAN', site:'black-limousine.com'
+};
+
+// ADMIN PASSWORD (stored in Firebase)
+const ADMIN_KEY = 'sc_admin_session';
+const DEFAULT_PASS = 'simplycab2024'; // changeable in params
+
+// STATE
+let D = { courses:[], chauffeurs:[], clients:[], tarifs:[], vehicules:[], logs:[], dispatch_accounts:[] };
+let SESSION = { role:null, name:null, uid:null };
+let curMonth = new Date();
+
+// ── FIREBASE REST ──
+async function fbGet(path) {
+  const r = await fetch(`${FB_URL}/${path}.json`);
+  const data = await r.json();
+  if (!data) return [];
+  return Object.entries(data).map(([k,v]) => ({_id:k,...v}));
+}
+
+async function fbPush(path, data) {
+  const r = await fetch(`${FB_URL}/${path}.json`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+  });
+  const res = await r.json();
+  return res.name; // returns new key
+}
+
+async function fbUpdate(path, key, data) {
+  await fetch(`${FB_URL}/${path}/${key}.json`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+  });
+}
+
+async function fbDelete(path, key) {
+  await fetch(`${FB_URL}/${path}${key?'/'+key:''}.json`, {method:'DELETE'});
+}
+
+async function fbDel(path) {
+  await fetch(`${FB_URL}/${path}.json`, {method:'DELETE'});
+}
+
+// ── LOAD ALL ──
+async function loadAll() {
+  try {
+    document.getElementById('fb-status').innerHTML = '<span style="color:var(--orange);font-size:11px">⏳</span>';
+    const [courses, chauffeurs, clients, tarifs, vehicules, logs, dispatch_accounts] = await Promise.all([
+      fbGet('courses'), fbGet('chauffeurs'), fbGet('clients'),
+      fbGet('tarifs'), fbGet('vehicules'), fbGet('logs'), fbGet('dispatch_accounts')
+    ]);
+    D.courses = courses.sort((a,b) => new Date(b.datetime||0) - new Date(a.datetime||0));
+    D.chauffeurs = chauffeurs;
+    D.clients = clients;
+    D.tarifs = tarifs;
+    D.vehicules = vehicules;
+    D.logs = logs.sort((a,b) => new Date(b.at||0) - new Date(a.at||0));
+    D.dispatch_accounts = dispatch_accounts;
+    document.getElementById('fb-status').innerHTML = '<span style="color:var(--green);font-size:11px">● Firebase</span>';
+    renderAll();
+  } catch(e) {
+    document.getElementById('fb-status').innerHTML = '<span style="color:var(--red);font-size:11px">✗ Erreur</span>';
+    showToast('Erreur connexion Firebase', 'err');
+  }
+}
+
+function renderAll() {
+  renderDash(); renderDispatch(); renderChauffeurs(); renderClients();
+  renderTarifs(); renderFact(); renderVehicules(); renderMesCourses();
+  renderRapports(); renderHistorique(); renderPlanning(); renderComptes();
+  updateBadges(); buildDriverSelects();
+}
+
+// ── AUTH ──
+function checkSession() {
+  const s = localStorage.getItem(ADMIN_KEY);
+  if (s) {
+    try {
+      const d = JSON.parse(s);
+      SESSION = d;
+      return true;
+    } catch(e) {}
+  }
+  return false;
+}
+
+window.doAdminLogin = async function() {
+  const pass = document.getElementById('l-pass').value;
+  const err = document.getElementById('l-err');
+  err.textContent = '';
+  if (!pass) { err.textContent = 'Mot de passe requis'; return; }
+  // Check against Firebase stored password
+  try {
+    const r = await fetch(`${FB_URL}/config/admin_pass.json`);
+    const stored = await r.json();
+    const validPass = stored || DEFAULT_PASS;
+    if (pass === validPass) {
+      SESSION = { role:'admin', name:'Mustafa', uid:'admin' };
+      localStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+      startApp();
+    } else {
+      err.textContent = 'Mot de passe incorrect';
+    }
+  } catch(e) {
+    // If Firebase not accessible, use default
+    if (pass === DEFAULT_PASS) {
+      SESSION = { role:'admin', name:'Mustafa', uid:'admin' };
+      localStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+      startApp();
+    } else {
+      err.textContent = 'Mot de passe incorrect';
+    }
+  }
+};
+
+window.doDispatchLogin = async function() {
+  const user = document.getElementById('d-user').value.trim();
+  const pass = document.getElementById('d-pass').value;
+  const err = document.getElementById('d-err');
+  err.textContent = '';
+  if (!user || !pass) { err.textContent = 'Identifiant et mot de passe requis'; return; }
+  const accounts = await fbGet('dispatch_accounts');
+  const found = accounts.find(a => a.user === user && a.pass === pass);
+  if (found) {
+    SESSION = { role:'dispatch', name:found.nom||found.user, uid:'dispatch_'+found._id };
+    localStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+    startApp();
+  } else {
+    err.textContent = 'Identifiant ou mot de passe incorrect';
+  }
+};
+
+let pinBuf = '';
+window.pp = function(k) {
+  const d = document.getElementById('pin-disp'), e = document.getElementById('pin-err');
+  e.textContent = '';
+  if (k === 'del') pinBuf = pinBuf.slice(0,-1);
+  else if (k === 'ok') { checkPin(); return; }
+  else if (pinBuf.length < 4) pinBuf += k;
+  d.textContent = ('●'.repeat(pinBuf.length) + '·'.repeat(4-pinBuf.length)).split('').join('  ');
+  if (pinBuf.length === 4) checkPin();
+};
+
+async function checkPin() {
+  const chauf = await fbGet('chauffeurs');
+  const found = chauf.find(c => c.pin === pinBuf);
+  if (found) {
+    SESSION = { role:'chauffeur', name:found.prenom+(found.nom?' '+found.nom:''), uid:'driver_'+found._id };
+    localStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+    startApp();
+  } else {
+    document.getElementById('pin-err').textContent = 'PIN incorrect';
+    pinBuf = '';
+    document.getElementById('pin-disp').textContent = '·  ·  ·  ·';
+  }
+}
+
+window.doLogout = function() {
+  if (!confirm('Se déconnecter ?')) return;
+  localStorage.removeItem(ADMIN_KEY);
+  SESSION = { role:null, name:null, uid:null };
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login').style.display = 'flex';
+};
+
+function startApp() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const name = SESSION.name || 'Admin';
+  document.getElementById('sb-av').textContent = name.slice(0,2).toUpperCase();
+  document.getElementById('sb-un').textContent = name;
+  document.getElementById('sb-ue').textContent = SESSION.role;
+  const roleEl = document.getElementById('sb-role');
+  roleEl.textContent = SESSION.role === 'admin' ? 'Administrateur' : SESSION.role === 'dispatch' ? 'Dispatch' : 'Chauffeur';
+  roleEl.className = 'sb-role role-' + SESSION.role;
+  if (SESSION.role === 'chauffeur') {
+    document.querySelectorAll('.ni').forEach(n => n.style.display = 'none');
+    const nav = document.getElementById('main-nav');
+    const btn = document.createElement('button');
+    btn.className = 'ni on'; btn.dataset.p = 'mescourses';
+    btn.innerHTML = '<i style="width:16px;text-align:center" class="fas fa-route"></i> Mes courses';
+    btn.onclick = () => gp('mescourses', btn);
+    nav.prepend(btn);
+    document.getElementById('btn-new').style.display = 'none';
+    gp('mescourses', btn);
+  } else if (SESSION.role === 'dispatch') {
+    document.querySelectorAll('.admin-only').forEach(n => n.style.display = 'none');
+    document.getElementById('btn-new').style.display = 'flex';
+    gp('dispatch', document.querySelector('[data-p=dispatch]'));
+  } else {
+    document.getElementById('btn-new').style.display = 'flex';
+  }
+  loadAll();
+  startClock();
+}
+
+// ── HELPERS ──
+function ht(ttc) { return parseFloat(ttc||0)/(1+TVA); }
+function fp(v) { return v ? parseFloat(v).toFixed(0)+'€' : '—'; }
+function fdt(dt) {
+  if (!dt) return '—';
+  const d = new Date(dt);
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+function vI(v) { return {berline:'🚗 Berline',van:'🚐 Van',sprinter:'🚌 Sprinter',bus:'🚍 Bus'}[v]||'🚗 Berline'; }
+function sBdg(s) {
+  const m = {
+    nouvelle:['bdg-purple','🆕 Nouvelle'],en_attente:['bdg-orange','⏳ En attente'],
+    attribuee:['bdg-blue','👤 Attribuée'],acceptee:['bdg-green','✅ Accepté'],
+    en_route:['bdg-green','🚗 En route'],sur_place:['bdg-gold','📍 Sur place'],
+    onboard:['bdg-green','👤 Client à bord'],depose:['bdg-blue','🏁 Déposé'],
+    en_cours:['bdg-gold','▶ En cours'],terminee:['bdg-muted','✔ Terminée'],
+    facturee:['bdg-blue','📄 Facturée'],payee:['bdg-green','💚 Payée'],
+    annulee:['bdg-red','✗ Annulée'],noshow:['bdg-red','👻 No-show'],
+    disponible:['bdg-green','● Disponible'],indisponible:['bdg-red','● Indisponible'],
+    premium:['bdg-gold','★ Premium'],corporate:['bdg-blue','🏢 Corporate'],standard:['bdg-muted','Standard'],
+    actif:['bdg-green','● Actif'],maintenance:['bdg-orange','🔧 Maint.'],
+  };
+  const[cls,lbl] = m[s]||['bdg-muted',s||'—'];
+  return `<span class="bdg ${cls}">${lbl}</span>`;
+}
+function tBdg(t) { return t==='mad'?'<span class="bdg bdg-orange">⏱ MAD</span>':'<span class="bdg bdg-blue">🚗 Transfert</span>'; }
+
+function updateBadges() {
+  const w = D.courses.filter(c=>['nouvelle','en_attente'].includes(c.statut)).length;
+  const dispo = D.chauffeurs.filter(c=>c.statut==='disponible').length;
+  const e1=document.getElementById('nb-d'); const e2=document.getElementById('nb-c');
+  if(e1)e1.textContent=w; if(e2)e2.textContent=dispo;
+}
+
+function buildDriverSelects() {
+  // Refresh all autocomplete dropdowns with current driver list
+  ['fc-ch','assign-drv','groupe-drv','vh-ch'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.tagName==='SELECT'){
+      el.innerHTML='<option value="">— Non assigné —</option>'+D.chauffeurs.map(d=>`<option value="${d.prenom+(d.nom?' '+d.nom:'')}">${d.prenom} ${d.nom||''}</option>`).join('');
+    }
+  });
+}
+
+// ── AUTOCOMPLETE CHAUFFEUR ──
+function getDrvName(id) {
+  const inp = document.getElementById(id+'-input');
+  return inp ? inp.value.trim() : (document.getElementById(id)?.value||'');
+}
+
+function buildDrvDrop(dropId, filter) {
+  const drop = document.getElementById('drv-drop-'+dropId);
+  if(!drop) return;
+  const list = filter
+    ? D.chauffeurs.filter(d=>(d.prenom+' '+(d.nom||'')).toLowerCase().includes(filter.toLowerCase()))
+    : D.chauffeurs;
+  if(!list.length){
+    drop.innerHTML=`<div class="drv-empty">Aucun chauffeur trouvé</div>`;
+    return;
+  }
+  drop.innerHTML = [
+    `<div class="drv-opt" onmousedown="selDrv('${dropId}','')"><div class="av" style="background:var(--card3);color:var(--muted)">—</div> Non assigné</div>`,
+    ...list.map(d=>{
+      const name=d.prenom+(d.nom?' '+d.nom:'');
+      const av=name.slice(0,2).toUpperCase();
+      const statut=d.statut==='disponible'?'<span style="font-size:9px;color:var(--green)">●</span>':'<span style="font-size:9px;color:var(--red)">●</span>';
+      return `<div class="drv-opt" onmousedown="selDrv('${dropId}','${name}')"><div class="av">${av}</div>${statut} ${name} <span style="font-size:10px;color:var(--muted);margin-left:4px">${{berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[d.vehicule]||''}</span></div>`;
+    })
+  ].join('');
+}
+
+window.openDrv = function(id) {
+  buildDrvDrop(id, '');
+  const drop = document.getElementById('drv-drop-'+id);
+  if(drop) drop.classList.add('on');
+};
+
+window.closeDrv = function(id) {
+  const drop = document.getElementById('drv-drop-'+id);
+  if(drop) drop.classList.remove('on');
+};
+
+window.filterDrv = function(id, val) {
+  buildDrvDrop(id, val);
+  const drop = document.getElementById('drv-drop-'+id);
+  if(drop) drop.classList.add('on');
+  // Clear hidden value if input changed
+  document.getElementById(id).value = '';
+};
+
+window.selDrv = function(id, name) {
+  const inp = document.getElementById(id+'-input');
+  const hid = document.getElementById(id);
+  if(inp) inp.value = name;
+  if(hid) hid.value = name;
+  closeDrv(id);
+  if(id==='fc-ch') genRef();
+};
+
+// ── NOTIFICATIONS PUSH ONESIGNAL ──
+async function sendPushNotification(title, message, url) {
+  try {
+    if(window.OneSignal) {
+      // Notification via OneSignal REST API
+      await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic os_v2_app_w22z7sdctnawdnbws54yxxe7hrbruukst7bua5njbxiipyawwiebpset3gji6i55tfkifry3wu5xrd4blvmmbpdrhmjvl5anj4y3bwq'
+        },
+        body: JSON.stringify({
+          app_id: 'b6b59fc8-629b-4161-b436-97798bdc9f3c',
+          included_segments: ['All'],
+          headings: { fr: title, en: title },
+          contents: { fr: message, en: message },
+          url: url || 'https://musakdogan-droid.github.io/Simplycab-'
+        })
+      });
+    }
+  } catch(e) {
+    console.log('Notification non envoyée:', e);
+  }
+}
+
+
+window.toggleClientSearch = function() {
+  const drop = document.getElementById('client-search-drop');
+  const isOpen = drop.style.display !== 'none';
+  drop.style.display = isOpen ? 'none' : 'block';
+  if(!isOpen) {
+    searchClientDrop('');
+    setTimeout(()=>document.getElementById('client-search-input')?.focus(), 100);
+  }
+  if(!isOpen) {
+    document.addEventListener('click', function closeCS(e){
+      if(!e.target.closest('#client-search-drop')&&!e.target.closest('#btn-client-search')){
+        drop.style.display='none';
+        document.removeEventListener('click',closeCS);
+      }
+    });
+  }
+};
+
+window.searchClientDrop = function(val) {
+  const res = document.getElementById('client-search-results');
+  if(!res) return;
+  const list = val
+    ? D.clients.filter(c=>(c.nom||'').toLowerCase().includes(val.toLowerCase())||(c.tel||'').includes(val))
+    : D.clients;
+  if(!list.length) {
+    res.innerHTML = `<div style="padding:16px;text-align:center;color:var(--muted);font-size:12px">
+      <i class="fas fa-user-plus" style="display:block;font-size:24px;margin-bottom:8px;color:var(--border3)"></i>
+      Aucun client trouvé
+      ${val?`<br><button onclick="quickCreateClient('${val}')" class="btn btn-p btn-sm" style="margin-top:8px"><i class="fas fa-plus"></i> Créer "${val}"</button>`:''}
+    </div>`;
+    return;
+  }
+  res.innerHTML = list.slice(0,10).map(c=>{
+    const av=(c.nom||'?').split(' ').map(n=>n[0]||'').join('').slice(0,2).toUpperCase();
+    const courses = D.courses.filter(x=>x.client===c.nom).length;
+    return `<div onclick="pickClient('${c._id}')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);transition:background 0.15s" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background=''">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Syne',sans-serif;color:#fff;flex-shrink:0">${av}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600">${c.nom}</div>
+        <div style="font-size:10px;color:var(--muted2)">${c.tel||'—'} ${c.email?'• '+c.email:''}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <span class="bdg bdg-muted" style="font-size:9px">${courses} course${courses!==1?'s':''}</span>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+window.pickClient = function(id) {
+  const c = D.clients.find(x=>x._id===id);
+  if(!c) return;
+  // Fill client fields
+  const inp = document.getElementById('fc-client-input');
+  const hid = document.getElementById('fc-client');
+  const tel = document.getElementById('fc-tel');
+  if(inp) inp.value = c.nom;
+  if(hid) hid.value = c.nom;
+  if(tel && c.tel) tel.value = c.tel;
+  // Close dropdown
+  document.getElementById('client-search-drop').style.display = 'none';
+  // Visual feedback
+  const btn = document.getElementById('btn-client-search');
+  if(btn) { btn.innerHTML = `<i class="fas fa-check-circle" style="color:var(--green)"></i> ${c.nom}`; btn.style.borderColor='var(--green)'; }
+  showToast(`Client "${c.nom}" sélectionné ✓`);
+};
+
+window.quickCreateClient = async function(nom) {
+  if(!nom) return;
+  await fbPush('clients',{nom,tel:'',email:'',type:'standard',createdAt:new Date().toISOString()});
+  await loadAll();
+  document.getElementById('client-search-input').value = '';
+  searchClientDrop('');
+  showToast(`Client "${nom}" créé ✓`);
+};
+
+
+window.openClientDrop = function() {
+  buildClientDrop('');
+  document.getElementById('drv-drop-client')?.classList.add('on');
+};
+window.closeClientDrop = function() {
+  document.getElementById('drv-drop-client')?.classList.remove('on');
+};
+window.filterClient = function(val) {
+  buildClientDrop(val);
+  document.getElementById('drv-drop-client')?.classList.add('on');
+  document.getElementById('fc-client').value = val; // allow free text
+};
+function buildClientDrop(filter) {
+  const drop = document.getElementById('drv-drop-client');
+  if(!drop) return;
+  const list = filter
+    ? D.clients.filter(c=>(c.nom||'').toLowerCase().includes(filter.toLowerCase()))
+    : D.clients;
+  const rows = list.slice(0,8).map(c=>{
+    const av=(c.nom||'?').slice(0,2).toUpperCase();
+    return `<div class="drv-opt" onmousedown="selClient('${c.nom}','${c.tel||''}')">
+      <div class="av" style="background:linear-gradient(135deg,var(--blue),var(--purple))">${av}</div>
+      ${c.nom} ${c.tel?`<span style="font-size:10px;color:var(--muted);margin-left:4px">${c.tel}</span>`:''}
+      <span class="bdg bdg-muted" style="margin-left:auto;font-size:9px">${c.type||'standard'}</span>
+    </div>`;
+  }).join('');
+  const newBtn = filter ? `<div class="drv-opt" style="color:var(--green);border-top:1px solid var(--border)" onmousedown="selClient('${filter}','')"><i class="fas fa-plus"></i> Créer "${filter}"</div>` : '';
+  drop.innerHTML = rows + newBtn || `<div class="drv-empty">Aucun client — tapez un nom</div>`;
+}
+window.selClient = function(nom, tel) {
+  document.getElementById('fc-client-input').value = nom;
+  document.getElementById('fc-client').value = nom;
+  if(tel) document.getElementById('fc-tel').value = tel;
+  closeClientDrop();
+};
+
+async function addLog(text) {
+  await fbPush('logs', {text, at:new Date().toISOString(), by:SESSION.name||'admin'});
+}
+
+// ── DASHBOARD ──
+function renderDash() {
+  const now = new Date(), m = now.getMonth(), yr = now.getFullYear();
+  const mC = D.courses.filter(c=>{const d=new Date(c.datetime||0);return d.getMonth()===m&&d.getFullYear()===yr;});
+  const ca = mC.filter(c=>c.statut==='terminee').reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
+  const w = D.courses.filter(c=>['nouvelle','en_attente'].includes(c.statut));
+  const e1=document.getElementById('sd-courses');const e2=document.getElementById('sd-ca');const e3=document.getElementById('sd-chauff');const e4=document.getElementById('sd-wait');
+  if(e1)e1.textContent=mC.length; if(e2)e2.textContent=ca.toFixed(0)+'€'; if(e3)e3.textContent=D.chauffeurs.length; if(e4)e4.textContent=w.length;
+  const tl=document.getElementById('tl-dash');
+  if(tl){const dc=['g','gr','b','r','o'];tl.innerHTML=D.logs.slice(0,7).map((l,i)=>`<div class="tl-item"><div class="tl-dot ${dc[i%5]}"></div><div class="tl-time">${fdt(l.at)}</div><div class="tl-text">${l.text}</div></div>`).join('')||'<div style="color:var(--muted);font-size:12px">Aucune activité</div>';}
+  const tb=document.getElementById('tb-dash');
+  if(!tb)return;
+  const active=D.courses.filter(c=>!['terminee','annulee','noshow','payee','facturee'].includes(c.statut)).slice(0,8);
+  if(!active.length){tb.innerHTML=`<tr><td colspan="7" class="t-empty"><i class="fas fa-inbox"></i><p>Aucune course active</p></td></tr>`;return;}
+  tb.innerHTML=active.map(c=>`<tr>
+    <td><strong>${c.client||'—'}</strong></td>
+    <td>${tBdg(c.type)}</td>
+    <td style="font-size:11px;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.depart||c.lieu||'—'} → ${c.arrivee||c.duree||'—'}</td>
+    <td>${c.chauffeur||'<span style="color:var(--muted)">—</span>'}</td>
+    <td>${sBdg(c.statut)}</td>
+    <td class="text-gold fw7">${fp(c.prix)}</td>
+    <td><button class="btn btn-ghost btn-xs" onclick="openAssign('${c._id}')"><i class="fas fa-user-check"></i></button></td>
+  </tr>`).join('');
+  drawBarChart();
+}
+
+// ── DISPATCH ──
+function renderDispatch() {
+  const q=(document.getElementById('ds-q')?.value||'').toLowerCase();
+  const s=document.getElementById('ds-s')?.value||'';
+  const t=document.getElementById('ds-t')?.value||'';
+  let list=D.courses.filter(c=>{
+    const ms=!s||c.statut===s;const mt=!t||c.type===t;
+    const mq=!q||(c.client||'').toLowerCase().includes(q)||(c.depart||'').toLowerCase().includes(q)||(c.chauffeur||'').toLowerCase().includes(q);
+    return ms&&mt&&mq;
+  });
+  const cnt=document.getElementById('ds-cnt');if(cnt)cnt.textContent=`${list.length} course${list.length!==1?'s':''}`;
+  const tb=document.getElementById('tb-dispatch');
+  if(tb){
+    if(!list.length){tb.innerHTML=`<tr><td colspan="11" class="t-empty"><i class="fas fa-inbox"></i><p>Aucune course</p></td></tr>`;}
+    else tb.innerHTML=list.map(c=>`<tr>
+      <td><input type="checkbox" class="row-chk" data-id="${c._id}" onchange="onChkChange()" style="cursor:pointer;width:14px;height:14px"></td>
+      <td class="col-ref" style="font-size:10px;color:var(--gold);font-family:'Syne',sans-serif;font-weight:600;white-space:nowrap">${c.ref||'—'}</td>
+      <td class="col-dt" style="font-size:10px;white-space:nowrap">${fdt(c.datetime)}</td>
+      <td class="col-client"><strong style="font-size:12px">${c.client||'—'}</strong><br>
+        <span style="color:var(--muted);font-size:10px">${c.tel||''}</span>
+        ${c.passagers&&c.passagers.length?`<br><span style="font-size:10px;color:var(--blue)">${c.passagers.filter(p=>p.present!==false).length}/${c.passagers.length} pax <button onclick="viewPax('${c._id}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:10px;padding:0">👥 voir</button></span>`:''}</td>
+      <td class="col-type">${tBdg(c.type)}</td>
+      <td class="col-dep" style="font-size:11px;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.depart||c.lieu||'—'}</td>
+      <td class="col-arr" style="font-size:11px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.arrivee||c.duree||'—'}</td>
+      <td class="col-term" style="font-size:10px;color:var(--blue)">${c.terminaux||'—'}</td>
+      <td class="col-chauff" style="font-size:11px">${c.chauffeur||'<span style="color:var(--muted)">—</span>'}</td>
+      <td class="col-veh" style="font-size:11px">${vI(c.vehicule)}</td>
+      <td class="col-pax" style="font-size:11px">${c.pax||1}</td>
+      <td class="col-ttc text-gold fw7" style="font-size:11px">${fp(c.prix)}</td>
+      <td class="col-statut">${sBdg(c.statut)}</td>
+      <td>
+        <div style="display:flex;gap:3px;flex-wrap:wrap">
+          <select onchange="updStatut('${c._id}',this.value);this.value=''" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);padding:3px 5px;color:var(--white);font-size:9px;outline:none;cursor:pointer">
+            <option value="">Statut...</option>
+            <option value="en_attente">⏳ En attente</option><option value="attribuee">👤 Attribuée</option>
+            <option value="acceptee">✅ Accepté</option><option value="en_route">🚗 En route</option>
+            <option value="sur_place">📍 Sur place</option><option value="onboard">👤 Client à bord</option>
+            <option value="depose">🏁 Déposé</option><option value="terminee">✔ Terminée</option>
+            <option value="facturee">📄 Facturée</option><option value="payee">💚 Payée</option>
+            <option value="annulee">✗ Annulée</option><option value="noshow">👻 No-show</option>
+          </select>
+          <button class="btn btn-ghost btn-xs" onclick="openAssign('${c._id}')"><i class="fas fa-user-check"></i></button>
+          <button class="btn btn-d btn-xs" onclick="delCourse('${c._id}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>`).join('');
+  }
+  // Kanban
+  const kb=document.getElementById('kb-dispatch');
+  if(kb){
+    const cols=[{k:['nouvelle','en_attente'],l:'En attente',c:'var(--orange)'},{k:['attribuee','acceptee'],l:'Attribuée',c:'var(--blue)'},{k:['en_route','onboard','en_cours'],l:'En cours',c:'var(--green)'},{k:['terminee','facturee','payee'],l:'Terminée',c:'var(--muted2)'}];
+    kb.innerHTML=cols.map(col=>{
+      const items=list.filter(c=>col.k.includes(c.statut));
+      return`<div class="kb-col"><div class="kb-ch"><div class="kb-ct"><span style="color:${col.c}">●</span> ${col.l}</div><span class="kb-cc">${items.length}</span></div>
+      <div class="kb-items">${items.map(c=>`<div class="kb-card" onclick="openAssign('${c._id}')">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">${c.client} ${tBdg(c.type)}</div>
+        <div style="font-size:10px;color:var(--muted2);margin-bottom:6px">${(c.depart||c.lieu||'').slice(0,30)}</div>
+        <div style="display:flex;justify-content:space-between"><span style="font-size:10px;color:var(--muted)">${fdt(c.datetime)}</span><span class="text-gold fw7" style="font-size:11px">${fp(c.prix)}</span></div>
+        ${c.chauffeur?`<div style="margin-top:4px;font-size:10px;color:var(--blue)">👤 ${c.chauffeur}</div>`:''}
+      </div>`).join('')}</div></div>`;
+    }).join('');
+  }
+}
+
+function switchView(v){document.getElementById('dv-table').style.display=v==='table'?'block':'none';document.getElementById('dv-kanban').style.display=v==='kanban'?'block':'none';}
+
+async function updStatut(id, statut) {
+  if(!statut)return;
+  await fbUpdate('courses', id, {statut, updatedAt:new Date().toISOString()});
+  await addLog(`Statut course mis à jour → ${statut}`);
+  await loadAll();
+  showToast('Statut mis à jour ✓');
+}
+
+async function delCourse(id) {
+  showConfirm('Supprimer cette course ?','',async()=>{
+    await fbDelete('courses', id);
+    await loadAll();
+    showToast('Course supprimée');
+  });
+}
+
+window.openAssign = function(id) {
+  document.getElementById('assign-id').value = id;
+  const inp = document.getElementById('assign-drv-input');
+  const hid = document.getElementById('assign-drv');
+  if(inp) inp.value = '';
+  if(hid) hid.value = '';
+  buildDriverSelects();
+  openMo('assign');
+};
+
+window.doAssign = async function() {
+  const id = document.getElementById('assign-id').value;
+  const drv = document.getElementById('assign-drv').value;
+  if(!drv){showToast('Sélectionner un chauffeur',true);return;}
+  await fbUpdate('courses', id, {chauffeur:drv, statut:'attribuee', updatedAt:new Date().toISOString()});
+  const c = D.courses.find(x=>x._id===id);
+  await addLog(`Course "${c?.client||id}" assignée à ${drv}`);
+  // Notification push
+  await sendPushNotification(
+    `🚗 Nouvelle course — ${drv}`,
+    `${c?.ref||''} | ${c?.client||''} | ${fdt(c?.datetime)} | ${c?.depart||c?.lieu||''} → ${c?.arrivee||c?.duree||''}`,
+    'https://musakdogan-droid.github.io/Simplycab-'
+  );
+  closeMo('assign');
+  await loadAll();
+  showToast(`Assigné à ${drv} ✓`);
+};
+
+// ── SAVE COURSE ──
+window.openCourseModal = function() {
+  const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById('fc-dt').value = now.toISOString().slice(0,16);
+  ['fc-dep','fc-arr','fc-lieu','fc-notes','fc-prix','fc-prix-mad','fc-numveh','fc-ref','fc-tel'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('.term-chk').forEach(c=>c.checked=false);
+  document.getElementById('prix-suggest').style.display='none';
+  document.getElementById('pax-notes').value='';
+  document.getElementById('pax-count').textContent='';
+  // Reset client button
+  const btnCS = document.getElementById('btn-client-search');
+  if(btnCS){btnCS.innerHTML='<i class="fas fa-user-circle"></i> Choisir un client';btnCS.style.borderColor='';}
+  document.getElementById('client-search-drop').style.display='none';
+  // Reset chauffeur autocomplete
+  const fcInp = document.getElementById('fc-ch-input');
+  const fcHid = document.getElementById('fc-ch');
+  if(fcInp) fcInp.value='';
+  if(fcHid) fcHid.value='';
+  selType('transfert');
+  buildDriverSelects();
+  openMo('course');
+};
+
+// ── PASSAGERS ──
+let paxCounter = 0;
+const PAX_CAP = {berline:3,van:7,sprinter:16,bus:35};
+
+window.updatePaxMax = function() {
+  const veh = document.getElementById('fc-veh').value;
+  const max = PAX_CAP[veh]||3;
+  const count = document.querySelectorAll('.pax-row').length;
+  const warn = document.getElementById('pax-cap-warn');
+  if(warn) warn.style.display = count >= max ? 'inline' : 'none';
+};
+
+function parsePaxLine(line) {
+  // Format: H.Arrivée/Vol/Terminal/Réf/Nom Prénom/Téléphone
+  // Flexible — tolère les variantes
+  const parts = line.split('/').map(s=>s.trim());
+  return {
+    harrivee: parts[0]||'',
+    vol:      parts[1]||'',
+    terminal: parts[2]||'',
+    refClient:parts[3]||'',
+    nom:      (parts[4]||'').split(' ').slice(1).join(' ')||parts[4]||'',
+    prenom:   (parts[4]||'').split(' ')[0]||'',
+    tel:      parts[5]||'',
+    present:  true
+  };
+}
+
+window.addPax = function() {
+  const veh = document.getElementById('fc-veh').value;
+  const max = PAX_CAP[veh]||3;
+  const rows = document.querySelectorAll('.pax-row');
+  if(rows.length >= max) { showToast(`Capacité max ${max} pax`,true); return; }
+  paxCounter++;
+  const id = paxCounter;
+  const list = document.getElementById('pax-list');
+  const row = document.createElement('div');
+  row.className = 'pax-row';
+  row.id = 'pax-'+id;
+  row.dataset.pax = JSON.stringify({prenom:'',nom:'',tel:'',vol:'',terminal:'',harrivee:'',refClient:'',present:true});
+  row.style.cssText = 'background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:7px;display:flex;align-items:center;gap:8px';
+  row.innerHTML = `
+    <div style="font-size:11px;color:var(--gold);font-family:'Syne',sans-serif;font-weight:700;flex-shrink:0;width:22px">${id}</div>
+    <input type="text" id="pax-line-${id}" placeholder="12:00 / AF0456 / CDG2F / REF-001 / Jean Dupont / +33612345678"
+      style="flex:1;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:9px 12px;color:var(--white);font-size:12px;outline:none;font-family:'DM Sans',sans-serif"
+      oninput="previewPax(${id})" onpaste="setTimeout(()=>previewPax(${id}),50)">
+    <div id="pax-preview-${id}" style="font-size:10px;color:var(--muted2);white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis"></div>
+    <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;flex-shrink:0">
+      <input type="checkbox" id="pax-present-${id}" checked style="width:13px;height:13px;cursor:pointer">
+      <span id="pax-present-lbl-${id}" style="color:var(--green);font-weight:600">✓</span>
+    </label>
+    <button onclick="removePax(${id})" style="background:var(--red-dim);border:1px solid rgba(224,92,92,0.2);color:var(--red);border-radius:var(--r-xs);padding:4px 8px;cursor:pointer;font-size:11px;flex-shrink:0"><i class="fas fa-times"></i></button>
+  `;
+  row.querySelector(`#pax-present-${id}`).addEventListener('change', function() {
+    const lbl = document.getElementById('pax-present-lbl-'+id);
+    if(this.checked){lbl.textContent='✓';lbl.style.color='var(--green)';row.style.opacity='1';}
+    else{lbl.textContent='✗';lbl.style.color='var(--red)';row.style.opacity='0.5';}
+  });
+  list.appendChild(row);
+  document.getElementById('pax-count').textContent='('+(document.querySelectorAll('.pax-row').length)+')';
+  document.getElementById('pax-line-'+id).focus();
+  updatePaxMax();
+};
+
+window.previewPax = function(id) {
+  const val = document.getElementById('pax-line-'+id)?.value||'';
+  const p = parsePaxLine(val);
+  const prev = document.getElementById('pax-preview-'+id);
+  if(prev) prev.textContent = (p.prenom||p.nom) ? `${p.prenom} ${p.nom}`.trim()+(p.vol?' • '+p.vol:'') : '';
+};
+
+window.removePax = function(id) {
+  const row = document.getElementById('pax-'+id);
+  if(row) row.remove();
+  document.getElementById('pax-count').textContent='('+(document.querySelectorAll('.pax-row').length)+')';
+  updatePaxMax();
+};
+
+window.updatePaxCount = function() {
+  const lines = (document.getElementById('pax-notes')?.value||'').split('\n').filter(l=>l.trim());
+  const cnt = document.getElementById('pax-count');
+  if(cnt) cnt.textContent = lines.length ? `(${lines.length} passager${lines.length>1?'s':''})` : '';
+};
+
+function getPaxList() {
+  const text = document.getElementById('pax-notes')?.value||'';
+  const lines = text.split('\n').filter(l=>l.trim());
+  return lines.map(line => parsePaxLine(line));
+}
+
+
+window.selType = function(t) {
+  document.getElementById('fc-type').value = t;
+  const tEl=document.getElementById('t-transfert'); const mEl=document.getElementById('t-mad');
+  const fT=document.getElementById('f-transfert'); const fM=document.getElementById('f-mad');
+  if(t==='transfert'){
+    tEl.style.cssText='padding:11px;background:var(--blue-dim);border:2px solid var(--blue);border-radius:var(--r-sm);cursor:pointer;text-align:center';
+    tEl.querySelector('div:nth-child(2)').style.color='var(--blue)';
+    mEl.style.cssText='padding:11px;background:var(--card2);border:2px solid var(--border);border-radius:var(--r-sm);cursor:pointer;text-align:center';
+    mEl.querySelector('div:nth-child(2)').style.color='var(--muted2)';
+    fT.style.display='block';fM.style.display='none';
+  } else {
+    mEl.style.cssText='padding:11px;background:var(--orange-dim);border:2px solid var(--orange);border-radius:var(--r-sm);cursor:pointer;text-align:center';
+    mEl.querySelector('div:nth-child(2)').style.color='var(--orange)';
+    tEl.style.cssText='padding:11px;background:var(--card2);border:2px solid var(--border);border-radius:var(--r-sm);cursor:pointer;text-align:center';
+    tEl.querySelector('div:nth-child(2)').style.color='var(--muted2)';
+    fT.style.display='none';fM.style.display='block';
+  }
+};
+
+window.calcHT = function() {
+  const ttc = parseFloat(document.getElementById('fc-prix').value)||0;
+  document.getElementById('fc-ht').value = ttc ? ht(ttc).toFixed(2)+'€ HT' : '';
+  // suggest price
+  const cat = document.getElementById('fc-cat').value;
+  const veh = document.getElementById('fc-veh').value;
+  const t = D.tarifs.find(x=>x.categorie===cat);
+  const ps = document.getElementById('prix-suggest');
+  if(t){const p={berline:t.berline,van:t.van,sprinter:t.sprinter,bus:t.bus}[veh];if(p){ps.style.display='block';ps.innerHTML=`💡 Tarif suggéré : <strong>${p}€ TTC</strong> (${t.route})`;}}
+  else ps.style.display='none';
+};
+
+window.saveCourse = async function() {
+  const type = document.getElementById('fc-type').value;
+  const dep = document.getElementById('fc-dep').value.trim();
+  const arr = document.getElementById('fc-arr').value.trim();
+  const lieu = document.getElementById('fc-lieu').value.trim();
+  if(type==='transfert'&&(!dep||!arr)){showToast('Départ et arrivée obligatoires',true);return;}
+  if(type==='mad'&&!lieu){showToast('Lieu de prise en charge obligatoire',true);return;}
+
+  // Get passengers from textarea
+  const passagers = getPaxList();
+  const prix = type==='mad' ? parseFloat(document.getElementById('fc-prix-mad').value)||0 : parseFloat(document.getElementById('fc-prix').value)||0;
+  const ch = document.getElementById('fc-ch').value;
+  const terminaux = [...document.querySelectorAll('.term-chk:checked')].map(c=>c.value).join('-');
+  const numveh = document.getElementById('fc-numveh').value.trim();
+  const ref = document.getElementById('fc-ref').value || genRefVal();
+
+  // Client = champ client ou premier passager
+  const fcClient = document.getElementById('fc-client')?.value?.trim();
+  const firstPax = passagers.find(p=>p.present!==false) || passagers[0];
+  const clientName = fcClient || (firstPax ? `${firstPax.prenom} ${firstPax.nom}`.trim() : (dep.split(',')[0]||'Course'));
+
+  const data = {
+    type,
+    client: clientName,
+    tel: firstPax.tel||'',
+    datetime: document.getElementById('fc-dt').value,
+    depart: type==='transfert'?dep:'',
+    arrivee: type==='transfert'?arr:'',
+    lieu: type==='mad'?lieu:'',
+    duree: type==='mad'?document.getElementById('fc-duree').value:'',
+    vehicule: document.getElementById('fc-veh').value,
+    pax: passagers.length,
+    bags: 0,
+    chauffeur: ch,
+    prix, cat: document.getElementById('fc-cat').value,
+    terminaux, numveh, ref,
+    passagers,
+    notes: document.getElementById('fc-notes').value,
+    statut: ch?'attribuee':'nouvelle',
+    createdAt: new Date().toISOString()
+  };
+  closeMo('course');
+  showToast('Enregistrement...');
+  await fbPush('courses', data);
+  await addLog(`Nouvelle ${type==='mad'?'MAD':'course'} : ${clientName} (${passagers.length} pax)${ch?' → '+ch:''}`);
+  // Notification push si chauffeur assigné
+  if(ch) {
+    await sendPushNotification(
+      `🚗 Course assignée — ${ch}`,
+      `${ref} | ${clientName} | ${data.datetime?.slice(11,16)||''} | ${dep||lieu} → ${arr||data.duree||''}`,
+      'https://musakdogan-droid.github.io/Simplycab-'
+    );
+  }
+  await loadAll();
+  showToast(`Course créée — ${passagers.length} passager(s) ✓`);
+};
+
+// ── CHAUFFEURS ──
+function renderChauffeurs() {
+  const q=(document.getElementById('ch-q')?.value||'').toLowerCase();
+  const s=document.getElementById('ch-s')?.value||'';
+  let list=D.chauffeurs.filter(c=>{
+    const mq=!q||(c.prenom+' '+c.nom).toLowerCase().includes(q);
+    const ms=!s||c.statut===s;
+    return mq&&ms;
+  });
+  const g=document.getElementById('cg-ch');if(!g)return;
+  if(!list.length){g.innerHTML=`<div class="t-empty" style="grid-column:1/-1"><i class="fas fa-id-card"></i><p>Aucun chauffeur</p></div>`;return;}
+  g.innerHTML=list.map(c=>{
+    const name=c.prenom+(c.nom?' '+c.nom:'');
+    const courses=D.courses.filter(x=>x.chauffeur===name);
+    const ca=courses.filter(x=>x.statut==='terminee').reduce((s,x)=>s+(parseFloat(x.prix)||0),0);
+    const active=courses.find(x=>['en_route','onboard','en_cours','attribuee','acceptee'].includes(x.statut));
+    const av=name.split(' ').map(n=>n[0]||'').join('').slice(0,2).toUpperCase();
+    return`<div class="ic">
+      <div class="ic-h">
+        <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${c.vehicule==='van'||c.vehicule==='sprinter'?'var(--blue),var(--purple)':'var(--gold),var(--orange)'});display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--black);flex-shrink:0">${av}</div>
+        <div style="flex:1;min-width:0">
+          <div class="ic-t">${name}</div>
+          <div class="ic-s">${vI(c.vehicule)}</div>
+          ${c.tel?`<div style="font-size:10px;color:var(--muted)">${c.tel}</div>`:''}
+        </div>
+        ${sBdg(c.statut||'disponible')}
+      </div>
+      ${active?`<div style="padding:6px 9px;background:var(--blue-dim);border-radius:var(--r-xs);font-size:11px;color:var(--blue);margin-bottom:9px"><i class="fas fa-route"></i> ${active.client}</div>`:''}
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding-top:10px;border-top:1px solid var(--border);margin-bottom:10px">
+        <div style="text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:15px">${courses.length}</div><div style="font-size:10px;color:var(--muted)">Courses</div></div>
+        <div style="text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:15px">${ca.toFixed(0)}€</div><div style="font-size:10px;color:var(--muted)">CA TTC</div></div>
+        <div style="text-align:center"><div style="font-size:15px">${c.pin?'🔐':'—'}</div><div style="font-size:10px;color:var(--muted)">PIN</div></div>
+      </div>
+      <div class="prog"><div class="prog-fill" style="width:${Math.min(100,(courses.length/Math.max(1,D.courses.length))*100).toFixed(0)}%;background:linear-gradient(90deg,var(--gold),var(--orange))"></div></div>
+      <div class="ic-foot">
+        <button class="btn btn-g btn-xs" onclick="updChauffStatut('${c._id}','disponible')"><i class="fas fa-check"></i></button>
+        <button class="btn btn-d btn-xs" onclick="updChauffStatut('${c._id}','indisponible')"><i class="fas fa-times"></i></button>
+        <button class="btn btn-d btn-xs" style="margin-left:auto" onclick="delChauffeur('${c._id}')"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.saveChauffeur = async function() {
+  const prenom = document.getElementById('ch-prenom').value.trim();
+  const pin = document.getElementById('ch-pin').value.trim();
+  if(!prenom){showToast('Prénom obligatoire',true);return;}
+  if(pin && pin.length!==4){showToast('PIN = 4 chiffres',true);return;}
+  if(pin && D.chauffeurs.find(c=>c.pin===pin)){showToast('PIN déjà utilisé',true);return;}
+  closeMo('chauffeur');
+  showToast('Enregistrement...');
+  await fbPush('chauffeurs', {prenom, nom:document.getElementById('ch-nom').value, tel:document.getElementById('ch-tel').value, email:document.getElementById('ch-email').value, pin, vehicule:document.getElementById('ch-veh').value, statut:'disponible', createdAt:new Date().toISOString()});
+  await addLog(`Chauffeur ajouté : ${prenom}`);
+  await loadAll();
+  showToast('Chauffeur ajouté ✓');
+};
+
+async function updChauffStatut(id, statut) {
+  await fbUpdate('chauffeurs', id, {statut});
+  await loadAll();
+  showToast('Statut mis à jour');
+}
+
+async function delChauffeur(id) {
+  showConfirm('Supprimer ce chauffeur ?','',async()=>{
+    const c=D.chauffeurs.find(x=>x._id===id);
+    await fbDelete('chauffeurs', id);
+    await addLog(`Chauffeur supprimé : ${c?.prenom||id}`);
+    await loadAll();
+    showToast('Chauffeur supprimé');
+  });
+}
+
+// ── VEHICULES ──
+function renderVehicules() {
+  const g=document.getElementById('cg-vh');if(!g)return;
+  if(!D.vehicules.length){g.innerHTML=`<div class="t-empty" style="grid-column:1/-1"><i class="fas fa-car"></i><p>Aucun véhicule</p></div>`;return;}
+  g.innerHTML=D.vehicules.map(v=>`
+    <div class="ic">
+      <div class="ic-h">
+        <div style="width:38px;height:38px;border-radius:var(--r-xs);background:var(--blue-dim);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚗</div>
+        <div><div class="ic-t">${v.marque||'—'} ${v.modele||''}</div><div class="ic-s">${v.immat||'—'}</div></div>
+        ${sBdg(v.statut||'actif')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:14px">${v.annee||'—'}</div><div style="font-size:9px;color:var(--muted)">Année</div></div>
+        <div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:14px">${v.km?parseInt(v.km).toLocaleString('fr-FR'):'-'}</div><div style="font-size:9px;color:var(--muted)">Km</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:10px">👤 ${v.chauffeur||'Non assigné'}</div>
+      <div class="ic-foot">
+        <span class="bdg bdg-muted">${{van:'🚐 Van',sprinter:'🚌 Sprinter',bus:'🚍 Bus'}[v.type]||'🚗 Berline'}</span>
+        <button class="btn btn-d btn-xs" style="margin-left:auto" onclick="delVehicule('${v._id}')"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+window.saveVehicule = async function() {
+  const marque = document.getElementById('vh-marque').value.trim();
+  if(!marque){showToast('Marque obligatoire',true);return;}
+  closeMo('vehicule');
+  showToast('Enregistrement...');
+  await fbPush('vehicules', {marque, modele:document.getElementById('vh-modele').value, immat:document.getElementById('vh-immat').value, annee:document.getElementById('vh-annee').value, type:document.getElementById('vh-type').value, km:document.getElementById('vh-km').value, chauffeur:document.getElementById('vh-ch').value, statut:'actif', createdAt:new Date().toISOString()});
+  await loadAll();
+  showToast('Véhicule ajouté ✓');
+};
+
+async function delVehicule(id) {
+  showConfirm('Supprimer ?','',async()=>{await fbDelete('vehicules',id);await loadAll();showToast('Véhicule supprimé');});
+}
+
+// ── CLIENTS ──
+function renderClients() {
+  const q=(document.getElementById('cl-q')?.value||'').toLowerCase();
+  let list=D.clients.filter(c=>!q||(c.nom||'').toLowerCase().includes(q)||(c.tel||'').includes(q));
+  const tb=document.getElementById('tb-cl');if(!tb)return;
+  if(!list.length){tb.innerHTML=`<tr><td colspan="7" class="t-empty"><i class="fas fa-users"></i><p>Aucun client</p></td></tr>`;return;}
+  tb.innerHTML=list.map(c=>{
+    const courses=D.courses.filter(x=>x.client===c.nom).length;
+    const ca=D.courses.filter(x=>x.client===c.nom&&x.statut==='terminee').reduce((s,x)=>s+(parseFloat(x.prix)||0),0);
+    const av=(c.nom||'?').split(' ').map(n=>n[0]||'').join('').slice(0,2).toUpperCase();
+    return`<tr>
+      <td><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:'Syne',sans-serif;color:#fff;flex-shrink:0">${av}</div><strong>${c.nom}</strong></div></td>
+      <td>${c.tel||'—'}</td><td style="font-size:11px">${c.email||'—'}</td>
+      <td>${sBdg(c.type||'standard')}</td>
+      <td><span class="bdg bdg-blue">${courses}</span></td>
+      <td class="text-gold fw7">${ca.toFixed(0)}€</td>
+      <td><button class="btn btn-d btn-xs" onclick="delClient('${c._id}')"><i class="fas fa-trash"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+window.saveClient = async function() {
+  const nom = document.getElementById('cl-nom').value.trim();
+  if(!nom){showToast('Nom obligatoire',true);return;}
+  closeMo('client');
+  await fbPush('clients', {nom, tel:document.getElementById('cl-tel').value, email:document.getElementById('cl-email').value, type:document.getElementById('cl-type').value, createdAt:new Date().toISOString()});
+  await loadAll();
+  showToast('Client ajouté ✓');
+};
+
+async function delClient(id){showConfirm('Supprimer ?','',async()=>{await fbDelete('clients',id);await loadAll();showToast('Client supprimé');});}
+
+// ── TARIFS ──
+function renderTarifs() {
+  const g=document.getElementById('cg-tf');if(!g)return;
+  if(!D.tarifs.length){g.innerHTML=`<div class="t-empty" style="grid-column:1/-1"><i class="fas fa-tags"></i><p>Aucun tarif</p></div>`;return;}
+  const catCls={cdg:'bdg-blue',orly:'bdg-blue',disney:'bdg-gold',paris:'bdg-green',autre:'bdg-muted'};
+  g.innerHTML=D.tarifs.map(t=>`
+    <div class="ic">
+      <div class="ic-h">
+        <div style="width:36px;height:36px;border-radius:var(--r-xs);background:var(--gold-dim);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:13px;flex-shrink:0"><i class="fas fa-tag"></i></div>
+        <div><div class="ic-t">${t.route||'—'}</div><div class="ic-s"><span class="bdg ${catCls[t.categorie]||'bdg-muted'}">${(t.categorie||'autre').toUpperCase()}</span></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
+        ${t.berline?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:16px">${t.berline}€</div><div style="font-size:9px;color:var(--muted)">🚗 Berline TTC</div></div>`:''}
+        ${t.van?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:16px">${t.van}€</div><div style="font-size:9px;color:var(--muted)">🚐 Van TTC</div></div>`:''}
+        ${t.sprinter?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:16px">${t.sprinter}€</div><div style="font-size:9px;color:var(--muted)">🚌 Sprinter TTC</div></div>`:''}
+        ${t.bus?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:16px">${t.bus}€</div><div style="font-size:9px;color:var(--muted)">🚍 Bus TTC</div></div>`:''}
+      </div>
+      ${t.nuit?`<div style="font-size:10px;color:var(--orange);margin-bottom:8px">🌙 Nuit : +${t.nuit}€ TTC</div>`:''}
+      <div class="ic-foot"><button class="btn btn-d btn-xs" style="margin-left:auto" onclick="delTarif('${t._id}')"><i class="fas fa-trash"></i></button></div>
+    </div>`).join('');
+}
+
+window.saveTarif = async function() {
+  const route = document.getElementById('tf-route').value.trim();
+  if(!route){showToast('Route obligatoire',true);return;}
+  closeMo('tarif');
+  await fbPush('tarifs', {route, berline:document.getElementById('tf-berline').value, van:document.getElementById('tf-van').value, sprinter:document.getElementById('tf-sprinter').value, bus:document.getElementById('tf-bus').value, categorie:document.getElementById('tf-cat').value, nuit:document.getElementById('tf-nuit').value, createdAt:new Date().toISOString()});
+  await loadAll();
+  showToast('Tarif ajouté ✓');
+};
+
+async function delTarif(id){showConfirm('Supprimer ?','',async()=>{await fbDelete('tarifs',id);await loadAll();showToast('Tarif supprimé');});}
+
+// ── FACTURATION ──
+function renderFact() {
+  const s=document.getElementById('fac-s')?.value||'';
+  const list=D.courses.filter(c=>['terminee','facturee','payee'].includes(c.statut)&&(!s||c.statut===s));
+  const totalTTC=list.reduce((x,c)=>x+(parseFloat(c.prix)||0),0);
+  const totalHT=ht(totalTTC);
+  const e1=document.getElementById('fac-ht');const e2=document.getElementById('fac-ttc');
+  if(e1)e1.textContent=`HT : ${totalHT.toFixed(0)}€`;
+  if(e2)e2.textContent=`TTC : ${totalTTC.toFixed(0)}€`;
+  const tb=document.getElementById('tb-fac');if(!tb)return;
+  if(!list.length){tb.innerHTML=`<tr><td colspan="11" class="t-empty"><i class="fas fa-file-invoice"></i><p>Aucune facture</p></td></tr>`;return;}
+  let n=1;
+  tb.innerHTML=list.map(c=>{
+    const ttc=parseFloat(c.prix)||0;const htv=ht(ttc);const tva=ttc-htv;
+    const num=`BL-${new Date().getFullYear()}-${String(n++).padStart(4,'0')}`;
+    return`<tr>
+      <td class="text-gold fw7 ff-syne" style="font-size:11px">${num}</td>
+      <td><strong style="font-size:12px">${c.client||'—'}</strong></td>
+      <td style="font-size:11px">${c.chauffeur||'—'}</td>
+      <td style="font-size:10px">${fdt(c.datetime)}</td>
+      <td>${tBdg(c.type)}</td>
+      <td style="font-size:10px;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(c.depart||c.lieu||'').slice(0,18)}→${(c.arrivee||c.duree||'').slice(0,12)}</td>
+      <td style="font-size:11px">${htv.toFixed(2)}€</td>
+      <td style="font-size:11px;color:var(--muted2)">${tva.toFixed(2)}€</td>
+      <td class="text-gold fw7">${ttc.toFixed(2)}€</td>
+      <td>${sBdg(c.statut)}</td>
+      <td>
+        <button class="btn btn-ghost btn-xs" onclick="printFac('${c._id}','${num}')"><i class="fas fa-print"></i></button>
+        <button class="btn btn-g btn-xs" onclick="updStatut('${c._id}','payee')"><i class="fas fa-check"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+window.printFac = function(id, num) {
+  const c=D.courses.find(x=>x._id===id);if(!c)return;
+  const ttc=parseFloat(c.prix)||0;const htv=ht(ttc);const tva=ttc-htv;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Facture ${num}</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Helvetica Neue',Arial,sans-serif;padding:40px;max-width:700px;margin:auto;color:#111;font-size:13px;line-height:1.6}
+  .header{display:flex;justify-content:space-between;margin-bottom:28px;padding-bottom:18px;border-bottom:3px solid #c9a84c}
+  .co{font-size:22px;font-weight:900;color:#c9a84c;letter-spacing:2px}.cb{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px}
+  .ca{font-size:11px;color:#555;margin-top:6px;line-height:1.5}.cl{font-size:10px;color:#888;margin-top:3px}
+  .fi{text-align:right}.fn{font-size:18px;font-weight:700;margin-bottom:4px}.fd{font-size:12px;color:#555}
+  .cb2{background:#f8f7f4;border-radius:6px;padding:12px 16px;margin-bottom:20px;border-left:4px solid #c9a84c}
+  .st{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:6px}
+  table{width:100%;border-collapse:collapse}th{background:#1a1a1a;color:#fff;padding:8px 11px;text-align:left;font-size:11px}
+  td{padding:9px 11px;border-bottom:1px solid #eee;font-size:12px}
+  .tot{margin-left:auto;width:260px;margin-top:14px}.tr{display:flex;justify-content:space-between;padding:5px 0;font-size:12px}
+  .tr.total{font-size:16px;font-weight:700;color:#c9a84c;border-top:2px solid #c9a84c;padding-top:8px;margin-top:4px}
+  .men{margin-top:24px;padding:10px 14px;background:#f8f7f4;border-radius:4px;font-size:10px;color:#888;line-height:1.6}
+  .footer{margin-top:20px;padding-top:12px;border-top:1px solid #eee;text-align:center;font-size:10px;color:#aaa}</style></head><body>
+  <div class="header">
+    <div><div class="co">BLACK LIMOUSINE</div><div class="cb">by SimplyCab — Chauffeur Privé</div>
+    <div class="ca">${SOC.adresse}<br>${SOC.cp} ${SOC.ville}<br>${SOC.site}</div>
+    <div class="cl">SIRET : ${SOC.siret} | N° TVA : ${SOC.tva_num}<br>Code APE : ${SOC.ape} — ${SOC.dirigeant}</div></div>
+    <div class="fi"><div class="fn">FACTURE ${num}</div><div class="fd">Émise le ${new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})}</div><div class="fd" style="margin-top:6px">Prestation : ${fdt(c.datetime)}</div></div>
+  </div>
+  <div class="cb2"><div class="st">Facturé à</div><div style="font-size:15px;font-weight:700">${c.client||'—'}</div>${c.tel?`<div style="font-size:12px;color:#555">${c.tel}</div>`:''}</div>
+  <div class="st">Détail de la prestation</div>
+  <table><thead><tr><th>Description</th><th>Détails</th><th>Montant HT</th></tr></thead>
+  <tbody><tr>
+    <td><strong>Transport VTC — ${c.type==='mad'?'Mise à disposition':'Transfert'}</strong><br><span style="font-size:11px;color:#666">${vI(c.vehicule)}</span></td>
+    <td style="font-size:11px">${c.type==='mad'?`Lieu : ${c.lieu||'—'}<br>Durée : ${c.duree||'—'}`:
+    `Départ : ${c.depart||'—'}<br>Arrivée : ${c.arrivee||'—'}`}
+    ${c.vol?`<br>Vol : ${c.vol}`:''}
+    <br>Passagers : ${c.pax||1} | Chauffeur : ${c.chauffeur||'—'}</td>
+    <td><strong>${htv.toFixed(2)} €</strong></td>
+  </tr></tbody></table>
+  <div class="tot">
+    <div class="tr"><span>Sous-total HT</span><span>${htv.toFixed(2)} €</span></div>
+    <div class="tr"><span>TVA 10%</span><span>${tva.toFixed(2)} €</span></div>
+    <div class="tr total"><span>TOTAL TTC</span><span>${ttc.toFixed(2)} €</span></div>
+  </div>
+  <div class="men">TVA applicable selon l'article 259 A du CGI — Transport de personnes (taux 10%).<br>
+  Pénalités de retard au taux légal + indemnité forfaitaire 40€ (art. L.441-6 Code de commerce). Pas d'escompte pour paiement anticipé.</div>
+  <div class="footer">${SOC.nom} SASU — SIRET ${SOC.siret}<br>${SOC.adresse}, ${SOC.cp} ${SOC.ville} — ${SOC.site}</div>
+  </body></html>`);
+  w.print();
+};
+
+// ── RAPPORTS ──
+function renderRapports() {
+  const total=D.courses.filter(c=>c.statut==='terminee').reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
+  const tx=D.courses.length?((D.courses.filter(c=>c.statut==='terminee').length/D.courses.length)*100).toFixed(0)+'%':'0%';
+  const e1=document.getElementById('rap-ca');const e2=document.getElementById('rap-tot');const e3=document.getElementById('rap-tx');
+  if(e1)e1.textContent=total.toFixed(0)+'€';if(e2)e2.textContent=D.courses.length;if(e3)e3.textContent=tx;
+  const dmap={};
+  D.courses.filter(c=>c.statut==='terminee'&&c.chauffeur).forEach(c=>{if(!dmap[c.chauffeur])dmap[c.chauffeur]=0;dmap[c.chauffeur]+=(parseFloat(c.prix)||0);});
+  const top=Object.entries(dmap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const rc=document.getElementById('rap-ch');
+  if(rc){rc.innerHTML=top.length?top.map(([name,ca])=>`
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--orange));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:'Syne',sans-serif;color:var(--black)">${name.slice(0,2).toUpperCase()}</div>
+      <div style="flex:1"><div style="font-size:12px;font-weight:600">${name}</div>
+        <div class="prog"><div class="prog-fill" style="width:${top[0][1]?((ca/top[0][1])*100).toFixed(0):0}%;background:linear-gradient(90deg,var(--gold),var(--orange))"></div></div>
+      </div>
+      <div class="text-gold fw7 ff-syne" style="font-size:12px">${ca.toFixed(0)}€</div>
+    </div>`).join(''):'<div style="color:var(--muted);font-size:12px">Aucune donnée</div>';}
+  setTimeout(drawBarChart, 100);
+}
+
+// ── PLANNING ──
+function renderPlanning() {
+  const m=curMonth;
+  const label=m.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  const el=document.getElementById('plan-m');if(el)el.textContent=label;
+  const wrap=document.getElementById('cal-wrap');if(!wrap)return;
+  const yr=m.getFullYear(),mo=m.getMonth();
+  const first=new Date(yr,mo,1).getDay()||7;
+  const days=new Date(yr,mo+1,0).getDate();
+  const today=new Date().toDateString();
+  const jours=['L','M','M','J','V','S','D'];
+  let html=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden">`;
+  jours.forEach(j=>html+=`<div style="padding:7px;text-align:center;font-size:9px;color:var(--muted);font-weight:600;background:var(--card2)">${j}</div>`);
+  for(let i=1;i<first;i++) html+=`<div style="background:var(--dark);min-height:55px;padding:5px"></div>`;
+  for(let d=1;d<=days;d++){
+    const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=new Date(yr,mo,d).toDateString()===today;
+    const dc=D.courses.filter(c=>c.datetime&&c.datetime.startsWith(ds));
+    html+=`<div style="background:var(--card);min-height:55px;padding:5px;${isToday?'background:var(--gold-dim);':''}cursor:pointer" onclick="openCourseModal()">
+      <div style="font-size:11px;font-weight:${isToday?'700':'500'};color:${isToday?'var(--gold)':'var(--white)'};margin-bottom:2px">${d}</div>
+      ${dc.slice(0,2).map(c=>`<div style="font-size:8px;padding:1px 4px;border-radius:2px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:${c.type==='mad'?'var(--orange-dim)':'var(--blue-dim)'};color:${c.type==='mad'?'var(--orange)':'var(--blue)'}">${c.client||'Course'}</div>`).join('')}
+      ${dc.length>2?`<div style="font-size:8px;color:var(--muted)">+${dc.length-2}</div>`:''}
+    </div>`;
+  }
+  html+=`</div>`;
+  wrap.innerHTML=html;
+  const pd=document.getElementById('plan-drivers');if(!pd)return;
+  const ts=new Date().toISOString().split('T')[0];
+  const tc=D.courses.filter(c=>c.datetime&&c.datetime.startsWith(ts));
+  if(!D.chauffeurs.length){pd.innerHTML='<div style="color:var(--muted);font-size:12px">Aucun chauffeur</div>';return;}
+  pd.innerHTML=D.chauffeurs.map(ch=>{
+    const name=ch.prenom+(ch.nom?' '+ch.nom:'');
+    const mine=tc.filter(c=>c.chauffeur===name);
+    return`<div style="display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center;margin-bottom:7px;padding:8px;background:var(--card2);border-radius:var(--r-xs);border:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:600">${name}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        ${mine.length?mine.map(c=>`<div style="padding:4px 8px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r-xs);font-size:10px;border-left:3px solid ${c.type==='mad'?'var(--orange)':'var(--gold)'}"><strong>${fdt(c.datetime).split(' ')[1]||'?'}</strong> — ${c.client}</div>`).join(''):`<div style="font-size:11px;color:var(--muted)">Pas de course</div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function chMonth(d){curMonth.setMonth(curMonth.getMonth()+d);renderPlanning();}
+window.chMonth=chMonth;
+
+// ── MES COURSES ──
+function renderMesCourses() {
+  if(SESSION.role!=='chauffeur')return;
+  const name=SESSION.name;
+  const mine=D.courses.filter(c=>c.chauffeur===name);
+  const today=new Date().toDateString();
+  const mois=new Date().getMonth();
+  const e1=document.getElementById('mc-today');const e2=document.getElementById('mc-month');const e3=document.getElementById('mc-ca');const e4=document.getElementById('mc-total');
+  if(e1)e1.textContent=mine.filter(c=>new Date(c.datetime).toDateString()===today).length;
+  if(e2)e2.textContent=mine.filter(c=>c.statut==='terminee'&&new Date(c.datetime).getMonth()===mois).length;
+  if(e4)e4.textContent=mine.length;
+  const ca=mine.filter(c=>c.statut==='terminee'&&new Date(c.datetime).getMonth()===mois).reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
+  if(e3)e3.textContent=ca.toFixed(0)+'€';
+  const active=mine.filter(c=>!['terminee','annulee','noshow','payee','facturee'].includes(c.statut));
+  const tb=document.getElementById('tb-mc');if(!tb)return;
+  if(!active.length){tb.innerHTML=`<tr><td colspan="9" class="t-empty"><i class="fas fa-check-circle" style="color:var(--green)"></i><p>Aucune course assignée</p></td></tr>`;return;}
+  tb.innerHTML=active.map(c=>{
+    const dep = encodeURIComponent(c.depart||c.lieu||'');
+    const arr = encodeURIComponent(c.arrivee||'');
+    const wazeDepUrl = `https://waze.com/ul?q=${dep}&navigate=yes`;
+    const wazeArrUrl = `https://waze.com/ul?q=${arr}&navigate=yes`;
+    const gmapsDepUrl = `https://www.google.com/maps/dir/?api=1&destination=${dep}&travelmode=driving`;
+    const gmapsArrUrl = `https://www.google.com/maps/dir/?api=1&destination=${arr}&travelmode=driving`;
+    return `<tr>
+    <td style="font-size:11px;white-space:nowrap">${fdt(c.datetime)}</td>
+    <td>
+      <strong>${c.client||'—'}</strong>
+      ${c.passagers&&c.passagers.length?`<br><button onclick="viewPax('${c._id}')" style="background:var(--blue-dim);border:1px solid rgba(91,156,246,0.3);color:var(--blue);border-radius:var(--r-xs);padding:3px 8px;cursor:pointer;font-size:10px;margin-top:3px">👥 ${c.passagers.length} passager(s)</button>`:''}
+    </td>
+    <td>${tBdg(c.type)}</td>
+    <td>
+      <div style="font-size:11px;margin-bottom:5px">${c.depart||c.lieu||'—'}</div>
+      ${dep?`<div style="display:flex;gap:4px">
+        <a href="${wazeDepUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:#00d4ff1a;border:1px solid rgba(0,212,255,0.3);border-radius:var(--r-xs);padding:3px 8px;color:#00d4ff;font-size:10px;font-weight:600;text-decoration:none">🗺️ Waze</a>
+        <a href="${gmapsDepUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:var(--green-dim);border:1px solid rgba(46,204,138,0.3);border-radius:var(--r-xs);padding:3px 8px;color:var(--green);font-size:10px;font-weight:600;text-decoration:none">📍 Maps</a>
+      </div>`:''}
+    </td>
+    <td>
+      <div style="font-size:11px;margin-bottom:5px">${c.arrivee||c.duree||'—'}</div>
+      ${arr?`<div style="display:flex;gap:4px">
+        <a href="${wazeArrUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:#00d4ff1a;border:1px solid rgba(0,212,255,0.3);border-radius:var(--r-xs);padding:3px 8px;color:#00d4ff;font-size:10px;font-weight:600;text-decoration:none">🗺️ Waze</a>
+        <a href="${gmapsArrUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:var(--green-dim);border:1px solid rgba(46,204,138,0.3);border-radius:var(--r-xs);padding:3px 8px;color:var(--green);font-size:10px;font-weight:600;text-decoration:none">📍 Maps</a>
+      </div>`:''}
+    </td>
+    <td style="font-size:11px">${c.terminaux||'—'}</td>
+    <td style="font-size:10px;color:var(--muted2)">${(c.notes||'—').replace(/\n/g,'<br>')}</td>
+    <td>${sBdg(c.statut)}</td>
+    <td>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <select onchange="driverUpd('${c._id}',this.value,null);this.value=''" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);padding:4px 6px;color:var(--white);font-size:10px;outline:none;cursor:pointer">
+          <option value="">Statut...</option>
+          <option value="acceptee">✅ Accepté</option>
+          <option value="en_route">🚗 En route</option>
+          <option value="sur_place">📍 Sur place</option>
+          <option value="onboard">👤 Client à bord</option>
+          <option value="depose">🏁 Déposé</option>
+          <option value="terminee">✔ Terminée</option>
+          <option value="noshow">👻 No-show</option>
+        </select>
+        <div style="display:flex;gap:3px">
+          <input type="text" placeholder="Note dispatch..." id="note-${c._id}"
+            style="flex:1;background:var(--dark);border:1px solid var(--border);border-radius:var(--r-xs);padding:3px 7px;color:var(--white);font-size:10px;outline:none"
+            onkeydown="if(event.key==='Enter')driverUpd('${c._id}',null,this.value)">
+          <button onclick="driverUpd('${c._id}',null,document.getElementById('note-${c._id}').value)" style="background:var(--gold-dim);border:1px solid rgba(201,168,76,0.3);border-radius:var(--r-xs);padding:3px 7px;cursor:pointer;color:var(--gold);font-size:10px">✓</button>
+        </div>
+      </div>
+    </td>
+  </tr>`;}).join('');
+}
+
+// ── GPS CHAUFFEUR ──
+let gpsInterval = null;
+let gpsActive = false;
+
+window.toggleGPS = async function() {
+  if(gpsActive) {
+    // Stop sharing
+    clearInterval(gpsInterval);
+    gpsInterval = null;
+    gpsActive = false;
+    // Remove position from Firebase
+    const name = SESSION.name;
+    const ch = D.chauffeurs.find(c=>(c.prenom+(c.nom?' '+c.nom:''))===name);
+    if(ch) await fbUpdate('chauffeurs', ch._id, {gps:null, gpsActive:false});
+    const btn = document.getElementById('gps-btn');
+    const st = document.getElementById('gps-status');
+    if(btn){btn.innerHTML='<i class="fas fa-map-marker-alt"></i> Partager ma position';btn.style.borderColor='';btn.style.color='';}
+    if(st){st.textContent='Position non partagée';st.style.color='var(--muted)';}
+    showToast('Partage de position arrêté');
+  } else {
+    // Start sharing
+    if(!navigator.geolocation){showToast('GPS non disponible sur cet appareil',true);return;}
+    navigator.geolocation.getCurrentPosition(async(pos)=>{
+      gpsActive = true;
+      await sendGPS(pos);
+      gpsInterval = setInterval(()=>{
+        navigator.geolocation.getCurrentPosition(sendGPS, null, {enableHighAccuracy:true});
+      }, 15000); // update every 15 seconds
+      const btn = document.getElementById('gps-btn');
+      const st = document.getElementById('gps-status');
+      if(btn){btn.innerHTML='<i class="fas fa-stop-circle"></i> Arrêter le partage';btn.style.borderColor='var(--green)';btn.style.color='var(--green)';}
+      if(st){st.textContent='● Position partagée';st.style.color='var(--green)';}
+      showToast('Position partagée ✓');
+    }, ()=>showToast('Impossible d\'accéder au GPS',true), {enableHighAccuracy:true});
+  }
+};
+
+async function sendGPS(pos) {
+  const name = SESSION.name;
+  const ch = D.chauffeurs.find(c=>(c.prenom+(c.nom?' '+c.nom:''))===name);
+  if(!ch) return;
+  await fbUpdate('chauffeurs', ch._id, {
+    gps: {lat:pos.coords.latitude, lng:pos.coords.longitude, acc:Math.round(pos.coords.accuracy)},
+    gpsActive: true,
+    gpsUpdated: new Date().toISOString()
+  });
+}
+
+// ── CARTE TEMPS RÉEL (ADMIN/DISPATCH) ──
+let liveMapVisible = false;
+let liveMapRefreshInterval = null;
+
+window.toggleLiveMap = function() {
+  const wrap = document.getElementById('live-map-wrap');
+  liveMapVisible = !liveMapVisible;
+  wrap.style.display = liveMapVisible ? 'block' : 'none';
+  if(liveMapVisible) {
+    setTimeout(()=>{
+      initLeafletMap();
+      setTimeout(refreshLiveMap, 600);
+    }, 100);
+    liveMapRefreshInterval = setInterval(refreshLiveMap, 15000);
+  } else {
+    clearInterval(liveMapRefreshInterval);
+  }
+};
+
+let leafletMap = null;
+let leafletMarkers = {};
+
+function initLeafletMap() {
+  if(leafletMap) return;
+  // Load Leaflet JS dynamically
+  if(!window.L) {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = () => {
+      leafletMap = window.L.map('live-map').setView([48.9606, 2.5889], 11);
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(leafletMap);
+    };
+    document.head.appendChild(script);
+  } else {
+    leafletMap = window.L.map('live-map').setView([48.9606, 2.5889], 11);
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(leafletMap);
+  }
+}
+
+window.refreshLiveMap = async function() {
+  const chauffeurs = await fbGet('chauffeurs');
+  const active = chauffeurs.filter(c=>c.gpsActive&&c.gps);
+
+  const cnt = document.getElementById('live-map-count');
+  const upd = document.getElementById('live-map-updated');
+  if(cnt) cnt.textContent = active.length+' actif(s)';
+  if(upd) upd.textContent = 'Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  // Init map if needed
+  if(!leafletMap && window.L) initLeafletMap();
+  if(!leafletMap) { setTimeout(refreshLiveMap, 800); return; }
+
+  // Update markers
+  // Remove old markers not in active list
+  const activeIds = active.map(c=>c._id);
+  Object.keys(leafletMarkers).forEach(id=>{
+    if(!activeIds.includes(id)){leafletMap.removeLayer(leafletMarkers[id]);delete leafletMarkers[id];}
+  });
+
+  // Add/update markers
+  active.forEach(c=>{
+    const name = c.prenom+(c.nom?' '+c.nom:'');
+    const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+    const course = D.courses.find(x=>x.chauffeur===name&&['en_route','sur_place','onboard','acceptee'].includes(x.statut));
+    const statusColor = c.statut==='disponible'?'#2ecc8a':'#f0934a';
+
+    const iconHtml = `
+      <div style="text-align:center;position:relative">
+        <div style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))">${vehIcon}</div>
+        <div style="background:${statusColor};color:#000;font-size:10px;font-weight:700;font-family:'Syne',sans-serif;padding:2px 7px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.4);margin-top:-4px">${c.prenom}</div>
+        ${course?`<div style="background:#1a1c20;color:#c9a84c;font-size:8px;padding:1px 5px;border-radius:6px;border:1px solid rgba(201,168,76,0.3);white-space:nowrap;margin-top:2px">${course.client}</div>`:''}
+      </div>`;
+
+    const icon = window.L.divIcon({
+      html: iconHtml,
+      className: '',
+      iconSize: [80, 60],
+      iconAnchor: [40, 30],
+      popupAnchor: [0, -30]
+    });
+
+    const popupContent = `
+      <div style="font-family:'DM Sans',sans-serif;min-width:180px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px">${vehIcon} ${name}</div>
+        <div style="font-size:11px;color:#666;margin-bottom:3px">📍 ${c.gps.lat.toFixed(5)}, ${c.gps.lng.toFixed(5)}</div>
+        <div style="font-size:11px;color:#666;margin-bottom:6px">Précision : ~${c.gps.acc||'?'}m</div>
+        ${course?`<div style="font-size:11px;background:#f8f7f4;padding:5px 8px;border-radius:4px;border-left:3px solid #c9a84c"><strong>Course :</strong> ${course.client}<br>${course.depart||course.lieu||''}</div>`:'<div style="font-size:11px;color:#2ecc8a">● Disponible</div>'}
+        <div style="margin-top:8px">
+          <a href="https://www.google.com/maps?q=${c.gps.lat},${c.gps.lng}" target="_blank"
+            style="font-size:11px;color:#5b9cf6;text-decoration:none">Ouvrir dans Maps →</a>
+        </div>
+      </div>`;
+
+    if(leafletMarkers[c._id]) {
+      leafletMarkers[c._id].setLatLng([c.gps.lat, c.gps.lng]);
+      leafletMarkers[c._id].setIcon(icon);
+    } else {
+      leafletMarkers[c._id] = window.L.marker([c.gps.lat, c.gps.lng], {icon})
+        .addTo(leafletMap)
+        .bindPopup(popupContent);
+    }
+  });
+
+  // Fit map to show all drivers
+  if(active.length === 1) {
+    leafletMap.setView([active[0].gps.lat, active[0].gps.lng], 14);
+  } else if(active.length > 1) {
+    const bounds = window.L.latLngBounds(active.map(c=>[c.gps.lat, c.gps.lng]));
+    leafletMap.fitBounds(bounds, {padding:[40,40]});
+  }
+
+  // Update side list
+  const list = document.getElementById('live-map-list');
+  if(list) {
+    list.innerHTML = active.length ? active.map(c=>{
+      const name = c.prenom+(c.nom?' '+c.nom:'');
+      const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+      const updAgo = c.gpsUpdated ? Math.round((new Date()-new Date(c.gpsUpdated))/1000) : '?';
+      const course = D.courses.find(x=>x.chauffeur===name&&['en_route','sur_place','onboard','acceptee'].includes(x.statut));
+      return `<div onclick="leafletMap&&leafletMap.setView([${c.gps.lat},${c.gps.lng}],15)" style="margin-bottom:10px;padding:8px;background:var(--card2);border-radius:var(--r-xs);cursor:pointer;border:1px solid var(--border);transition:border-color 0.2s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span style="font-size:16px">${vehIcon}</span>
+          <div style="font-size:12px;font-weight:700;color:var(--white)">${name}</div>
+          <div style="width:7px;height:7px;border-radius:50%;background:${c.statut==='disponible'?'var(--green)':'var(--orange)'};margin-left:auto;flex-shrink:0"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted)">⏱ Mis à jour il y a ${updAgo}s</div>
+        ${course?`<div style="font-size:10px;color:var(--gold);margin-top:3px">🚗 ${course.client}</div>`:'<div style="font-size:10px;color:var(--green);margin-top:3px">● Disponible</div>'}
+      </div>`;
+    }).join('') : '<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px"><i class="fas fa-car" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.3"></i>Aucun chauffeur<br>actif pour le moment</div>';
+  }
+};
+
+
+window.mcTab = function(tab) {
+  const isActive = tab === 'active';
+  document.getElementById('mc-pane-active').style.display = isActive ? 'block' : 'none';
+  document.getElementById('mc-pane-history').style.display = isActive ? 'none' : 'block';
+  const btnA = document.getElementById('mc-tab-active');
+  const btnH = document.getElementById('mc-tab-history');
+  if(btnA){btnA.style.background=isActive?'var(--card2)':'transparent';btnA.style.color=isActive?'var(--gold)':'var(--muted2)';}
+  if(btnH){btnH.style.background=isActive?'transparent':'var(--card2)';btnH.style.color=isActive?'var(--muted2)':'var(--gold)';}
+  if(!isActive) renderHistMC();
+};
+
+function renderHistMC() {
+  if(SESSION.role!=='chauffeur') return;
+  const name = SESSION.name;
+  const mine = D.courses.filter(c=>c.chauffeur===name);
+
+  // Populate month filter
+  const mSel = document.getElementById('mc-hist-m');
+  if(mSel && mSel.options.length <= 1) {
+    const months = [...new Set(mine.filter(c=>c.datetime).map(c=>c.datetime.slice(0,7)))].sort().reverse();
+    months.forEach(m=>{
+      const opt=document.createElement('option');
+      opt.value=m;
+      const d=new Date(m+'-01');
+      opt.textContent=d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+      mSel.appendChild(opt);
+    });
+  }
+
+  const q = (document.getElementById('mc-hist-q')?.value||'').toLowerCase();
+  const s = document.getElementById('mc-hist-s')?.value||'';
+  const m = document.getElementById('mc-hist-m')?.value||'';
+
+  let list = mine.filter(c=>{
+    const ms = !s || c.statut===s;
+    const mm = !m || (c.datetime&&c.datetime.startsWith(m));
+    const mq = !q || (c.client||'').toLowerCase().includes(q) || (c.ref||'').toLowerCase().includes(q) || (c.depart||'').toLowerCase().includes(q);
+    return ms && mm && mq;
+  });
+
+  // Update total
+  const el=document.getElementById('mc-total');
+  if(el) el.textContent=mine.length;
+
+  const tb = document.getElementById('tb-mc-hist');
+  if(!tb) return;
+  if(!list.length){tb.innerHTML=`<tr><td colspan="9" class="t-empty"><i class="fas fa-history"></i><p>Aucune course</p></td></tr>`;return;}
+  tb.innerHTML = list.map(c=>`<tr>
+    <td style="font-size:10px;color:var(--gold);font-family:'Syne',sans-serif;font-weight:600">${c.ref||'—'}</td>
+    <td style="font-size:11px;white-space:nowrap">${fdt(c.datetime)}</td>
+    <td><strong style="font-size:12px">${c.client||'—'}</strong></td>
+    <td>${tBdg(c.type)}</td>
+    <td style="font-size:11px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.depart||c.lieu||'—'}</td>
+    <td style="font-size:11px;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.arrivee||c.duree||'—'}</td>
+    <td style="font-size:11px;text-align:center">${c.pax||1}</td>
+    <td>${sBdg(c.statut)}</td>
+    <td style="font-size:10px;color:var(--muted2);max-width:150px">${(c.notes||'—').replace(/\n/g,'<br>')}</td>
+  </tr>`).join('');
+}
+
+window.driverUpd = async function(id, statut, note) {
+  const update = {updatedAt:new Date().toISOString()};
+  if(statut) update.statut = statut;
+  if(note && note.trim()) {
+    const c = D.courses.find(x=>x._id===id);
+    const existing = c?.notes||'';
+    const ts = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    update.notes = existing ? existing+'\n'+ts+' — '+note.trim() : ts+' — '+note.trim();
+  }
+  await fbUpdate('courses', id, update);
+  if(statut) await addLog(`${SESSION.name} → ${statut}${note?' ('+note+')':''}`);
+  if(note && note.trim()) { const el=document.getElementById('note-'+id); if(el)el.value=''; }
+  await loadAll();
+  showToast(statut?'Statut mis à jour ✓':'Note ajoutée ✓');
+};
+
+// ── COMPTES DISPATCH ──
+function renderComptes() {
+  const tb=document.getElementById('tb-comptes');if(!tb)return;
+  if(!D.dispatch_accounts.length){tb.innerHTML=`<tr><td colspan="4" class="t-empty"><i class="fas fa-users-cog"></i><p>Aucun compte dispatch</p></td></tr>`;return;}
+  tb.innerHTML=D.dispatch_accounts.map(d=>`<tr>
+    <td><strong>${d.user||'—'}</strong></td>
+    <td>${d.nom||'—'}</td>
+    <td style="font-size:11px;color:var(--muted)">${d.createdAt?new Date(d.createdAt).toLocaleDateString('fr-FR'):'—'}</td>
+    <td><button class="btn btn-d btn-xs" onclick="delDispatch('${d._id}')"><i class="fas fa-trash"></i></button></td>
+  </tr>`).join('');
+}
+
+window.saveDispatchAccount = async function() {
+  const user=document.getElementById('da-user').value.trim();
+  const pass=document.getElementById('da-pass').value.trim();
+  const nom=document.getElementById('da-nom').value.trim();
+  if(!user||!pass){showToast('Identifiant et mot de passe requis',true);return;}
+  if(pass.length<6){showToast('Mot de passe min. 6 caractères',true);return;}
+  if(D.dispatch_accounts.find(d=>d.user===user)){showToast('Identifiant déjà utilisé',true);return;}
+  closeMo('dispatch-account');
+  await fbPush('dispatch_accounts',{user,pass,nom,createdAt:new Date().toISOString()});
+  await addLog(`Compte dispatch créé : ${user}`);
+  await loadAll();
+  showToast(`Compte "${user}" créé ✓`);
+};
+
+async function delDispatch(id){showConfirm('Supprimer ce compte ?','',async()=>{await fbDelete('dispatch_accounts',id);await loadAll();showToast('Compte supprimé');});}
+
+// ── HISTORIQUE ──
+function renderHistorique() {
+  const wrap=document.getElementById('log-wrap');if(!wrap)return;
+  if(!D.logs.length){wrap.innerHTML='<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Aucune activité</div>';return;}
+  const dc=['g','gr','b','r','o'];
+  wrap.innerHTML=`<div class="tl">${D.logs.slice(0,100).map((l,i)=>`<div class="tl-item"><div class="tl-dot ${dc[i%5]}"></div><div class="tl-time">${fdt(l.at)} — ${l.by||'système'}</div><div class="tl-text">${l.text}</div></div>`).join('')}</div>`;
+}
+
+// ── PARAMS ──
+window.changeAdminPass = async function() {
+  const p1=document.getElementById('new-pass').value;
+  const p2=document.getElementById('conf-pass').value;
+  if(!p1||!p2){showToast('Remplissez les deux champs',true);return;}
+  if(p1!==p2){showToast('Les mots de passe ne correspondent pas',true);return;}
+  if(p1.length<6){showToast('Minimum 6 caractères',true);return;}
+  await fetch(`${FB_URL}/config/admin_pass.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(p1)});
+  showToast('Mot de passe changé ✓');
+};
+
+window.loadDemoData = async function() {
+  if(!confirm('Charger 10 transferts démo avec passagers ?'))return;
+  showToast('Chargement...');
+  const today=new Date().toISOString().split('T')[0];
+  if(!D.chauffeurs.length){
+    const ch=[{prenom:'Florent',nom:'',tel:'+33 6 11 22 33 44',pin:'1111',vehicule:'berline',statut:'disponible'},{prenom:'Mehdi',nom:'',tel:'+33 6 22 33 44 55',pin:'2222',vehicule:'van',statut:'disponible'},{prenom:'Sofiane',nom:'',tel:'+33 6 33 44 55 66',pin:'3333',vehicule:'berline',statut:'disponible'},{prenom:'Mourad',nom:'',tel:'+33 6 44 55 66 77',pin:'4444',vehicule:'van',statut:'disponible'}];
+    for(const c of ch) await fbPush('chauffeurs',{...c,createdAt:new Date().toISOString()});
+  }
+  if(!D.tarifs.length){
+    const tr=[{route:'CDG → Paris Centre',berline:'82.50',van:'104.50',sprinter:'165',bus:'275',categorie:'cdg',nuit:'16.50'},{route:'Orly → Paris Centre',berline:'71.50',van:'93.50',sprinter:'143',bus:'220',categorie:'orly',nuit:'13.20'},{route:'Disneyland → CDG',berline:'99',van:'132',sprinter:'198',bus:'330',categorie:'disney',nuit:'22'},{route:'Paris → Versailles',berline:'60.50',van:'82.50',sprinter:'132',bus:'220',categorie:'paris',nuit:'11'}];
+    for(const t of tr) await fbPush('tarifs',{...t,createdAt:new Date().toISOString()});
+  }
+  const demos=[
+    {type:'transfert',client:'Sophie Martin',tel:'+33 6 11 22 33 44',datetime:today+'T07:30',depart:'CDG Terminal 2F, Roissy',arrivee:'Hotel Le Marais, Paris 75004',vehicule:'berline',pax:2,bags:2,chauffeur:'Florent',prix:85,cat:'cdg',terminaux:'CDG2F',numveh:'B1',ref:'CDG2F/B/B1/D1/FLORENT',statut:'attribuee',notes:'Couple 2 valises',passagers:[{prenom:'Sophie',nom:'Martin',tel:'+33 6 11 22 33 44',vol:'AF1234',terminal:'CDG2F',harrivee:'07:15',refClient:'SMT-001',present:true},{prenom:'Jean',nom:'Martin',tel:'+33 6 11 22 33 55',vol:'AF1234',terminal:'CDG2F',harrivee:'07:15',refClient:'SMT-002',present:true}]},
+    {type:'transfert',client:'Thomas Dupont',tel:'+33 6 22 33 44 55',datetime:today+'T08:00',depart:'CDG Terminal 2E, Roissy',arrivee:'Disneyland Paris, Chessy',vehicule:'van',pax:5,bags:8,chauffeur:'Mehdi',prix:132,cat:'disney',terminaux:'CDG2E',numveh:'V1',ref:'CDG2E/V/V1/D1/MEHDI',statut:'attribuee',notes:'Famille 8 bagages',passagers:[{prenom:'Thomas',nom:'Dupont',tel:'+33 6 22 33 44 55',vol:'EJ456',terminal:'CDG2E',harrivee:'07:45',refClient:'DIS-001',present:true},{prenom:'Marie',nom:'Dupont',tel:'+33 6 22 33 44 66',vol:'EJ456',terminal:'CDG2E',harrivee:'07:45',refClient:'DIS-002',present:true},{prenom:'Lucas',nom:'Dupont',tel:'',vol:'EJ456',terminal:'CDG2E',harrivee:'07:45',refClient:'DIS-003',present:true},{prenom:'Emma',nom:'Dupont',tel:'',vol:'EJ456',terminal:'CDG2E',harrivee:'07:45',refClient:'DIS-004',present:true},{prenom:'Lea',nom:'Dupont',tel:'',vol:'EJ456',terminal:'CDG2E',harrivee:'07:45',refClient:'DIS-005',present:true}]},
+    {type:'transfert',client:'Pierre Leclerc',tel:'+33 6 33 44 55 66',datetime:today+'T09:15',depart:'Gare du Nord, Paris',arrivee:'CDG Terminal 2G, Roissy',vehicule:'berline',pax:1,bags:1,chauffeur:'Sofiane',prix:75,cat:'cdg',terminaux:'CDG2G',numveh:'B2',ref:'G/B/B2/D2/SOFIANE',statut:'en_route',notes:'Client seul',passagers:[{prenom:'Pierre',nom:'Leclerc',tel:'+33 6 33 44 55 66',vol:'LH789',terminal:'CDG2G',harrivee:'-',refClient:'PL-001',present:true}]},
+    {type:'transfert',client:'Isabelle Moreau',tel:'+33 6 44 55 66 77',datetime:today+'T10:30',depart:'Orly Terminal 4',arrivee:'Paris 8eme, Avenue Montaigne',vehicule:'berline',pax:3,bags:3,chauffeur:'Mourad',prix:65,cat:'orly',terminaux:'ORY4',numveh:'B3',ref:'RORY4/B/B3/D3/MOURAD',statut:'attribuee',notes:'Julie absente - verifier',passagers:[{prenom:'Isabelle',nom:'Moreau',tel:'+33 6 44 55 66 77',vol:'AF2100',terminal:'ORY4',harrivee:'10:10',refClient:'IM-001',present:true},{prenom:'Claude',nom:'Moreau',tel:'+33 6 44 55 66 88',vol:'AF2100',terminal:'ORY4',harrivee:'10:10',refClient:'IM-002',present:true},{prenom:'Julie',nom:'Moreau',tel:'',vol:'AF2100',terminal:'ORY4',harrivee:'10:10',refClient:'IM-003',present:false}]},
+    {type:'transfert',client:'Ahmed Karim',tel:'+33 6 55 66 77 88',datetime:today+'T11:00',depart:'Hotel Ritz, Paris 1er',arrivee:'CDG Terminal 1',vehicule:'berline',pax:1,bags:2,chauffeur:'Florent',prix:90,cat:'cdg',terminaux:'CDG1',numveh:'B1',ref:'CDG1/B/B1/D4/FLORENT',statut:'en_attente',notes:'VIP attendre au lobby',passagers:[{prenom:'Ahmed',nom:'Karim',tel:'+33 6 55 66 77 88',vol:'TK1234',terminal:'CDG1',harrivee:'-',refClient:'AK-001',present:true}]},
+    {type:'transfert',client:'Groupe Disney Corp',tel:'+33 1 60 30 60 30',datetime:today+'T13:00',depart:'CDG Terminal 2F + 2E',arrivee:'Disneyland Paris, Hotel New York',vehicule:'sprinter',pax:12,bags:15,chauffeur:'Mehdi',prix:320,cat:'disney',terminaux:'CDG2F-CDG2E',numveh:'SP1',ref:'CDG2F-2E/SP/SP1/D1/MEHDI',statut:'nouvelle',notes:'Groupe corporate 2 terminaux',passagers:[{prenom:'Mark',nom:'Johnson',tel:'+1 555 0101',vol:'AA100',terminal:'CDG2F',harrivee:'12:30',refClient:'DIS-G001',present:true},{prenom:'Sarah',nom:'Johnson',tel:'+1 555 0102',vol:'AA100',terminal:'CDG2F',harrivee:'12:30',refClient:'DIS-G002',present:true},{prenom:'Kevin',nom:'Smith',tel:'+1 555 0103',vol:'AA100',terminal:'CDG2F',harrivee:'12:30',refClient:'DIS-G003',present:true},{prenom:'Linda',nom:'Smith',tel:'+1 555 0104',vol:'AA100',terminal:'CDG2F',harrivee:'12:30',refClient:'DIS-G004',present:true},{prenom:'David',nom:'Brown',tel:'+44 20 7946 0301',vol:'BA202',terminal:'CDG2E',harrivee:'12:45',refClient:'DIS-G005',present:true},{prenom:'Emma',nom:'Brown',tel:'+44 20 7946 0302',vol:'BA202',terminal:'CDG2E',harrivee:'12:45',refClient:'DIS-G006',present:true},{prenom:'James',nom:'Wilson',tel:'+44 20 7946 0303',vol:'BA202',terminal:'CDG2E',harrivee:'12:45',refClient:'DIS-G007',present:true},{prenom:'Olivia',nom:'Wilson',tel:'+44 20 7946 0304',vol:'BA202',terminal:'CDG2E',harrivee:'12:45',refClient:'DIS-G008',present:false},{prenom:'Liam',nom:'Taylor',tel:'+33 6 12 34 56 78',vol:'FR303',terminal:'CDG2F',harrivee:'12:35',refClient:'DIS-G009',present:true},{prenom:'Ava',nom:'Taylor',tel:'+33 6 12 34 56 79',vol:'FR303',terminal:'CDG2F',harrivee:'12:35',refClient:'DIS-G010',present:true},{prenom:'Noah',nom:'Davis',tel:'+49 30 901820',vol:'LH404',terminal:'CDG2E',harrivee:'12:50',refClient:'DIS-G011',present:true},{prenom:'Sophia',nom:'Davis',tel:'+49 30 901821',vol:'LH404',terminal:'CDG2E',harrivee:'12:50',refClient:'DIS-G012',present:true}]},
+    {type:'transfert',client:'Nathalie Petit',tel:'+33 6 66 77 88 99',datetime:today+'T14:30',depart:'Paris 16eme, Trocadero',arrivee:'Orly Terminal 3',vehicule:'berline',pax:2,bags:2,chauffeur:'Sofiane',prix:58,cat:'orly',terminaux:'ORY3',numveh:'B2',ref:'RORY3/B/B2/D5/SOFIANE',statut:'attribuee',notes:'Depart Orly 3',passagers:[{prenom:'Nathalie',nom:'Petit',tel:'+33 6 66 77 88 99',vol:'U24567',terminal:'ORY3',harrivee:'-',refClient:'NP-001',present:true},{prenom:'Marc',nom:'Petit',tel:'+33 6 66 77 99 00',vol:'U24567',terminal:'ORY3',harrivee:'-',refClient:'NP-002',present:true}]},
+    {type:'transfert',client:'Roberto Garcia',tel:'+34 91 234 5678',datetime:today+'T16:00',depart:'CDG Terminal 2D, Roissy',arrivee:'Versailles, Chateau',vehicule:'van',pax:6,bags:6,chauffeur:'Mourad',prix:145,cat:'paris',terminaux:'CDG2D',numveh:'V2',ref:'CDG2D/V/V2/D2/MOURAD',statut:'nouvelle',notes:'Groupe espagnol Versailles',passagers:[{prenom:'Roberto',nom:'Garcia',tel:'+34 91 234 5678',vol:'IB601',terminal:'CDG2D',harrivee:'15:30',refClient:'RG-001',present:true},{prenom:'Ana',nom:'Garcia',tel:'+34 91 234 5679',vol:'IB601',terminal:'CDG2D',harrivee:'15:30',refClient:'RG-002',present:true},{prenom:'Carlos',nom:'Garcia',tel:'',vol:'IB601',terminal:'CDG2D',harrivee:'15:30',refClient:'RG-003',present:true},{prenom:'Maria',nom:'Garcia',tel:'',vol:'IB601',terminal:'CDG2D',harrivee:'15:30',refClient:'RG-004',present:true},{prenom:'Pedro',nom:'Lopez',tel:'+34 91 234 5680',vol:'IB601',terminal:'CDG2D',harrivee:'15:30',refClient:'RG-005',present:true},{prenom:'Carmen',nom:'Lopez',tel:'+34 91 234 5681',vol:'IB601',terminal:'CDG2D',harrivee:'15:30',refClient:'RG-006',present:true}]},
+    {type:'transfert',client:'Michel Bernard',tel:'+33 6 77 88 99 00',datetime:today+'T17:45',depart:'La Defense, Grande Arche',arrivee:'CDG Terminal 2B, Roissy',vehicule:'berline',pax:1,bags:1,chauffeur:'Florent',prix:82,cat:'cdg',terminaux:'CDG2B',numveh:'B1',ref:'CDG2B/B/B1/D6/FLORENT',statut:'attribuee',notes:'Corporate ponctualite requise',passagers:[{prenom:'Michel',nom:'Bernard',tel:'+33 6 77 88 99 00',vol:'AF999',terminal:'CDG2B',harrivee:'-',refClient:'MB-001',present:true}]},
+    {type:'transfert',client:'Yuki Tanaka',tel:'+81 3 1234 5678',datetime:today+'T19:00',depart:'CDG Terminal 2A, Roissy',arrivee:'Hotel Plaza Athenee, Paris 8eme',vehicule:'berline',pax:3,bags:4,chauffeur:'Mehdi',prix:88,cat:'cdg',terminaux:'CDG2A',numveh:'B2',ref:'CDG2A/B/B2/D3/MEHDI',statut:'en_attente',notes:'Groupe japonais VIP',passagers:[{prenom:'Yuki',nom:'Tanaka',tel:'+81 3 1234 5678',vol:'JL402',terminal:'CDG2A',harrivee:'18:35',refClient:'YT-001',present:true},{prenom:'Hiroshi',nom:'Tanaka',tel:'+81 3 1234 5679',vol:'JL402',terminal:'CDG2A',harrivee:'18:35',refClient:'YT-002',present:true},{prenom:'Aiko',nom:'Tanaka',tel:'',vol:'JL402',terminal:'CDG2A',harrivee:'18:35',refClient:'YT-003',present:true}]}
+  ];
+  for(const d of demos) await fbPush('courses',{...d,createdAt:new Date().toISOString()});
+  await addLog('10 transferts demo charges avec passagers');
+  await loadAll();
+  showToast('10 transferts demo charges !');
+};
+
+window.resetAll = async function() {
+  for(const p of['courses','chauffeurs','clients','tarifs','vehicules','logs']) await fbDel(p);
+  await loadAll();
+  showToast('Base réinitialisée');
+};
+
+// ── CHARTS ──
+function drawBarChart() {
+  const canvases = ['chart-main','chart-ca'];
+  canvases.forEach(id=>{
+    const canvas=document.getElementById(id);
+    if(!canvas||!canvas.getContext)return;
+    const ctx=canvas.getContext('2d');
+    canvas.width=canvas.offsetWidth||400;canvas.height=canvas.offsetHeight||200;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const mois=['Jan','Fév','Mar','Avr','Mai','Jun'];const now=new Date();
+    const data=mois.map((_,i)=>{const m=now.getMonth()-5+i;const yr=now.getFullYear()+(m<0?-1:0);const mm=(m+12)%12;return D.courses.filter(c=>c.statut==='terminee'&&c.datetime&&new Date(c.datetime).getMonth()===mm&&new Date(c.datetime).getFullYear()===yr).reduce((s,c)=>s+(parseFloat(c.prix)||0),0);});
+    const w=canvas.width,h=canvas.height;
+    const pad={t:16,r:14,b:34,l:44};const cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;
+    const max=Math.max(...data,1);const bw=cw/mois.length*0.55;const gap=cw/mois.length;
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+    for(let i=0;i<=4;i++){const y=pad.t+ch-(ch/4)*i;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke();ctx.fillStyle='rgba(90,93,101,0.7)';ctx.font='9px DM Sans';ctx.textAlign='right';ctx.fillText(Math.round(max/4*i)+'€',pad.l-4,y+3);}
+    mois.forEach((lbl,i)=>{const x=pad.l+gap*i+gap/2-bw/2;const bh=(data[i]/max)*ch;const y=pad.t+ch-bh;
+      const grad=ctx.createLinearGradient(0,y,0,y+bh);grad.addColorStop(0,'rgba(201,168,76,0.9)');grad.addColorStop(1,'rgba(201,168,76,0.2)');
+      ctx.fillStyle=grad;ctx.fillRect(x,y,bw,bh);
+      ctx.fillStyle='rgba(90,93,101,0.8)';ctx.font='9px DM Sans';ctx.textAlign='center';ctx.fillText(lbl,pad.l+gap*i+gap/2,h-pad.b+12);
+      if(data[i]>0){ctx.fillStyle='rgba(201,168,76,0.9)';ctx.font='bold 9px DM Sans';ctx.fillText(data[i].toFixed(0)+'€',x+bw/2,y-4);}
+    });
+  });
+}
+
+// ── CLOCK ──
+function startClock(){const u=()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});};u();setInterval(u,1000);}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loading').classList.add('out');
+  if (checkSession()) {
+    startApp();
+  }
+  startClock();
+});
+
+// ── NAV ──
+function gp(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('on');
+  if(btn)btn.classList.add('on');
+  const titles={dashboard:'Dashboard',dispatch:'Dispatch',planning:'Planning',chauffeurs:'Chauffeurs',vehicules:'Véhicules',clients:'Clients',tarifs:'Tarifs',facturation:'Facturation',rapports:'Rapports',comptes:'Comptes Dispatch',historique:'Historique',parametres:'Paramètres',mescourses:'Mes courses'};
+  document.getElementById('page-title').textContent=titles[name]||name;
+  closeMob();
+  loadAll(); // reload on every page change
+}
+window.gp=gp;window.loadAll=loadAll;window.renderDispatch=renderDispatch;window.renderClients=renderClients;window.renderFact=renderFact;window.updStatut=updStatut;window.delCourse=delCourse;window.updChauffStatut=updChauffStatut;window.delChauffeur=delChauffeur;window.delVehicule=delVehicule;window.delClient=delClient;window.delTarif=delTarif;window.delDispatch=delDispatch;
+
+function switchTab(t){document.querySelectorAll('.ltab').forEach(x=>x.classList.remove('on'));document.getElementById('lt-'+t).classList.add('on');['admin','dispatch','chauffeur'].forEach(p=>{const el=document.getElementById('pane-'+p);if(el)el.style.display=p===t?'block':'none';});}
+window.switchTab=switchTab;
+
+function openMo(n){document.getElementById('mo-'+n).classList.add('on');}
+function closeMo(n){document.getElementById('mo-'+n).classList.remove('on');}
+window.openMo=openMo;window.closeMo=closeMo;
+document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('on');}));
+
+function showToast(msg,type){
+  const t=document.getElementById('toast'),tm=document.getElementById('toast-msg');
+  tm.textContent=msg;t.className='toast'+(type==='err'||type===true?' err':type==='info'?' info':type==='warn'?' warn':'');
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);
+}
+window.showToast=showToast;
+
+let confCb=null;
+function showConfirm(title,msg,cb){document.getElementById('conf-t').textContent=title;document.getElementById('conf-m').textContent=msg||'Cette action est irréversible.';confCb=cb;document.getElementById('conf-ov').classList.add('on');}
+function closeConf(){document.getElementById('conf-ov').classList.remove('on');confCb=null;}
+document.getElementById('conf-ok').onclick=()=>{closeConf();if(confCb)confCb();};
+window.showConfirm=showConfirm;window.closeConf=closeConf;
+
+function toggleMob(){document.getElementById('sidebar').classList.toggle('on');document.getElementById('mob-ov').classList.toggle('on');}
+function closeMob(){document.getElementById('sidebar').classList.remove('on');document.getElementById('mob-ov').classList.remove('on');}
+window.toggleMob=toggleMob;window.closeMob=closeMob;
+
+// ── RÉFÉRENCE AUTO ──
+function genRefVal() {
+  const cat = document.getElementById('fc-cat')?.value || 'autre';
+  const veh = document.getElementById('fc-veh')?.value || 'berline';
+  const ch = document.getElementById('fc-ch')?.value || '';
+  const numveh = document.getElementById('fc-numveh')?.value || '';
+  const terminaux = [...(document.querySelectorAll('.term-chk:checked')||[])].map(c=>c.value).join('-');
+
+  // Code destination
+  const catCode = {cdg:'RCDG',orly:'RORY',disney:'DIS',paris:'PAR',gare:'G',corporate:'COR',autre:'AUT'}[cat]||'AUT';
+  const termCode = terminaux ? catCode+'-'+terminaux : catCode;
+
+  // Code véhicule
+  const vehCode = {berline:'B',van:'V',sprinter:'SP',bus:'BU'}[veh]||'B';
+
+  // Numéro du jour
+  const today = new Date();
+  const dayNum = D.courses.filter(c=>{
+    if(!c.datetime)return false;
+    const d=new Date(c.datetime);
+    return d.toDateString()===today.toDateString();
+  }).length + 1;
+  const dayCode = 'D'+dayNum;
+
+  // Nom chauffeur (prénom seulement)
+  const chName = ch ? ch.split(' ')[0].toUpperCase() : 'NC';
+
+  // Numéro véhicule
+  const numVehCode = numveh || vehCode+'1';
+
+  return `${termCode}/${vehCode}/${numVehCode}/${dayCode}/${chName}`;
+}
+
+window.genRef = function() {
+  const el = document.getElementById('fc-ref');
+  if(el) el.value = genRefVal();
+};
+
+// ── EXPORT EXCEL ──
+window.exportExcel = function() {
+  const list = D.courses;
+  if(!list.length){showToast('Aucune course à exporter',true);return;}
+
+  let csv = '\uFEFF'; // BOM for Excel UTF-8
+  const headers = [
+    'Référence','Date','Heure','Client','Téléphone','Type',
+    'Départ','Arrivée/Lieu','Durée MAD','Terminaux',
+    'Véhicule','N° Véhicule','Chauffeur','Passagers','Bagages',
+    'N° Vol','Catégorie','Prix HT (€)','TVA 10% (€)','Prix TTC (€)',
+    'Statut','Notes','Créé le'
+  ];
+  csv += headers.join(';') + '\n';
+
+  list.forEach(c => {
+    const ttc = parseFloat(c.prix)||0;
+    const htv = ht(ttc);
+    const tva = ttc - htv;
+    const dt = c.datetime ? new Date(c.datetime) : null;
+    const date = dt ? dt.toLocaleDateString('fr-FR') : '';
+    const heure = dt ? dt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
+    const row = [
+      c.ref||'',
+      date, heure,
+      c.client||'',
+      c.tel||'',
+      c.type==='mad'?'Mise à disposition':'Transfert',
+      c.depart||c.lieu||'',
+      c.arrivee||'',
+      c.duree||'',
+      c.terminaux||'',
+      {berline:'Berline',van:'Van',sprinter:'Sprinter',bus:'Bus'}[c.vehicule]||'',
+      c.numveh||'',
+      c.chauffeur||'',
+      c.pax||1,
+      c.bags||0,
+      c.vol||'',
+      c.cat||'',
+      htv.toFixed(2),
+      tva.toFixed(2),
+      ttc.toFixed(2),
+      c.statut||'',
+      (c.notes||'').replace(/;/g,','),
+      c.createdAt ? new Date(c.createdAt).toLocaleDateString('fr-FR') : ''
+    ];
+    csv += row.map(v=>`"${v}"`).join(';') + '\n';
+  });
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `black-limousine-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`Export Excel — ${list.length} courses ✓`);
+};
+
+
+function getSelectedIds() {
+  return [...document.querySelectorAll('.row-chk:checked')].map(c=>c.dataset.id);
+}
+
+function onChkChange() {
+  const ids = getSelectedIds();
+  const bar = document.getElementById('groupe-bar');
+  const cnt = document.getElementById('sel-count');
+  if(ids.length > 0) {
+    bar.style.display = 'flex';
+    cnt.textContent = ids.length;
+    // update groupe-drv options
+    const sel = document.getElementById('groupe-drv');
+    sel.innerHTML = '<option value="">— Choisir un chauffeur —</option>' +
+      D.chauffeurs.map(d=>`<option value="${d.prenom+(d.nom?' '+d.nom:'')}">${d.prenom} ${d.nom||''}</option>`).join('');
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function toggleAll(chk) {
+  document.querySelectorAll('.row-chk').forEach(c=>c.checked=chk.checked);
+  onChkChange();
+}
+
+function clearSelection() {
+  document.querySelectorAll('.row-chk').forEach(c=>c.checked=false);
+  const chkAll = document.getElementById('chk-all');
+  if(chkAll) chkAll.checked = false;
+  document.getElementById('groupe-bar').style.display = 'none';
+}
+
+async function assignGroupe() {
+  const ids = getSelectedIds();
+  const drv = document.getElementById('groupe-drv').value;
+  if(!drv) { showToast('Sélectionner un chauffeur', true); return; }
+  if(!ids.length) { showToast('Sélectionner au moins une course', true); return; }
+  showToast(`Assignation de ${ids.length} course(s)...`);
+  for(const id of ids) {
+    await fbUpdate('courses', id, {chauffeur:drv, statut:'attribuee', updatedAt:new Date().toISOString()});
+  }
+  await addLog(`${ids.length} course(s) assignées en groupe à ${drv}`);
+  clearSelection();
+  await loadAll();
+  showToast(`${ids.length} course(s) assignées à ${drv} ✓`);
+}
+window.onChkChange=onChkChange;window.toggleAll=toggleAll;window.clearSelection=clearSelection;window.assignGroupe=assignGroupe;
+
+// ── COLONNES VISIBILITÉ ──
+window.toggleColMenu = function() {
+  const m = document.getElementById('col-menu');
+  if(m) m.style.display = m.style.display==='none'?'block':'none';
+  document.addEventListener('click', function closeMenu(e){
+    if(!e.target.closest('#col-menu')&&!e.target.closest('#col-btn')){
+      if(m) m.style.display='none';
+      document.removeEventListener('click',closeMenu);
+    }
+  });
+};
+
+window.toggleCol = function(cls, visible) {
+  document.querySelectorAll('.'+cls).forEach(el=>{
+    el.classList.toggle('col-hidden', !visible);
+  });
+};
+
+window.resetCols = function() {
+  document.querySelectorAll('.col-hidden').forEach(el=>el.classList.remove('col-hidden'));
+  document.querySelectorAll('#col-menu input[type=checkbox]').forEach(cb=>cb.checked=true);
+};
+
+// ── VOIR PASSAGERS ──
+// ── GESTION COURSE COMPLÈTE ──
+let currentEditCourse = null;
+
+window.viewPax = function(id) { editCourse(id); };
+
+window.editCourse = function(id) {
+  const c = D.courses.find(x=>x._id===id);
+  if(!c){showToast('Course introuvable',true);return;}
+  currentEditCourse = id;
+
+  const present = (c.passagers||[]).filter(p=>p.present!==false).length;
+  const absent = (c.passagers||[]).length - present;
+
+  // Build passenger rows
+  const paxRows = (c.passagers||[]).map((p,i)=>{
+    const copyText = `${p.prenom||''}/${p.nom||''}/${p.tel||''}/${p.vol||''}/${p.terminal||''}/${p.harrivee||''}/${p.refClient||''}`;
+    return `<tr id="edit-pax-row-${i}" style="background:${p.present===false?'var(--red-dim)':''};transition:background 0.2s">
+      <td style="font-size:12px;font-weight:600">${p.prenom||''} ${p.nom||''}</td>
+      <td style="font-size:11px">${p.tel||'—'}</td>
+      <td style="font-size:11px">${p.vol||'—'}</td>
+      <td style="font-size:11px">${p.terminal||'—'}</td>
+      <td style="font-size:11px">${p.harrivee||'—'}</td>
+      <td style="font-size:11px;color:var(--gold)">${p.refClient||'—'}</td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button onclick="togglePaxPresence('${id}',${i})" style="background:${p.present===false?'var(--red-dim)':'var(--green-dim)'};border:1px solid ${p.present===false?'rgba(224,92,92,0.3)':'rgba(46,204,138,0.3)'};color:${p.present===false?'var(--red)':'var(--green)'};border-radius:var(--r-xs);padding:3px 8px;cursor:pointer;font-size:10px;font-weight:600">
+            ${p.present===false?'✗ Absent':'✓ Présent'}
+          </button>
+          <button onclick="copyPaxInfo('${copyText}')" title="Copier infos" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-xs);padding:3px 7px;cursor:pointer;font-size:10px;color:var(--muted2)">📋</button>
+          <button onclick="transferPax('${id}',${i})" title="Transférer" style="background:var(--blue-dim);border:1px solid rgba(91,156,246,0.3);border-radius:var(--r-xs);padding:3px 7px;cursor:pointer;font-size:10px;color:var(--blue)">➡️ Transférer</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Other courses for merge/transfer
+  const otherCourses = D.courses.filter(x=>x._id!==id&&!['terminee','annulee','payee'].includes(x.statut));
+
+  const html = `
+    <!-- INFOS COURSE -->
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;margin-bottom:16px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">RÉFÉRENCE</div><div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--gold)">${c.ref||'—'}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">DATE / HEURE</div><div style="font-size:13px;font-weight:600">${fdt(c.datetime)}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">CHAUFFEUR</div><div style="font-size:13px;font-weight:600;color:var(--blue)">${c.chauffeur||'Non assigné'}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">DÉPART</div><div style="font-size:12px">${c.depart||c.lieu||'—'}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">ARRIVÉE</div><div style="font-size:12px">${c.arrivee||c.duree||'—'}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:3px">VÉHICULE / TERMINAUX</div><div style="font-size:12px">${vI(c.vehicule)} ${c.terminaux?'• '+c.terminaux:''}</div></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${c.statut!=='terminee'?`<button onclick="openAssignFromEdit('${id}')" class="btn btn-b btn-sm"><i class="fas fa-user-check"></i> Changer chauffeur</button>`:''}
+        <button onclick="mergeCourse('${id}')" class="btn btn-s btn-sm" style="color:var(--purple);border-color:rgba(155,127,240,0.3)"><i class="fas fa-object-group"></i> Fusionner avec une autre course</button>
+      </div>
+    </div>
+
+    <!-- PASSAGERS -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">
+        <i class="fas fa-users" style="color:var(--gold)"></i> Passagers
+        <span class="bdg bdg-green" style="margin-left:6px">✓ ${present}</span>
+        ${absent>0?`<span class="bdg bdg-red" style="margin-left:4px">✗ ${absent}</span>`:''}
+      </div>
+      <button onclick="addPaxToExistingCourse('${id}')" class="btn btn-p btn-sm"><i class="fas fa-plus"></i> Ajouter passager</button>
+    </div>
+
+    <div class="tw" style="margin-bottom:14px">
+      <table>
+        <thead><tr><th>Nom</th><th>Tél</th><th>Vol</th><th>Terminal</th><th>H. Arr.</th><th>Réf. client</th><th>Actions</th></tr></thead>
+        <tbody id="edit-pax-tbody">${paxRows||'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Aucun passager</td></tr>'}</tbody>
+      </table>
+    </div>
+
+    <!-- AJOUTER PAX RAPIDE (copier-coller) -->
+    <div style="background:var(--dark);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px">
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:8px"><i class="fas fa-paste"></i> Ajout rapide par copier-coller (format: <span style="color:var(--gold)">Prénom/Nom/Tel/Vol/Terminal/H.Arrivée/Réf</span>)</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="quick-pax-input" placeholder="Jean/Dupont/0612345678/AF1234/CDG2F/07:30/REF-001" style="flex:1;background:var(--card2);border:1px solid var(--border2);border-radius:var(--r-xs);padding:8px 12px;color:var(--white);font-size:12px;outline:none">
+        <button onclick="quickAddPax('${id}')" class="btn btn-p btn-sm"><i class="fas fa-plus"></i> Ajouter</button>
+      </div>
+    </div>`;
+
+  const ov = document.createElement('div');
+  ov.id = 'edit-course-ov';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)';
+  ov.innerHTML=`<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);width:860px;max-width:100%;max-height:92vh;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column">
+    <div style="padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700"><i class="fas fa-route" style="color:var(--gold)"></i> ${c.client} <span style="font-size:12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400">— ${fdt(c.datetime)}</span></div>
+      <button onclick="document.getElementById('edit-course-ov').remove()" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);width:30px;height:30px;color:var(--muted2);cursor:pointer;font-size:12px">✕</button>
+    </div>
+    <div style="padding:18px 22px;overflow-y:auto;flex:1">${html}</div>
+  </div>`;
+  ov.addEventListener('click', function(e){if(e.target===this)this.remove();});
+  document.body.appendChild(ov);
+};
+
+window.copyPaxInfo = function(text) {
+  navigator.clipboard.writeText(text).then(()=>showToast('Copié ✓')).catch(()=>{
+    // fallback
+    const el = document.createElement('textarea');
+    el.value = text; document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+    showToast('Copié ✓');
+  });
+};
+
+window.quickAddPax = async function(courseId) {
+  const input = document.getElementById('quick-pax-input');
+  const val = input.value.trim();
+  if(!val){showToast('Entrez les infos du passager',true);return;}
+  const parts = val.split('/').map(s=>s.trim());
+  const newPax = {
+    prenom: parts[0]||'',
+    nom: parts[1]||'',
+    tel: parts[2]||'',
+    vol: parts[3]||'',
+    terminal: parts[4]||'',
+    harrivee: parts[5]||'',
+    refClient: parts[6]||'',
+    present: true
+  };
+  const c = D.courses.find(x=>x._id===courseId);
+  if(!c){showToast('Course introuvable',true);return;}
+  const passagers = [...(c.passagers||[]), newPax];
+  await fbUpdate('courses', courseId, {passagers, pax:passagers.length, updatedAt:new Date().toISOString()});
+  await addLog(`Passager ajouté : ${newPax.prenom} ${newPax.nom} → ${c.client}`);
+  input.value = '';
+  await loadAll();
+  document.getElementById('edit-course-ov')?.remove();
+  setTimeout(()=>editCourse(courseId), 400);
+  showToast(`${newPax.prenom} ${newPax.nom} ajouté ✓`);
+};
+
+window.addPaxToExistingCourse = function(courseId) {
+  // Show quick add form focus
+  const input = document.getElementById('quick-pax-input');
+  if(input){input.focus();input.style.borderColor='var(--gold)';}
+};
+
+window.transferPax = function(courseId, paxIndex) {
+  const c = D.courses.find(x=>x._id===courseId);
+  if(!c||!c.passagers) return;
+  const pax = c.passagers[paxIndex];
+  const otherCourses = D.courses.filter(x=>x._id!==courseId&&!['terminee','annulee','payee'].includes(x.statut));
+
+  const ov2 = document.createElement('div');
+  ov2.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)';
+  ov2.innerHTML=`<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);width:520px;max-width:100%;box-shadow:var(--shadow)">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700">➡️ Transférer ${pax.prenom} ${pax.nom}</div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);width:28px;height:28px;color:var(--muted2);cursor:pointer;font-size:11px">✕</button>
+    </div>
+    <div style="padding:18px 20px">
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:12px">Le passager sera marqué <strong style="color:var(--red)">Absent</strong> dans la course actuelle et ajouté à la course choisie.</div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Vers une course existante</div>
+        <select id="transfer-dest" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px 12px;color:var(--white);font-size:13px;outline:none">
+          <option value="">— Choisir une course —</option>
+          ${otherCourses.map(x=>`<option value="${x._id}">${fdt(x.datetime)} — ${x.client} (${vI(x.vehicule)}) ${x.chauffeur?'→ '+x.chauffeur:''}</option>`).join('')}
+        </select>
+      </div>
+      <div style="margin-bottom:16px;text-align:center;color:var(--muted);font-size:12px">— ou —</div>
+      <button onclick="createNewCourseForPax('${courseId}',${paxIndex})" class="btn btn-p btn-sm" style="width:100%;justify-content:center"><i class="fas fa-plus"></i> Créer une nouvelle course pour ce passager</button>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="this.closest('div[style*=fixed]').remove()" class="btn btn-ghost btn-sm">Annuler</button>
+      <button onclick="doTransferPax('${courseId}',${paxIndex})" class="btn btn-p btn-sm"><i class="fas fa-check"></i> Confirmer</button>
+    </div>
+  </div>`;
+  ov2.addEventListener('click', function(e){if(e.target===this)this.remove();});
+  document.body.appendChild(ov2);
+};
+
+window.doTransferPax = async function(fromId, paxIndex) {
+  const destId = document.getElementById('transfer-dest').value;
+  if(!destId){showToast('Sélectionner une course de destination',true);return;}
+  const fromCourse = D.courses.find(x=>x._id===fromId);
+  const toCourse = D.courses.find(x=>x._id===destId);
+  if(!fromCourse||!toCourse){showToast('Course introuvable',true);return;}
+  const pax = fromCourse.passagers[paxIndex];
+  // Mark absent in source
+  const fromPax = [...fromCourse.passagers];
+  fromPax[paxIndex] = {...fromPax[paxIndex], present:false};
+  await fbUpdate('courses', fromId, {passagers:fromPax, updatedAt:new Date().toISOString()});
+  // Add to destination
+  const toPax = [...(toCourse.passagers||[]), {...pax, present:true}];
+  await fbUpdate('courses', destId, {passagers:toPax, pax:toPax.length, updatedAt:new Date().toISOString()});
+  await addLog(`${pax.prenom} ${pax.nom} transféré de "${fromCourse.client}" vers "${toCourse.client}"`);
+  // Close overlays
+  document.querySelectorAll('div[style*="position:fixed"]').forEach(el=>el.remove());
+  await loadAll();
+  setTimeout(()=>editCourse(fromId), 400);
+  showToast(`${pax.prenom} ${pax.nom} transféré ✓`);
+};
+
+window.createNewCourseForPax = function(fromId, paxIndex) {
+  // Close transfer overlay, open course modal pre-filled
+  document.querySelectorAll('div[style*="z-index:400"]').forEach(el=>el.remove());
+  const fromCourse = D.courses.find(x=>x._id===fromId);
+  const pax = fromCourse?.passagers?.[paxIndex];
+  openCourseModal();
+  // Pre-fill with same route
+  if(fromCourse){
+    setTimeout(()=>{
+      document.getElementById('fc-dep').value = fromCourse.depart||'';
+      document.getElementById('fc-arr').value = fromCourse.arrivee||'';
+      document.getElementById('fc-cat').value = fromCourse.cat||'cdg';
+    }, 100);
+  }
+  // Store pax to auto-add after save
+  window._pendingTransferPax = {fromId, paxIndex};
+  showToast('Créez la nouvelle course — le passager sera transféré automatiquement');
+};
+
+window.mergeCourse = function(id) {
+  const c = D.courses.find(x=>x._id===id);
+  if(!c) return;
+  const others = D.courses.filter(x=>x._id!==id&&!['terminee','annulee','payee'].includes(x.statut));
+  if(!others.length){showToast('Aucune autre course disponible pour fusion',true);return;}
+
+  const ov = document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)';
+  ov.innerHTML=`<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);width:560px;max-width:100%;box-shadow:var(--shadow)">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700"><i class="fas fa-object-group" style="color:var(--purple)"></i> Fusionner avec une autre course</div>
+    </div>
+    <div style="padding:18px 20px">
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:12px">Les passagers de la course sélectionnée seront ajoutés à <strong style="color:var(--white)">${c.client}</strong>. La course fusionnée sera marquée comme annulée.</div>
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 13px;margin-bottom:12px;font-size:12px">
+        <div style="color:var(--muted);margin-bottom:4px">Course principale :</div>
+        <div style="font-weight:600">${c.ref||c.client} — ${fdt(c.datetime)} — ${vI(c.vehicule)} — ${(c.passagers||[]).length} pax</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Course à fusionner</div>
+        <select id="merge-dest" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px 12px;color:var(--white);font-size:13px;outline:none">
+          <option value="">— Choisir —</option>
+          ${others.map(x=>`<option value="${x._id}">${fdt(x.datetime)} — ${x.client} — ${(x.passagers||[]).length} pax — ${vI(x.vehicule)} ${x.chauffeur?'→ '+x.chauffeur:''}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="this.closest('div[style*=fixed]').remove()" class="btn btn-ghost btn-sm">Annuler</button>
+      <button onclick="doMerge('${id}')" class="btn btn-p btn-sm" style="background:linear-gradient(135deg,var(--purple),#7c5de8)"><i class="fas fa-object-group"></i> Fusionner</button>
+    </div>
+  </div>`;
+  ov.addEventListener('click', function(e){if(e.target===this)this.remove();});
+  document.body.appendChild(ov);
+};
+
+window.doMerge = async function(mainId) {
+  const destId = document.getElementById('merge-dest').value;
+  if(!destId){showToast('Sélectionner une course',true);return;}
+  const main = D.courses.find(x=>x._id===mainId);
+  const other = D.courses.find(x=>x._id===destId);
+  if(!main||!other){showToast('Course introuvable',true);return;}
+  // Merge passengers
+  const merged = [...(main.passagers||[]), ...(other.passagers||[])];
+  await fbUpdate('courses', mainId, {passagers:merged, pax:merged.length, updatedAt:new Date().toISOString()});
+  // Mark other as annulée
+  await fbUpdate('courses', destId, {statut:'annulee', notes:(other.notes||'')+` [Fusionnée avec ${main.ref||main.client}]`, updatedAt:new Date().toISOString()});
+  await addLog(`Courses fusionnées : "${other.client}" → "${main.client}" (${(other.passagers||[]).length} pax transférés)`);
+  document.querySelectorAll('div[style*="position:fixed"]').forEach(el=>el.remove());
+  await loadAll();
+  setTimeout(()=>editCourse(mainId), 400);
+  showToast(`Fusion réussie — ${merged.length} passagers au total ✓`);
+};
+
+window.togglePaxPresence = async function(courseId, paxIndex) {
+  const c = D.courses.find(x=>x._id===courseId);
+  if(!c||!c.passagers) return;
+  const passagers = [...c.passagers];
+  passagers[paxIndex] = {...passagers[paxIndex], present: passagers[paxIndex].present===false ? true : false};
+  await fbUpdate('courses', courseId, {passagers, updatedAt:new Date().toISOString()});
+  await loadAll();
+  document.getElementById('edit-course-ov')?.remove();
+  setTimeout(()=>editCourse(courseId), 300);
+  showToast('Présence mise à jour ✓');
+};
+
+window.openAssignFromEdit = function(id) {
+  document.getElementById('edit-course-ov')?.remove();
+  openAssign(id);
+};
+
+
+
+
+window.importExcel = async function(input) {
+  const file = input.files[0];
+  if(!file){return;}
+  input.value = '';
+  showToast('Lecture du fichier...');
+  const text = await file.text();
+  const sep = text.includes(';') ? ';' : ',';
+  const lines = text.split('\n').filter(l=>l.trim());
+  if(lines.length < 2){showToast('Fichier vide ou invalide',true);return;}
+  const rows = lines.slice(1);
+  let count = 0, errors = 0;
+  for(const row of rows) {
+    const cols = row.split(sep).map(c=>c.replace(/^"|"$/g,'').trim());
+    if(cols.length < 3) continue;
+    const [dateStr, heure, client, tel, depart, arrivee, chauffeur, vehicule, pax, prix, notes] = cols;
+    if(!client || !dateStr) continue;
+    let datetime = '';
+    try {
+      let d;
+      if(dateStr.includes('/')) {
+        const p = dateStr.split('/');
+        d = new Date(`${p[2]||new Date().getFullYear()}-${(p[1]||'01').padStart(2,'0')}-${p[0].padStart(2,'0')}`);
+      } else { d = new Date(dateStr); }
+      const h = (heure||'08:00').replace('h',':').trim();
+      datetime = `${d.toISOString().split('T')[0]}T${h.includes(':')?h:'08:00'}`;
+    } catch(e) { errors++; continue; }
+    const vehMap = {'b':'berline','berline':'berline','v':'van','van':'van','sp':'sprinter','sprinter':'sprinter','bu':'bus','bus':'bus'};
+    const vehCode = vehMap[(vehicule||'').toLowerCase().trim()] || 'berline';
+    const vehLetter = {berline:'B',van:'V',sprinter:'SP',bus:'BU'}[vehCode]||'B';
+    const chName = (chauffeur||'NC').split(' ')[0].toUpperCase();
+    const ref = `IMP/${vehLetter}/D${count+1}/${chName}`;
+    await fbPush('courses', {
+      type:'transfert', client:client.trim(), tel:(tel||'').trim(),
+      depart:(depart||'').trim(), arrivee:(arrivee||'').trim(),
+      datetime, vehicule:vehCode, pax:parseInt(pax)||1, bags:0,
+      chauffeur:(chauffeur||'').trim(),
+      prix:parseFloat((prix||'0').replace(',','.'))||0,
+      cat:'autre', ref, notes:(notes||'').trim(),
+      statut:(chauffeur||'').trim()?'attribuee':'nouvelle',
+      createdAt:new Date().toISOString(), importedFrom:file.name
+    });
+    count++;
+  }
+  await addLog(`Import Excel : ${count} course(s) depuis ${file.name}`);
+  await loadAll();
+  showToast(`✓ ${count} course(s) importée(s)${errors>0?' ('+errors+' ignorées)':''}`);
+};
+
+
+</script>
+</body>
+</html>m/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
 :root{
   --black:#07080a;--dark:#0d0f12;--card:#141618;--card2:#1a1c20;--card3:#202328;
