@@ -357,10 +357,14 @@ tr:last-child td{border-bottom:none}
       <div class="nsec">Gestion</div>
       <button class="ni" data-p="clients" onclick="gp('clients',this)"><i style="width:16px;text-align:center" class="fas fa-users"></i> Clients</button>
       <button class="ni" data-p="tarifs" onclick="gp('tarifs',this)"><i style="width:16px;text-align:center" class="fas fa-tags"></i> Tarifs</button>
+      <div class="nsec">Communication</div>
+      <button class="ni" data-p="messagerie" onclick="gp('messagerie',this)"><i style="width:16px;text-align:center" class="fas fa-comments"></i> Messagerie <span class="nb b" id="nb-msg">0</span></button>
       <div class="nsec">Finance</div>
       <button class="ni" data-p="facturation" onclick="gp('facturation',this)"><i style="width:16px;text-align:center" class="fas fa-file-invoice-dollar"></i> Facturation</button>
       <button class="ni" data-p="rapports" onclick="gp('rapports',this)"><i style="width:16px;text-align:center" class="fas fa-chart-pie"></i> Rapports</button>
+      <button class="ni admin-only" data-p="dirigeant" onclick="gp('dirigeant',this)"><i style="width:16px;text-align:center" class="fas fa-chart-bar"></i> Dashboard dirigeant</button>
       <div class="nsec">Système</div>
+      <button class="ni admin-only" data-p="reservation" onclick="gp('reservation',this)"><i style="width:16px;text-align:center" class="fas fa-globe"></i> App cliente</button>
       <button class="ni admin-only" data-p="comptes" onclick="gp('comptes',this)"><i style="width:16px;text-align:center" class="fas fa-users-cog"></i> Comptes Dispatch</button>
       <button class="ni" data-p="historique" onclick="gp('historique',this)"><i style="width:16px;text-align:center" class="fas fa-history"></i> Historique</button>
       <button class="ni" data-p="parametres" onclick="gp('parametres',this)"><i style="width:16px;text-align:center" class="fas fa-cog"></i> Paramètres</button>
@@ -643,6 +647,152 @@ tr:last-child td{border-bottom:none}
                 <button class="btn btn-p" onclick="loadDemoData()"><i class="fas fa-magic"></i> Données démo</button>
                 <button class="btn btn-d" onclick="if(confirm('Tout supprimer ?'))resetAll()"><i class="fas fa-trash"></i> Réinitialiser</button>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MESSAGERIE -->
+      <div class="page" id="page-messagerie">
+        <div style="display:grid;grid-template-columns:280px 1fr;gap:0;height:calc(100vh - 120px);background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+          <!-- Liste conversations -->
+          <div style="border-right:1px solid var(--border);display:flex;flex-direction:column">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-family:'Syne',sans-serif;font-size:14px;font-weight:700">
+              <i class="fas fa-comments" style="color:var(--gold)"></i> Conversations
+            </div>
+            <div style="padding:10px">
+              <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="msg-search" oninput="renderConvList()"></div>
+            </div>
+            <div id="conv-list" style="flex:1;overflow-y:auto"></div>
+          </div>
+          <!-- Zone chat -->
+          <div style="display:flex;flex-direction:column">
+            <div id="chat-header" style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;min-height:54px">
+              <div style="color:var(--muted);font-size:13px">Sélectionner une conversation</div>
+            </div>
+            <div id="chat-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px"></div>
+            <div id="chat-input-wrap" style="padding:12px 16px;border-top:1px solid var(--border);display:none">
+              <div style="display:flex;gap:8px">
+                <input type="text" id="chat-input" placeholder="Écrire un message..." 
+                  style="flex:1;background:var(--dark);border:1px solid var(--border2);border-radius:20px;padding:10px 16px;color:var(--white);font-size:13px;outline:none"
+                  onkeydown="if(event.key==='Enter')sendMsg()">
+                <button onclick="sendMsg()" style="background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:16px;color:var(--black)">➤</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD DIRIGEANT -->
+      <div class="page" id="page-dirigeant">
+        <div style="margin-bottom:18px">
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4px">Dashboard Dirigeant</div>
+          <div style="font-size:12px;color:var(--muted)">Vue globale de l'activité Black Limousine</div>
+        </div>
+        <!-- KPIs -->
+        <div class="sg" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
+          <div class="sc cg"><div class="sc-head"><div class="sc-ico"><i class="fas fa-euro-sign"></i></div></div><div class="sc-val" id="dir-ca-total">0€</div><div class="sc-lbl">CA total TTC</div><div class="sc-sub" id="dir-ca-sub"></div></div>
+          <div class="sc cgr"><div class="sc-head"><div class="sc-ico"><i class="fas fa-route"></i></div></div><div class="sc-val" id="dir-total">0</div><div class="sc-lbl">Courses totales</div><div class="sc-sub" id="dir-total-sub"></div></div>
+          <div class="sc cb"><div class="sc-head"><div class="sc-ico"><i class="fas fa-check-circle"></i></div></div><div class="sc-val" id="dir-tx">0%</div><div class="sc-lbl">Taux complétion</div></div>
+          <div class="sc co"><div class="sc-head"><div class="sc-ico"><i class="fas fa-star"></i></div></div><div class="sc-val" id="dir-moy">0€</div><div class="sc-lbl">Panier moyen TTC</div></div>
+        </div>
+        <!-- Filtres -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <select class="fsel" id="dir-period" onchange="renderDirigeant()">
+            <option value="month">Ce mois</option>
+            <option value="quarter">Ce trimestre</option>
+            <option value="year">Cette année</option>
+            <option value="all">Tout</option>
+          </select>
+          <select class="fsel" id="dir-chauff-filter" onchange="renderDirigeant()">
+            <option value="">Tous les chauffeurs</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <!-- CA par chauffeur -->
+          <div class="sec">
+            <div class="sec-h"><div class="sec-t"><i class="fas fa-users"></i> CA par chauffeur (TTC)</div></div>
+            <div style="padding:16px" id="dir-by-chauff"></div>
+          </div>
+          <!-- CA par catégorie -->
+          <div class="sec">
+            <div class="sec-h"><div class="sec-t"><i class="fas fa-tags"></i> CA par catégorie</div></div>
+            <div style="padding:16px" id="dir-by-cat"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+          <!-- CA par mois -->
+          <div class="sec">
+            <div class="sec-h"><div class="sec-t"><i class="fas fa-chart-bar"></i> Évolution CA mensuel</div></div>
+            <div style="padding:16px;height:220px"><canvas id="chart-dirigeant"></canvas></div>
+          </div>
+          <!-- Top clients -->
+          <div class="sec">
+            <div class="sec-h"><div class="sec-t"><i class="fas fa-trophy"></i> Top clients</div></div>
+            <div style="padding:16px" id="dir-top-clients"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REVENUS CHAUFFEUR (visible chauffeur uniquement) -->
+      <div class="page" id="page-revenus">
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:16px"><i class="fas fa-chart-line" style="color:var(--gold)"></i> Mes revenus</div>
+        <div class="sg" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+          <div class="sc cg"><div class="sc-val" id="rev-week">0€</div><div class="sc-lbl">Cette semaine</div></div>
+          <div class="sc cgr"><div class="sc-val" id="rev-month">0€</div><div class="sc-lbl">Ce mois</div></div>
+          <div class="sc cb"><div class="sc-val" id="rev-total">0€</div><div class="sc-lbl">Total cumulé</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="sec"><div class="sec-h"><div class="sec-t"><i class="fas fa-chart-bar"></i> CA par semaine</div></div><div style="padding:16px;height:200px"><canvas id="chart-rev-week"></canvas></div></div>
+          <div class="sec"><div class="sec-h"><div class="sec-t"><i class="fas fa-chart-line"></i> CA par mois</div></div><div style="padding:16px;height:200px"><canvas id="chart-rev-month"></canvas></div></div>
+        </div>
+        <div class="sec" style="margin-top:16px">
+          <div class="sec-h"><div class="sec-t"><i class="fas fa-list"></i> Détail par course</div></div>
+          <div class="tw"><table><thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Trajet</th><th>Statut</th></tr></thead><tbody id="tb-rev-detail"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- APP CLIENTE RÉSERVATION -->
+      <div class="page" id="page-reservation">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <!-- Aperçu formulaire -->
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px"><i class="fas fa-globe" style="color:var(--gold)"></i> Page de réservation client</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Formulaire que vos clients utilisent pour réserver</div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+              <div style="padding:16px;background:linear-gradient(135deg,#0d0f12,#141618);border-bottom:1px solid var(--border);text-align:center">
+                <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--gold);letter-spacing:2px">BLACK LIMOUSINE</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:3px">by SimplyCab — Réservation en ligne</div>
+              </div>
+              <div style="padding:20px">
+                <div class="fld"><label>Votre nom complet *</label><input type="text" placeholder="Jean Dupont" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+                <div class="fld"><label>Téléphone *</label><input type="tel" placeholder="+33 6 00 00 00 00" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+                <div class="fld"><label>Email</label><input type="email" placeholder="email@exemple.com" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+                <div class="fg2">
+                  <div class="fld"><label>Date & Heure *</label><input type="datetime-local" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+                  <div class="fld"><label>Véhicule</label><select style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"><option>🚗 Berline</option><option>🚐 Van</option><option>🚌 Sprinter</option></select></div>
+                </div>
+                <div class="fld"><label>Départ *</label><input type="text" placeholder="Adresse de départ" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+                <div class="fld"><label>Arrivée *</label><input type="text" placeholder="Adresse d'arrivée" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+                <div class="fld"><label>N° de vol (si aéroport)</label><input type="text" placeholder="AF1234" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+                <div class="fld"><label>Passagers & Notes</label><textarea rows="2" placeholder="2 personnes, 3 bagages..." style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none;resize:none"></textarea></div>
+                <button style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);border:none;border-radius:var(--r-sm);padding:13px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Envoyer ma demande →</button>
+              </div>
+            </div>
+          </div>
+          <!-- Demandes reçues -->
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px"><i class="fas fa-inbox" style="color:var(--blue)"></i> Demandes reçues</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Nouvelles réservations à confirmer</div>
+            <div class="sec">
+              <div class="sec-h">
+                <div class="sec-t"><span class="nb" id="res-count">0</span> demande(s)</div>
+                <button class="btn btn-ghost btn-sm" onclick="loadAll()"><i class="fas fa-sync-alt"></i></button>
+              </div>
+              <div id="res-list" style="padding:16px"></div>
+            </div>
+            <div style="margin-top:14px;padding:12px 16px;background:var(--blue-dim);border:1px solid rgba(91,156,246,0.2);border-radius:var(--r-sm);font-size:12px;color:var(--blue)">
+              <i class="fas fa-info-circle"></i> Pour partager ce formulaire avec vos clients, envoyez-leur le lien de votre app avec <strong>?reserve=1</strong> à la fin.
             </div>
           </div>
         </div>
@@ -1037,6 +1187,7 @@ function renderAll() {
   renderDash(); renderDispatch(); renderChauffeurs(); renderClients();
   renderTarifs(); renderFact(); renderVehicules(); renderMesCourses();
   renderRapports(); renderHistorique(); renderPlanning(); renderComptes();
+  renderConvList(); renderDirigeant(); renderReservations(); renderRevenus();
   updateBadges(); buildDriverSelects();
 }
 
@@ -1163,7 +1314,15 @@ function startApp() {
     btn.className = 'ni on'; btn.dataset.p = 'mescourses';
     btn.innerHTML = '<i style="width:16px;text-align:center" class="fas fa-route"></i> Mes courses';
     btn.onclick = () => gp('mescourses', btn);
-    nav.prepend(btn);
+    const btnR = document.createElement('button');
+    btnR.className = 'ni'; btnR.dataset.p = 'revenus';
+    btnR.innerHTML = '<i style="width:16px;text-align:center" class="fas fa-chart-line"></i> Mes revenus';
+    btnR.onclick = () => gp('revenus', btnR);
+    const btnM = document.createElement('button');
+    btnM.className = 'ni'; btnM.dataset.p = 'messagerie';
+    btnM.innerHTML = '<i style="width:16px;text-align:center" class="fas fa-comments"></i> Messagerie';
+    btnM.onclick = () => gp('messagerie', btnM);
+    nav.prepend(btnM); nav.prepend(btnR); nav.prepend(btn);
     document.getElementById('btn-new').style.display = 'none';
     gp('mescourses', btn);
   } else if (SESSION.role === 'dispatch') {
@@ -1175,6 +1334,8 @@ function startApp() {
   }
   loadAll();
   startClock();
+  startMsgRefresh();
+  checkReserveMode();
 }
 
 // ── HELPERS ──
@@ -2149,7 +2310,435 @@ function renderMesCourses() {
   </tr>`;}).join('');
 }
 
-// ── GPS CHAUFFEUR ──
+// ══════════════════════════════════════════
+// MESSAGERIE INTERNE
+// ══════════════════════════════════════════
+let currentConv = null;
+let msgRefreshInterval = null;
+
+function renderConvList() {
+  const q = (document.getElementById('msg-search')?.value||'').toLowerCase();
+  const list = document.getElementById('conv-list');
+  if(!list) return;
+
+  // Build conversation list from chauffeurs + dispatch accounts
+  const contacts = [
+    ...D.chauffeurs.map(c=>({id:'drv_'+c._id, name:c.prenom+(c.nom?' '+c.nom:''), role:'Chauffeur', icon:'🚗'})),
+    ...D.dispatch_accounts.map(d=>({id:'dsp_'+d._id, name:d.nom||d.user, role:'Dispatch', icon:'📋'}))
+  ].filter(c=>!q||c.name.toLowerCase().includes(q));
+
+  if(!contacts.length){list.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">Aucun contact</div>';return;}
+
+  list.innerHTML = contacts.map(c=>{
+    const msgs = (D.messages||[]).filter(m=>m.conv===c.id);
+    const last = msgs[msgs.length-1];
+    const unread = msgs.filter(m=>!m.read&&m.from!==SESSION.uid).length;
+    const isActive = currentConv===c.id;
+    return `<div onclick="openConv('${c.id}','${c.name}','${c.role}')"
+      style="padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:${isActive?'var(--gold-dim)':'transparent'};transition:background 0.15s"
+      onmouseover="if('${c.id}'!==currentConv)this.style.background='rgba(255,255,255,0.03)'" onmouseout="if('${c.id}'!==currentConv)this.style.background='transparent'">
+      <div style="width:36px;height:36px;border-radius:50%;background:${c.role==='Chauffeur'?'linear-gradient(135deg,var(--gold),var(--orange))':'linear-gradient(135deg,var(--blue),var(--purple))'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${c.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;display:flex;justify-content:space-between">
+          <span>${c.name}</span>
+          ${unread>0?`<span style="background:var(--red);color:#fff;font-size:9px;padding:2px 6px;border-radius:10px">${unread}</span>`:''}
+        </div>
+        <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${last?last.text:'Aucun message'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.openConv = async function(convId, name, role) {
+  currentConv = convId;
+  renderConvList();
+  // Update header
+  const header = document.getElementById('chat-header');
+  if(header) header.innerHTML = `
+    <div style="width:36px;height:36px;border-radius:50%;background:${role==='Chauffeur'?'linear-gradient(135deg,var(--gold),var(--orange))':'linear-gradient(135deg,var(--blue),var(--purple))'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${role==='Chauffeur'?'🚗':'📋'}</div>
+    <div><div style="font-size:14px;font-weight:700">${name}</div><div style="font-size:11px;color:var(--green)">● ${role}</div></div>`;
+  document.getElementById('chat-input-wrap').style.display = 'block';
+  await loadMessages(convId);
+  // Mark as read
+  const msgs = (D.messages||[]).filter(m=>m.conv===convId&&!m.read&&m.from!==SESSION.uid);
+  for(const m of msgs) await fbUpdate('messages', m._id, {read:true});
+};
+
+async function loadMessages(convId) {
+  const allMsgs = await fbGet('messages');
+  D.messages = allMsgs;
+  const msgs = allMsgs.filter(m=>m.conv===convId).sort((a,b)=>new Date(a.at)-new Date(b.at));
+  const box = document.getElementById('chat-messages');
+  if(!box) return;
+  if(!msgs.length){box.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;margin-top:40px"><i class="fas fa-comments" style="font-size:32px;display:block;margin-bottom:10px;opacity:0.3"></i>Début de la conversation</div>';return;}
+  box.innerHTML = msgs.map(m=>{
+    const isMe = m.from === SESSION.uid || m.fromName === SESSION.name;
+    return `<div style="display:flex;${isMe?'justify-content:flex-end':'justify-content:flex-start'}">
+      <div style="max-width:70%;padding:10px 14px;border-radius:${isMe?'18px 18px 4px 18px':'18px 18px 18px 4px'};background:${isMe?'linear-gradient(135deg,var(--gold),var(--gold2))':'var(--card2)'};color:${isMe?'var(--black)':'var(--white)'};font-size:13px;box-shadow:var(--shadow-sm)">
+        <div>${m.text}</div>
+        <div style="font-size:9px;opacity:0.6;margin-top:4px;text-align:right">${m.at?new Date(m.at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):''}</div>
+      </div>
+    </div>`;
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+window.sendMsg = async function() {
+  const input = document.getElementById('chat-input');
+  const text = input?.value?.trim();
+  if(!text||!currentConv) return;
+  input.value = '';
+  await fbPush('messages', {
+    conv: currentConv,
+    text,
+    from: SESSION.uid,
+    fromName: SESSION.name,
+    at: new Date().toISOString(),
+    read: false
+  });
+  await loadMessages(currentConv);
+  // Send push notification
+  await sendPushNotification(`💬 ${SESSION.name}`, text);
+};
+
+// Refresh messages every 5 seconds when on messagerie page
+function startMsgRefresh() {
+  if(msgRefreshInterval) return;
+  msgRefreshInterval = setInterval(async()=>{
+    if(currentConv) await loadMessages(currentConv);
+    // Update unread badge
+    const allMsgs = await fbGet('messages');
+    D.messages = allMsgs;
+    const unread = allMsgs.filter(m=>!m.read&&m.from!==SESSION.uid).length;
+    const nb = document.getElementById('nb-msg');
+    if(nb) nb.textContent = unread||'0';
+  }, 5000);
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD DIRIGEANT
+// ══════════════════════════════════════════
+function renderDirigeant() {
+  const period = document.getElementById('dir-period')?.value||'month';
+  const chFilter = document.getElementById('dir-chauff-filter')?.value||'';
+
+  // Populate chauffeur filter
+  const sel = document.getElementById('dir-chauff-filter');
+  if(sel && sel.options.length <= 1) {
+    D.chauffeurs.forEach(c=>{
+      const opt=document.createElement('option');
+      opt.value=c.prenom+(c.nom?' '+c.nom:'');
+      opt.textContent=c.prenom+(c.nom?' '+c.nom:'');
+      sel.appendChild(opt);
+    });
+  }
+
+  // Filter by period
+  const now = new Date();
+  let filtered = D.courses.filter(c=>c.statut==='terminee');
+  if(chFilter) filtered = filtered.filter(c=>c.chauffeur===chFilter);
+  filtered = filtered.filter(c=>{
+    if(!c.datetime) return false;
+    const d = new Date(c.datetime);
+    if(period==='month') return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    if(period==='quarter') {
+      const q = Math.floor(now.getMonth()/3);
+      return Math.floor(d.getMonth()/3)===q&&d.getFullYear()===now.getFullYear();
+    }
+    if(period==='year') return d.getFullYear()===now.getFullYear();
+    return true;
+  });
+
+  const totalCA = filtered.reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
+  const moy = filtered.length ? totalCA/filtered.length : 0;
+  const allTerminees = D.courses.filter(c=>c.statut==='terminee').length;
+  const tx = D.courses.length ? ((allTerminees/D.courses.length)*100).toFixed(0) : 0;
+
+  // Previous period for comparison
+  const prevFiltered = D.courses.filter(c=>{
+    if(c.statut!=='terminee'||!c.datetime) return false;
+    const d = new Date(c.datetime);
+    if(period==='month'){const pm=now.getMonth()-1;const py=pm<0?now.getFullYear()-1:now.getFullYear();return d.getMonth()===(pm+12)%12&&d.getFullYear()===py;}
+    return false;
+  });
+  const prevCA = prevFiltered.reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
+  const diff = prevCA ? (((totalCA-prevCA)/prevCA)*100).toFixed(0) : null;
+
+  const e1=document.getElementById('dir-ca-total');const e2=document.getElementById('dir-total');const e3=document.getElementById('dir-tx');const e4=document.getElementById('dir-moy');
+  const es1=document.getElementById('dir-ca-sub');const es2=document.getElementById('dir-total-sub');
+  if(e1)e1.textContent=totalCA.toFixed(0)+'€';
+  if(e2)e2.textContent=filtered.length;
+  if(e3)e3.textContent=tx+'%';
+  if(e4)e4.textContent=moy.toFixed(0)+'€';
+  if(es1&&diff)es1.innerHTML=`<span style="color:${diff>=0?'var(--green)':'var(--red)'}">${diff>=0?'+':''}${diff}% vs mois préc.</span>`;
+  if(es2)es2.textContent=`Sur ${D.courses.length} total`;
+
+  // CA par chauffeur
+  const byChauff = {};
+  filtered.forEach(c=>{if(c.chauffeur){if(!byChauff[c.chauffeur])byChauff[c.chauffeur]={ca:0,nb:0};byChauff[c.chauffeur].ca+=(parseFloat(c.prix)||0);byChauff[c.chauffeur].nb++;}});
+  const topChauff = Object.entries(byChauff).sort((a,b)=>b[1].ca-a[1].ca);
+  const maxCA = topChauff[0]?.[1]?.ca||1;
+  const bcEl = document.getElementById('dir-by-chauff');
+  if(bcEl) bcEl.innerHTML = topChauff.length ? topChauff.map(([name,d])=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div style="font-size:12px;font-weight:600">${name}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:10px;color:var(--muted)">${d.nb} course${d.nb!==1?'s':''}</span>
+          <span class="text-gold fw7 ff-syne" style="font-size:13px">${d.ca.toFixed(0)}€</span>
+        </div>
+      </div>
+      <div class="prog"><div class="prog-fill" style="width:${((d.ca/maxCA)*100).toFixed(0)}%;background:linear-gradient(90deg,var(--gold),var(--orange))"></div></div>
+    </div>`).join('') : '<div style="color:var(--muted);font-size:12px">Aucune donnée</div>';
+
+  // CA par catégorie
+  const byCat = {};
+  filtered.forEach(c=>{const cat=c.cat||'autre';if(!byCat[cat])byCat[cat]=0;byCat[cat]+=(parseFloat(c.prix)||0);});
+  const catNames = {cdg:'✈️ CDG',orly:'✈️ Orly',disney:'🏰 Disney',paris:'🗼 Paris',gare:'🚉 Gare',corporate:'🏢 Corporate',autre:'📍 Autre'};
+  const topCat = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const maxCat = topCat[0]?.[1]||1;
+  const bcatEl = document.getElementById('dir-by-cat');
+  if(bcatEl) bcatEl.innerHTML = topCat.length ? topCat.map(([cat,ca])=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <div style="font-size:12px;font-weight:600">${catNames[cat]||cat}</div>
+        <span class="text-gold fw7 ff-syne" style="font-size:13px">${ca.toFixed(0)}€</span>
+      </div>
+      <div class="prog"><div class="prog-fill" style="width:${((ca/maxCat)*100).toFixed(0)}%;background:linear-gradient(90deg,var(--blue),var(--purple))"></div></div>
+    </div>`).join('') : '<div style="color:var(--muted);font-size:12px">Aucune donnée</div>';
+
+  // Top clients
+  const byClient = {};
+  filtered.forEach(c=>{if(c.client){if(!byClient[c.client])byClient[c.client]=0;byClient[c.client]+=(parseFloat(c.prix)||0);}});
+  const topClients = Object.entries(byClient).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const tcEl = document.getElementById('dir-top-clients');
+  if(tcEl) tcEl.innerHTML = topClients.length ? topClients.map(([name,ca],i)=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="width:22px;height:22px;border-radius:50%;background:${['var(--gold)','var(--muted2)','var(--orange)','var(--blue)','var(--purple)'][i]};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--black);flex-shrink:0">${i+1}</div>
+      <div style="flex:1;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+      <div class="text-gold fw7 ff-syne" style="font-size:12px">${ca.toFixed(0)}€</div>
+    </div>`).join('') : '<div style="color:var(--muted);font-size:12px">Aucune donnée</div>';
+
+  // Chart mensuel
+  setTimeout(()=>{
+    const canvas = document.getElementById('chart-dirigeant');
+    if(!canvas||!canvas.getContext) return;
+    canvas.width=canvas.offsetWidth||500; canvas.height=canvas.offsetHeight||200;
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const months=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    const mData=months.map((_,i)=>D.courses.filter(c=>c.statut==='terminee'&&c.datetime&&new Date(c.datetime).getMonth()===i&&new Date(c.datetime).getFullYear()===now.getFullYear()).reduce((s,c)=>s+(parseFloat(c.prix)||0),0));
+    const w=canvas.width,h=canvas.height,pad={t:16,r:14,b:34,l:52};
+    const cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;
+    const max=Math.max(...mData,1);
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+    for(let i=0;i<=4;i++){const y=pad.t+ch-(ch/4)*i;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke();ctx.fillStyle='rgba(90,93,101,0.7)';ctx.font='9px DM Sans';ctx.textAlign='right';ctx.fillText(Math.round(max/4*i)+'€',pad.l-4,y+3);}
+    const bw=cw/12*0.6,gap=cw/12;
+    mData.forEach((val,i)=>{
+      const x=pad.l+gap*i+gap/2-bw/2;const bh=(val/max)*ch;const y=pad.t+ch-bh;
+      const isCur=i===now.getMonth();
+      const grad=ctx.createLinearGradient(0,y,0,y+bh);
+      grad.addColorStop(0,isCur?'rgba(201,168,76,0.95)':'rgba(91,156,246,0.7)');
+      grad.addColorStop(1,isCur?'rgba(201,168,76,0.2)':'rgba(91,156,246,0.1)');
+      ctx.fillStyle=grad;ctx.fillRect(x,y,bw,bh);
+      ctx.fillStyle='rgba(90,93,101,0.8)';ctx.font='8px DM Sans';ctx.textAlign='center';ctx.fillText(months[i].slice(0,3),x+bw/2,h-pad.b+12);
+      if(val>0){ctx.fillStyle=isCur?'rgba(201,168,76,0.9)':'rgba(91,156,246,0.9)';ctx.font='bold 8px DM Sans';ctx.fillText(val.toFixed(0)+'€',x+bw/2,y-4);}
+    });
+  }, 150);
+}
+
+// ══════════════════════════════════════════
+// REVENUS CHAUFFEUR
+// ══════════════════════════════════════════
+function renderRevenus() {
+  if(SESSION.role!=='chauffeur') return;
+  const name = SESSION.name;
+  const mine = D.courses.filter(c=>c.chauffeur===name&&c.statut==='terminee');
+  const now = new Date();
+
+  // Cette semaine
+  const startWeek = new Date(now);
+  startWeek.setDate(now.getDate()-now.getDay());
+  startWeek.setHours(0,0,0,0);
+  const weekCA = mine.filter(c=>new Date(c.datetime)>=startWeek).reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
+  const monthCA = mine.filter(c=>new Date(c.datetime).getMonth()===now.getMonth()&&new Date(c.datetime).getFullYear()===now.getFullYear()).reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
+  const totalCA = mine.reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
+
+  const e1=document.getElementById('rev-week');const e2=document.getElementById('rev-month');const e3=document.getElementById('rev-total');
+  if(e1)e1.textContent=weekCA.toFixed(0)+'€';
+  if(e2)e2.textContent=monthCA.toFixed(0)+'€';
+  if(e3)e3.textContent=totalCA.toFixed(0)+'€';
+
+  // Detail table
+  const tb = document.getElementById('tb-rev-detail');
+  if(tb){
+    const recent = mine.sort((a,b)=>new Date(b.datetime)-new Date(a.datetime)).slice(0,20);
+    tb.innerHTML = recent.map(c=>`<tr>
+      <td style="font-size:11px">${fdt(c.datetime)}</td>
+      <td style="font-size:12px;font-weight:600">${c.client||'—'}</td>
+      <td>${tBdg(c.type)}</td>
+      <td style="font-size:11px">${(c.depart||c.lieu||'').slice(0,20)} → ${(c.arrivee||c.duree||'').slice(0,15)}</td>
+      <td>${sBdg(c.statut)}</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="t-empty"><i class="fas fa-chart-line"></i><p>Aucune course terminée</p></td></tr>';
+  }
+
+  // Charts
+  setTimeout(()=>{
+    drawRevChart('chart-rev-week', getWeeklyData(mine), 'S');
+    drawRevChart('chart-rev-month', getMonthlyData(mine), 'M');
+  }, 100);
+}
+
+function getWeeklyData(mine) {
+  const now = new Date();
+  const weeks = [];
+  for(let i=7;i>=0;i--){
+    const d=new Date(now);d.setDate(now.getDate()-i*7);
+    const start=new Date(d);start.setDate(d.getDate()-d.getDay());start.setHours(0,0,0,0);
+    const end=new Date(start);end.setDate(start.getDate()+7);
+    weeks.push({label:`S${8-i}`,val:mine.filter(c=>{const dt=new Date(c.datetime);return dt>=start&&dt<end;}).reduce((s,c)=>s+(parseFloat(c.prix)||0),0)});
+  }
+  return weeks;
+}
+
+function getMonthlyData(mine) {
+  const now = new Date();
+  const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  return months.map((lbl,i)=>({label:lbl,val:mine.filter(c=>new Date(c.datetime).getMonth()===i&&new Date(c.datetime).getFullYear()===now.getFullYear()).reduce((s,c)=>s+(parseFloat(c.prix)||0),0)}));
+}
+
+function drawRevChart(id, data, prefix) {
+  const canvas=document.getElementById(id);if(!canvas||!canvas.getContext)return;
+  canvas.width=canvas.offsetWidth||400;canvas.height=canvas.offsetHeight||180;
+  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+  const w=canvas.width,h=canvas.height,pad={t:14,r:10,b:28,l:44};
+  const cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;
+  const max=Math.max(...data.map(d=>d.val),1);
+  const bw=cw/data.length*0.55,gap=cw/data.length;
+  ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+  for(let i=0;i<=3;i++){const y=pad.t+ch-(ch/3)*i;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke();ctx.fillStyle='rgba(90,93,101,0.6)';ctx.font='8px DM Sans';ctx.textAlign='right';ctx.fillText(Math.round(max/3*i)+'€',pad.l-3,y+3);}
+  data.forEach((d,i)=>{
+    const x=pad.l+gap*i+gap/2-bw/2;const bh=(d.val/max)*ch;const y=pad.t+ch-bh;
+    const grad=ctx.createLinearGradient(0,y,0,y+bh);grad.addColorStop(0,'rgba(46,204,138,0.85)');grad.addColorStop(1,'rgba(46,204,138,0.1)');
+    ctx.fillStyle=grad;ctx.fillRect(x,y,bw,bh);
+    ctx.fillStyle='rgba(90,93,101,0.7)';ctx.font='7px DM Sans';ctx.textAlign='center';ctx.fillText(d.label,x+bw/2,h-pad.b+11);
+  });
+}
+
+// ══════════════════════════════════════════
+// RÉSERVATIONS CLIENTS
+// ══════════════════════════════════════════
+function renderReservations() {
+  const list = document.getElementById('res-list');
+  const cnt = document.getElementById('res-count');
+  if(!list) return;
+  const reservations = D.courses.filter(c=>c.source==='client'&&c.statut==='nouvelle');
+  if(cnt) cnt.textContent = reservations.length;
+  if(!reservations.length){list.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)"><i class="fas fa-inbox" style="font-size:32px;display:block;margin-bottom:10px;opacity:0.3"></i>Aucune demande en attente</div>';return;}
+  list.innerHTML = reservations.map(c=>`
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700">${c.client||'—'}</div>
+        <span class="bdg bdg-orange">⏳ En attente</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:4px">📞 ${c.tel||'—'} • 📅 ${fdt(c.datetime)}</div>
+      <div style="font-size:12px;margin-bottom:4px">📍 ${c.depart||'—'} → ${c.arrivee||'—'}</div>
+      ${c.notes?`<div style="font-size:11px;color:var(--muted);margin-bottom:8px">📝 ${c.notes}</div>`:''}
+      <div style="display:flex;gap:7px;margin-top:10px">
+        <button onclick="confirmReservation('${c._id}')" class="btn btn-g btn-sm"><i class="fas fa-check"></i> Confirmer</button>
+        <button onclick="updStatut('${c._id}','annulee')" class="btn btn-d btn-sm"><i class="fas fa-times"></i> Refuser</button>
+      </div>
+    </div>`).join('');
+}
+
+window.confirmReservation = async function(id) {
+  await fbUpdate('courses', id, {statut:'en_attente', confirmedAt:new Date().toISOString()});
+  await addLog(`Réservation client confirmée : ${D.courses.find(c=>c._id===id)?.client||id}`);
+  await loadAll();
+  showToast('Réservation confirmée ✓');
+};
+
+// Check URL for ?reserve=1 to show client booking form
+function checkReserveMode() {
+  if(window.location.search.includes('reserve=1')) {
+    // Show booking form overlay
+    const ov = document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:var(--black);z-index:9999;overflow-y:auto;padding:20px';
+    ov.innerHTML=`<div style="max-width:500px;margin:auto">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--gold);letter-spacing:2px">BLACK LIMOUSINE</div>
+        <div style="font-size:12px;color:var(--muted)">by SimplyCab — Réservation en ligne</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px">Demande de réservation</div>
+        <div class="fld"><label>Nom complet *</label><input type="text" id="res-nom" placeholder="Jean Dupont" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+        <div class="fld"><label>Téléphone *</label><input type="tel" id="res-tel" placeholder="+33 6 00 00 00 00" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+        <div class="fld"><label>Email</label><input type="email" id="res-email" placeholder="email@exemple.com" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+        <div class="fg2">
+          <div class="fld"><label>Date & Heure *</label><input type="datetime-local" id="res-dt" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+          <div class="fld"><label>Véhicule</label><select id="res-veh" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"><option value="berline">🚗 Berline (1-3 pax)</option><option value="van">🚐 Van (1-7 pax)</option><option value="sprinter">🚌 Sprinter (1-16 pax)</option></select></div>
+        </div>
+        <div class="fld"><label>Départ *</label><input type="text" id="res-dep" placeholder="Adresse de départ" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+        <div class="fld"><label>Arrivée *</label><input type="text" id="res-arr" placeholder="Adresse d'arrivée" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+        <div class="fld"><label>N° de vol (aéroport)</label><input type="text" id="res-vol" placeholder="AF1234" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none"></div>
+        <div class="fld"><label>Notes</label><textarea id="res-notes" rows="2" placeholder="Nombre de passagers, bagages, demandes spéciales..." style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px;color:var(--white);font-size:13px;outline:none;resize:none"></textarea></div>
+        <button onclick="submitReservation()" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);border:none;border-radius:var(--r-sm);padding:14px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px">Envoyer ma demande →</button>
+        <div id="res-confirm" style="display:none;text-align:center;padding:20px;color:var(--green);font-family:'Syne',sans-serif;font-size:16px;font-weight:700">✅ Demande envoyée !<br><span style="font-size:12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400">Nous vous confirmons votre transfert très bientôt.</span></div>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+  }
+}
+
+window.submitReservation = async function() {
+  const nom = document.getElementById('res-nom')?.value?.trim();
+  const tel = document.getElementById('res-tel')?.value?.trim();
+  const dt = document.getElementById('res-dt')?.value;
+  const dep = document.getElementById('res-dep')?.value?.trim();
+  const arr = document.getElementById('res-arr')?.value?.trim();
+  if(!nom||!tel||!dt||!dep||!arr){alert('Veuillez remplir tous les champs obligatoires (*)');return;}
+  await fbPush('courses',{
+    type:'transfert',client:nom,tel,datetime:dt,
+    depart:dep,arrivee:arr,
+    vehicule:document.getElementById('res-veh')?.value||'berline',
+    vol:document.getElementById('res-vol')?.value||'',
+    notes:document.getElementById('res-notes')?.value||'',
+    statut:'nouvelle',source:'client',
+    createdAt:new Date().toISOString()
+  });
+  // Show success
+  document.querySelector('[onclick="submitReservation()"]').style.display='none';
+  document.getElementById('res-confirm').style.display='block';
+  // Notify admin
+  await sendPushNotification('🆕 Nouvelle réservation client',`${nom} — ${dep} → ${arr}`);
+};
+
+// ══════════════════════════════════════════
+// RAPPELS AUTOMATIQUES
+// ══════════════════════════════════════════
+async function checkRappels() {
+  const now = new Date();
+  const in1h = new Date(now.getTime() + 60*60*1000);
+  const courses = D.courses.filter(c=>['attribuee','acceptee','en_attente'].includes(c.statut)&&c.datetime&&!c.rappelEnvoye);
+  for(const c of courses) {
+    const dt = new Date(c.datetime);
+    const diffMin = (dt-now)/60000;
+    if(diffMin > 55 && diffMin < 65) {
+      // Send reminder notification
+      await sendPushNotification(
+        `⏰ Course dans 1h — ${c.chauffeur||'À assigner'}`,
+        `${c.ref||''} | ${c.client} | ${fdt(c.datetime)} | ${c.depart||c.lieu||''}`
+      );
+      await fbUpdate('courses', c._id, {rappelEnvoye:true});
+      await addLog(`Rappel envoyé : ${c.client} à ${fdt(c.datetime)}`);
+    }
+  }
+}
+
+// Start rappel check every 5 minutes
+setInterval(checkRappels, 5*60*1000);
+
+
 let gpsInterval = null;
 let gpsActive = false;
 
@@ -2539,7 +3128,7 @@ function gp(name, btn) {
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('on');
   if(btn)btn.classList.add('on');
-  const titles={dashboard:'Dashboard',dispatch:'Dispatch',planning:'Planning',chauffeurs:'Chauffeurs',vehicules:'Véhicules',clients:'Clients',tarifs:'Tarifs',facturation:'Facturation',rapports:'Rapports',comptes:'Comptes Dispatch',historique:'Historique',parametres:'Paramètres',mescourses:'Mes courses'};
+  const titles={dashboard:'Dashboard',dispatch:'Dispatch',planning:'Planning',chauffeurs:'Chauffeurs',vehicules:'Véhicules',clients:'Clients',tarifs:'Tarifs',facturation:'Facturation',rapports:'Rapports',comptes:'Comptes Dispatch',historique:'Historique',parametres:'Paramètres',mescourses:'Mes courses',messagerie:'Messagerie',dirigeant:'Dashboard Dirigeant',reservation:'App Cliente',revenus:'Mes revenus'};
   document.getElementById('page-title').textContent=titles[name]||name;
   closeMob();
   loadAll(); // reload on every page change
