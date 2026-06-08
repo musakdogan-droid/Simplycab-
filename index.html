@@ -511,7 +511,26 @@ tr:last-child td{border-bottom:none}
           <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="ch-q" oninput="renderChauffeurs()"></div>
           <select class="fsel" id="ch-s" onchange="renderChauffeurs()"><option value="">Tous</option><option value="disponible">Disponible</option><option value="indisponible">Indisponible</option></select>
           <button class="btn btn-p btn-sm" onclick="openMo('chauffeur')"><i class="fas fa-plus"></i> Ajouter chauffeur</button>
+          <button class="btn btn-s btn-sm" onclick="toggleLiveMap()"><i class="fas fa-map-marked-alt"></i> Carte temps réel</button>
         </div>
+
+        <!-- CARTE TEMPS RÉEL -->
+        <div id="live-map-wrap" style="display:none;margin-bottom:16px">
+          <div class="sec">
+            <div class="sec-h">
+              <div class="sec-t"><i class="fas fa-map-marked-alt" style="color:var(--green)"></i> Suivi temps réel <span id="live-map-count" class="bdg bdg-green" style="margin-left:6px">0 actif(s)</span></div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:11px;color:var(--muted)" id="live-map-updated"></span>
+                <button class="btn btn-ghost btn-sm" onclick="refreshLiveMap()"><i class="fas fa-sync-alt"></i> Actualiser</button>
+              </div>
+            </div>
+            <div id="live-map-container" style="height:400px;border-radius:0 0 var(--r) var(--r);overflow:hidden;position:relative;background:var(--dark)">
+              <iframe id="live-map-frame" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
+              <div id="live-map-list" style="position:absolute;top:10px;right:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px;min-width:180px;max-height:360px;overflow-y:auto;box-shadow:var(--shadow)"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="cg" id="cg-ch"></div>
       </div>
 
@@ -632,9 +651,16 @@ tr:last-child td{border-bottom:none}
         </div>
 
         <!-- TABS -->
-        <div style="display:flex;gap:3px;background:var(--dark);border-radius:var(--r-xs);padding:4px;margin-bottom:14px;width:fit-content">
-          <button id="mc-tab-active" onclick="mcTab('active')" style="padding:8px 16px;border:none;border-radius:var(--r-xs);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:var(--card2);color:var(--gold)">🚗 En cours</button>
-          <button id="mc-tab-history" onclick="mcTab('history')" style="padding:8px 16px;border:none;border-radius:var(--r-xs);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted2)">📋 Tout l'historique</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div style="display:flex;gap:3px;background:var(--dark);border-radius:var(--r-xs);padding:4px">
+            <button id="mc-tab-active" onclick="mcTab('active')" style="padding:8px 16px;border:none;border-radius:var(--r-xs);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:var(--card2);color:var(--gold)">🚗 En cours</button>
+            <button id="mc-tab-history" onclick="mcTab('history')" style="padding:8px 16px;border:none;border-radius:var(--r-xs);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted2)">📋 Tout l'historique</button>
+          </div>
+          <!-- BOUTON GPS PARTAGE -->
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="gps-status" style="font-size:11px;color:var(--muted)">Position non partagée</div>
+            <button id="gps-btn" onclick="toggleGPS()" class="btn btn-s btn-sm"><i class="fas fa-map-marker-alt"></i> Partager ma position</button>
+          </div>
         </div>
 
         <!-- EN COURS -->
@@ -2047,17 +2073,36 @@ function renderMesCourses() {
   const active=mine.filter(c=>!['terminee','annulee','noshow','payee','facturee'].includes(c.statut));
   const tb=document.getElementById('tb-mc');if(!tb)return;
   if(!active.length){tb.innerHTML=`<tr><td colspan="9" class="t-empty"><i class="fas fa-check-circle" style="color:var(--green)"></i><p>Aucune course assignée</p></td></tr>`;return;}
-  tb.innerHTML=active.map(c=>`<tr>
+  tb.innerHTML=active.map(c=>{
+    const dep = encodeURIComponent(c.depart||c.lieu||'');
+    const arr = encodeURIComponent(c.arrivee||'');
+    const wazeDepUrl = `https://waze.com/ul?q=${dep}&navigate=yes`;
+    const wazeArrUrl = `https://waze.com/ul?q=${arr}&navigate=yes`;
+    const gmapsDepUrl = `https://www.google.com/maps/dir/?api=1&destination=${dep}&travelmode=driving`;
+    const gmapsArrUrl = `https://www.google.com/maps/dir/?api=1&destination=${arr}&travelmode=driving`;
+    return `<tr>
     <td style="font-size:11px;white-space:nowrap">${fdt(c.datetime)}</td>
     <td>
       <strong>${c.client||'—'}</strong>
       ${c.passagers&&c.passagers.length?`<br><button onclick="viewPax('${c._id}')" style="background:var(--blue-dim);border:1px solid rgba(91,156,246,0.3);color:var(--blue);border-radius:var(--r-xs);padding:3px 8px;cursor:pointer;font-size:10px;margin-top:3px">👥 ${c.passagers.length} passager(s)</button>`:''}
     </td>
     <td>${tBdg(c.type)}</td>
-    <td style="font-size:11px">${c.depart||c.lieu||'—'}</td>
-    <td style="font-size:11px">${c.arrivee||c.duree||'—'}</td>
+    <td>
+      <div style="font-size:11px;margin-bottom:5px">${c.depart||c.lieu||'—'}</div>
+      ${dep?`<div style="display:flex;gap:4px">
+        <a href="${wazeDepUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:#00d4ff1a;border:1px solid rgba(0,212,255,0.3);border-radius:var(--r-xs);padding:3px 8px;color:#00d4ff;font-size:10px;font-weight:600;text-decoration:none">🗺️ Waze</a>
+        <a href="${gmapsDepUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:var(--green-dim);border:1px solid rgba(46,204,138,0.3);border-radius:var(--r-xs);padding:3px 8px;color:var(--green);font-size:10px;font-weight:600;text-decoration:none">📍 Maps</a>
+      </div>`:''}
+    </td>
+    <td>
+      <div style="font-size:11px;margin-bottom:5px">${c.arrivee||c.duree||'—'}</div>
+      ${arr?`<div style="display:flex;gap:4px">
+        <a href="${wazeArrUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:#00d4ff1a;border:1px solid rgba(0,212,255,0.3);border-radius:var(--r-xs);padding:3px 8px;color:#00d4ff;font-size:10px;font-weight:600;text-decoration:none">🗺️ Waze</a>
+        <a href="${gmapsArrUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:var(--green-dim);border:1px solid rgba(46,204,138,0.3);border-radius:var(--r-xs);padding:3px 8px;color:var(--green);font-size:10px;font-weight:600;text-decoration:none">📍 Maps</a>
+      </div>`:''}
+    </td>
     <td style="font-size:11px">${c.terminaux||'—'}</td>
-    <td style="font-size:10px;color:var(--muted2)">${c.notes||'—'}</td>
+    <td style="font-size:10px;color:var(--muted2)">${(c.notes||'—').replace(/\n/g,'<br>')}</td>
     <td>${sBdg(c.statut)}</td>
     <td>
       <div style="display:flex;flex-direction:column;gap:4px">
@@ -2079,10 +2124,123 @@ function renderMesCourses() {
         </div>
       </div>
     </td>
-  </tr>`).join('');
+  </tr>`;}).join('');
 }
 
-// ── ONGLETS MES COURSES ──
+// ── GPS CHAUFFEUR ──
+let gpsInterval = null;
+let gpsActive = false;
+
+window.toggleGPS = async function() {
+  if(gpsActive) {
+    // Stop sharing
+    clearInterval(gpsInterval);
+    gpsInterval = null;
+    gpsActive = false;
+    // Remove position from Firebase
+    const name = SESSION.name;
+    const ch = D.chauffeurs.find(c=>(c.prenom+(c.nom?' '+c.nom:''))===name);
+    if(ch) await fbUpdate('chauffeurs', ch._id, {gps:null, gpsActive:false});
+    const btn = document.getElementById('gps-btn');
+    const st = document.getElementById('gps-status');
+    if(btn){btn.innerHTML='<i class="fas fa-map-marker-alt"></i> Partager ma position';btn.style.borderColor='';btn.style.color='';}
+    if(st){st.textContent='Position non partagée';st.style.color='var(--muted)';}
+    showToast('Partage de position arrêté');
+  } else {
+    // Start sharing
+    if(!navigator.geolocation){showToast('GPS non disponible sur cet appareil',true);return;}
+    navigator.geolocation.getCurrentPosition(async(pos)=>{
+      gpsActive = true;
+      await sendGPS(pos);
+      gpsInterval = setInterval(()=>{
+        navigator.geolocation.getCurrentPosition(sendGPS, null, {enableHighAccuracy:true});
+      }, 15000); // update every 15 seconds
+      const btn = document.getElementById('gps-btn');
+      const st = document.getElementById('gps-status');
+      if(btn){btn.innerHTML='<i class="fas fa-stop-circle"></i> Arrêter le partage';btn.style.borderColor='var(--green)';btn.style.color='var(--green)';}
+      if(st){st.textContent='● Position partagée';st.style.color='var(--green)';}
+      showToast('Position partagée ✓');
+    }, ()=>showToast('Impossible d\'accéder au GPS',true), {enableHighAccuracy:true});
+  }
+};
+
+async function sendGPS(pos) {
+  const name = SESSION.name;
+  const ch = D.chauffeurs.find(c=>(c.prenom+(c.nom?' '+c.nom:''))===name);
+  if(!ch) return;
+  await fbUpdate('chauffeurs', ch._id, {
+    gps: {lat:pos.coords.latitude, lng:pos.coords.longitude, acc:Math.round(pos.coords.accuracy)},
+    gpsActive: true,
+    gpsUpdated: new Date().toISOString()
+  });
+}
+
+// ── CARTE TEMPS RÉEL (ADMIN/DISPATCH) ──
+let liveMapVisible = false;
+let liveMapRefreshInterval = null;
+
+window.toggleLiveMap = function() {
+  const wrap = document.getElementById('live-map-wrap');
+  liveMapVisible = !liveMapVisible;
+  wrap.style.display = liveMapVisible ? 'block' : 'none';
+  if(liveMapVisible) {
+    refreshLiveMap();
+    liveMapRefreshInterval = setInterval(refreshLiveMap, 15000);
+  } else {
+    clearInterval(liveMapRefreshInterval);
+  }
+};
+
+window.refreshLiveMap = async function() {
+  // Reload chauffeurs with GPS data
+  const chauffeurs = await fbGet('chauffeurs');
+  const active = chauffeurs.filter(c=>c.gpsActive&&c.gps);
+
+  const cnt = document.getElementById('live-map-count');
+  const upd = document.getElementById('live-map-updated');
+  if(cnt) cnt.textContent = active.length+' actif(s)';
+  if(upd) upd.textContent = 'Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  // Build list panel
+  const list = document.getElementById('live-map-list');
+  if(list) {
+    list.innerHTML = active.length ? active.map(c=>{
+      const name = c.prenom+(c.nom?' '+c.nom:'');
+      const updAgo = c.gpsUpdated ? Math.round((new Date()-new Date(c.gpsUpdated))/1000) : '?';
+      const course = D.courses.find(x=>x.chauffeur===name&&['en_route','sur_place','onboard','acceptee'].includes(x.statut));
+      return `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+          <div style="font-size:12px;font-weight:600">${name}</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted)">📍 ${c.gps.lat.toFixed(5)}, ${c.gps.lng.toFixed(5)}</div>
+        <div style="font-size:10px;color:var(--muted)">⏱ Il y a ${updAgo}s</div>
+        ${course?`<div style="font-size:10px;color:var(--gold);margin-top:3px">🚗 ${course.client}</div>`:''}
+        <a href="https://www.google.com/maps?q=${c.gps.lat},${c.gps.lng}" target="_blank"
+          style="display:inline-block;margin-top:5px;font-size:10px;color:var(--blue);text-decoration:none">Voir sur Maps →</a>
+      </div>`;
+    }).join('') : '<div style="font-size:12px;color:var(--muted);text-align:center;padding:10px">Aucun chauffeur actif</div>';
+  }
+
+  // Build map iframe with all markers
+  if(active.length) {
+    const frame = document.getElementById('live-map-frame');
+    if(frame) {
+      // Use OpenStreetMap with markers
+      const center = active[0].gps;
+      const markers = active.map(c=>`${c.gps.lat},${c.gps.lng},${c.prenom}`).join('|');
+      // Use Google Maps embed with markers
+      const pins = active.map(c=>`color:red|label:${c.prenom[0]}|${c.gps.lat},${c.gps.lng}`).join('&markers=');
+      frame.src = `https://www.google.com/maps/embed/v1/view?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&center=${center.lat},${center.lng}&zoom=12&maptype=roadmap`;
+    }
+  } else {
+    // Default map centered on CDG
+    const frame = document.getElementById('live-map-frame');
+    if(frame) frame.src = 'https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d84000!2d2.549!3d48.996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sfr!2sfr!4v1';
+  }
+};
+
+
 window.mcTab = function(tab) {
   const isActive = tab === 'active';
   document.getElementById('mc-pane-active').style.display = isActive ? 'block' : 'none';
