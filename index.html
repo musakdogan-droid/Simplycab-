@@ -2510,16 +2510,6 @@ function autoFillPrix() {
   }
 }
 
-  const ttc = parseFloat(document.getElementById('fc-prix').value)||0;
-  calcMarge();
-  const cat = document.getElementById('fc-cat').value;
-  const veh = document.getElementById('fc-veh').value;
-  const t = D.tarifs.find(x=>x.categorie===cat);
-  const ps = document.getElementById('prix-suggest');
-  if(t){const p={berline:t.berline,van:t.van,sprinter:t.sprinter,bus:t.bus}[veh];if(p){ps.style.display='block';ps.innerHTML=`💡 Tarif suggéré client : <strong>${p}€ TTC</strong> (${t.route})`;}}
-  else ps.style.display='none';
-};
-
 window.selPayMode = function(mode) {
   document.getElementById('fc-pay-mode').value = mode;
   const s = document.getElementById('pay-simplycab');
