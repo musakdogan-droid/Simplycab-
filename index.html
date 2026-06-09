@@ -578,7 +578,7 @@ tr:last-child td{border-bottom:none}
         <div class="sec-a" style="margin-bottom:14px;gap:8px;flex-wrap:wrap">
           <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="ch-q" oninput="renderChauffeurs()"></div>
           <select class="fsel" id="ch-s" onchange="renderChauffeurs()"><option value="">Tous</option><option value="disponible">Disponible</option><option value="indisponible">Indisponible</option></select>
-          <button class="btn btn-p btn-sm" onclick="openMo('chauffeur')"><i class="fas fa-plus"></i> Ajouter chauffeur</button>
+          <button class="btn btn-p btn-sm" onclick="openChauffeurModal()"><i class="fas fa-plus"></i> Ajouter chauffeur</button>
           <button class="btn btn-s btn-sm" onclick="toggleLiveMap()"><i class="fas fa-map-marked-alt"></i> Carte temps réel</button>
         </div>
 
@@ -1250,16 +1250,27 @@ tr:last-child td{border-bottom:none}
 
 <!-- CHAUFFEUR --><div class="mo" id="mo-chauffeur">
   <div class="mo-box" style="width:460px">
-    <div class="mo-h"><div class="mo-t"><i class="fas fa-id-card" style="color:var(--gold)"></i> Ajouter chauffeur</div><div class="mo-x" onclick="closeMo('chauffeur')"><i class="fas fa-times"></i></div></div>
+    <div class="mo-h">
+      <div class="mo-t"><i class="fas fa-id-card" style="color:var(--gold)"></i> <span id="mo-ch-title">Ajouter chauffeur</span></div>
+      <div class="mo-x" onclick="closeMo('chauffeur')"><i class="fas fa-times"></i></div>
+    </div>
     <div class="mo-b">
+      <input type="hidden" id="ch-edit-id">
       <div class="fg2"><div class="fld"><label>Prénom *</label><input type="text" id="ch-prenom" placeholder="Prénom"></div><div class="fld"><label>Nom</label><input type="text" id="ch-nom" placeholder="Nom"></div></div>
       <div class="fg2"><div class="fld"><label>Téléphone</label><input type="tel" id="ch-tel" placeholder="+33 6 00 00 00 00"></div><div class="fld"><label>Email</label><input type="email" id="ch-email" placeholder="email@exemple.com"></div></div>
       <div class="fg2">
-        <div class="fld"><label>Code à 6 chiffres *</label><input type="password" id="ch-pin" placeholder="••••••" maxlength="6" pattern="[0-9]{6}"></div>
+        <div class="fld">
+          <label id="ch-pin-label">Code à 6 chiffres *</label>
+          <input type="password" id="ch-pin" placeholder="••••••" maxlength="6" pattern="[0-9]{6}">
+          <div id="ch-pin-hint" style="display:none;font-size:10px;color:var(--muted);margin-top:3px">Laisser vide pour ne pas changer le code</div>
+        </div>
         <div class="fld"><label>Véhicule</label><select id="ch-veh"><option value="berline">🚗 Berline</option><option value="van">🚐 Van</option><option value="sprinter">🚌 Sprinter</option><option value="bus">🚍 Bus</option></select></div>
       </div>
     </div>
-    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('chauffeur')">Annuler</button><button class="btn btn-p" onclick="saveChauffeur()"><i class="fas fa-save"></i> Enregistrer</button></div>
+    <div class="mo-f">
+      <button class="btn btn-ghost" onclick="closeMo('chauffeur')">Annuler</button>
+      <button class="btn btn-p" onclick="saveChauffeur()"><i class="fas fa-save"></i> <span id="ch-save-lbl">Enregistrer</span></button>
+    </div>
   </div>
 </div>
 
@@ -2581,25 +2592,62 @@ function renderChauffeurs() {
       <div class="ic-foot">
         <button class="btn btn-g btn-xs" onclick="updChauffStatut('${c._id}','disponible')"><i class="fas fa-check"></i></button>
         <button class="btn btn-d btn-xs" onclick="updChauffStatut('${c._id}','indisponible')"><i class="fas fa-times"></i></button>
+        <button class="btn btn-s btn-xs" onclick="openChauffeurModal('${c._id}')"><i class="fas fa-edit"></i></button>
         <button class="btn btn-d btn-xs" style="margin-left:auto" onclick="delChauffeur('${c._id}')"><i class="fas fa-trash"></i></button>
       </div>
     </div>`;
   }).join('');
 }
 
+window.openChauffeurModal = function(id) {
+  document.getElementById('ch-edit-id').value = '';
+  ['ch-prenom','ch-nom','ch-tel','ch-email','ch-pin'].forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
+  if(id) {
+    const c = D.chauffeurs.find(x=>x._id===id);
+    if(!c) return;
+    document.getElementById('ch-edit-id').value = id;
+    document.getElementById('ch-prenom').value = c.prenom||'';
+    document.getElementById('ch-nom').value = c.nom||'';
+    document.getElementById('ch-tel').value = c.tel||'';
+    document.getElementById('ch-email').value = c.email||'';
+    document.getElementById('ch-veh').value = c.vehicule||'berline';
+    document.getElementById('mo-ch-title').textContent = 'Modifier chauffeur';
+    document.getElementById('ch-pin-label').textContent = 'Nouveau code (6 chiffres)';
+    document.getElementById('ch-pin-hint').style.display = 'block';
+    document.getElementById('ch-save-lbl').textContent = 'Enregistrer';
+  } else {
+    document.getElementById('mo-ch-title').textContent = 'Ajouter chauffeur';
+    document.getElementById('ch-pin-label').textContent = 'Code à 6 chiffres *';
+    document.getElementById('ch-pin-hint').style.display = 'none';
+    document.getElementById('ch-save-lbl').textContent = 'Ajouter';
+  }
+  openMo('chauffeur');
+};
+window.openChauffeurModal = window.openChauffeurModal;
+
 window.saveChauffeur = async function() {
   const prenom = document.getElementById('ch-prenom').value.trim();
   const pin = document.getElementById('ch-pin').value.trim();
+  const editId = document.getElementById('ch-edit-id').value;
   if(!prenom){showToast('Prénom obligatoire',true);return;}
   if(pin && pin.length!==6){showToast('Le code doit faire 6 chiffres',true);return;}
   if(pin && !/^\d{6}$/.test(pin)){showToast('Le code doit contenir uniquement des chiffres',true);return;}
-  if(pin && D.chauffeurs.find(c=>c.pin===pin)){showToast('PIN déjà utilisé',true);return;}
+  if(pin && D.chauffeurs.find(c=>c.pin===pin&&c._id!==editId)){showToast('Code déjà utilisé par un autre chauffeur',true);return;}
+  const data = {prenom, nom:document.getElementById('ch-nom').value, tel:document.getElementById('ch-tel').value, email:document.getElementById('ch-email').value, vehicule:document.getElementById('ch-veh').value, updatedAt:new Date().toISOString()};
+  if(pin) data.pin = pin;
   closeMo('chauffeur');
-  showToast('Enregistrement...');
-  await fbPush('chauffeurs', {prenom, nom:document.getElementById('ch-nom').value, tel:document.getElementById('ch-tel').value, email:document.getElementById('ch-email').value, pin, vehicule:document.getElementById('ch-veh').value, statut:'disponible', createdAt:new Date().toISOString()});
-  await addLog(`Chauffeur ajouté : ${prenom}`);
-  await loadAll();
-  showToast('Chauffeur ajouté ✓');
+  if(editId) {
+    await fbUpdate('chauffeurs', editId, data);
+    await addLog(`Chauffeur modifié : ${prenom}`);
+    await loadAll();
+    showToast('Chauffeur mis à jour ✓');
+  } else {
+    data.statut = 'disponible'; data.createdAt = new Date().toISOString();
+    await fbPush('chauffeurs', data);
+    await addLog(`Chauffeur ajouté : ${prenom}`);
+    await loadAll();
+    showToast('Chauffeur ajouté ✓');
+  }
 };
 
 async function updChauffStatut(id, statut) {
