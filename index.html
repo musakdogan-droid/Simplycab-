@@ -2649,7 +2649,7 @@ function renderChauffeurs() {
     const ca=courses.filter(x=>x.statut==='terminee').reduce((s,x)=>s+(parseFloat(x.prix)||0),0);
     const active=courses.find(x=>['en_route','onboard','en_cours','attribuee','acceptee'].includes(x.statut));
     const av=name.split(' ').map(n=>n[0]||'').join('').slice(0,2).toUpperCase();
-    return`<div class="ic">
+    return`<div class="ic" style="cursor:pointer" onclick="viewChauffeurCourses('${c._id}')">
       <div class="ic-h">
         <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,${c.vehicule==='van'||c.vehicule==='sprinter'?'var(--blue),var(--purple)':'var(--gold),var(--orange)'});display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--black);flex-shrink:0">${av}</div>
         <div style="flex:1;min-width:0">
@@ -2666,7 +2666,8 @@ function renderChauffeurs() {
         <div style="text-align:center"><div style="font-size:15px">${c.pin?'🔐':'—'}</div><div style="font-size:10px;color:var(--muted)">PIN</div></div>
       </div>
       <div class="prog"><div class="prog-fill" style="width:${Math.min(100,(courses.length/Math.max(1,D.courses.length))*100).toFixed(0)}%;background:linear-gradient(90deg,var(--gold),var(--orange))"></div></div>
-      <div class="ic-foot">
+      <div class="ic-foot" onclick="event.stopPropagation()">
+        <button class="btn btn-p btn-xs" onclick="viewChauffeurCourses('${c._id}')"><i class="fas fa-route"></i> Ses courses</button>
         <button class="btn btn-g btn-xs" onclick="updChauffStatut('${c._id}','disponible')"><i class="fas fa-check"></i></button>
         <button class="btn btn-d btn-xs" onclick="updChauffStatut('${c._id}','indisponible')"><i class="fas fa-times"></i></button>
         <button class="btn btn-s btn-xs" onclick="openChauffeurModal('${c._id}')"><i class="fas fa-edit"></i></button>
@@ -2675,6 +2676,52 @@ function renderChauffeurs() {
     </div>`;
   }).join('');
 }
+
+window.viewChauffeurCourses = function(id) {
+  const ch = D.chauffeurs.find(x=>x._id===id);
+  if(!ch) return;
+  const name = ch.prenom+(ch.nom?' '+ch.nom:'');
+  const courses = D.courses.filter(c=>c.chauffeur===name)
+    .sort((a,b)=>new Date(b.datetime)-new Date(a.datetime));
+
+  const activeStatuts = ['en_route','sur_place','onboard','depose','acceptee','attribuee','nouvelle','en_attente'];
+  const active = courses.filter(c=>activeStatuts.includes(c.statut));
+  const done = courses.filter(c=>['terminee','annulee','noshow','payee','facturee'].includes(c.statut));
+
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px';
+
+  const rows = (list, emptyMsg) => list.length ? list.map(c=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:12px;background:#f8f9fa;border-radius:10px;margin-bottom:6px;cursor:pointer" onclick="this.closest('div[style*=fixed]').remove();editCourse('${c._id}')">
+      <div style="background:${getClientColor(c.client,c)};width:4px;height:40px;border-radius:4px;flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:#111">${c.client||'—'} <span style="font-size:11px;color:#777">• ${c.datetime?.slice(11,16)||''}</span></div>
+        <div style="font-size:11px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.depart||c.lieu||'—'} → ${c.arrivee||c.duree||'—'}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        ${sBdg(c.statut)}
+        <span style="font-size:10px;color:#aaa">${c.datetime?.slice(0,10)||''}</span>
+      </div>
+    </div>`).join('') : `<div style="text-align:center;padding:20px;color:#aaa;font-size:12px">${emptyMsg}</div>`;
+
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:560px;max-width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column">
+      <div style="padding:16px 20px;border-bottom:1px solid #f0f2f5;display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--orange));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#fff;flex-shrink:0">${name.split(' ').map(n=>n[0]||'').join('').slice(0,2).toUpperCase()}</div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800">${name}</div>
+          <div style="font-size:12px;color:#777">${vI(ch.vehicule)} • ${courses.length} course(s) au total</div>
+        </div>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="margin-left:auto;background:#f0f2f5;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer">✕</button>
+      </div>
+      <div style="overflow-y:auto;padding:16px;flex:1">
+        ${active.length?`<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#b8860b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">En cours (${active.length})</div>${rows(active,'')}`:''}
+        ${done.length?`<div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px">Terminées (${done.length})</div>${rows(done.slice(0,10),'Aucune course terminée')}`:''}
+        ${!courses.length?'<div style="text-align:center;padding:40px;color:#aaa"><i class="fas fa-route" style="font-size:32px;display:block;margin-bottom:10px;opacity:0.3"></i>Aucune course</div>':''}
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+};
 
 window.openChauffeurModal = function(id) {
   document.getElementById('ch-edit-id').value = '';
