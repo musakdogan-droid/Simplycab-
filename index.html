@@ -239,7 +239,25 @@ tr:last-child td{border-bottom:none}
 .col-toggle input{cursor:pointer}
 .col-hidden{display:none!important}
 
-/* AUTOCOMPLETE CHAUFFEUR */
+/* AGENDA DISPATCH */
+.agenda-item{display:flex;gap:0;margin-bottom:6px;border-radius:var(--r-sm);overflow:hidden;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s}
+.agenda-item:hover{transform:translateX(3px);box-shadow:var(--shadow-sm)}
+.agenda-stripe{width:5px;flex-shrink:0}
+.agenda-body{flex:1;padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.agenda-time{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--white);white-space:nowrap;min-width:50px}
+.agenda-info{flex:1;min-width:0}
+.agenda-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agenda-sub{font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agenda-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.agenda-chauff{font-size:11px;font-weight:600;white-space:nowrap}
+.week-day{text-align:center;padding:6px 4px;border-radius:var(--r-xs);cursor:pointer;transition:background 0.15s}
+.week-day:hover{background:var(--card2)}
+.week-day.today{background:var(--gold-dim)}
+.week-day.selected{background:var(--gold);color:var(--black)}
+.week-day .dn{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase}
+.week-day .dd{font-size:16px;font-weight:700;font-family:'Syne',sans-serif}
+.week-day .dots{display:flex;justify-content:center;gap:2px;margin-top:2px;min-height:6px}
+.week-day .dot{width:5px;height:5px;border-radius:50%}
 .drv-wrap{position:relative}
 .drv-input{width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:9px 12px;color:var(--white);font-size:13px;outline:none;font-family:'DM Sans',sans-serif;transition:var(--tr)}
 .drv-input:focus{border-color:var(--gold)}
@@ -441,38 +459,66 @@ tr:last-child td{border-bottom:none}
 
       <!-- DISPATCH -->
       <div class="page" id="page-dispatch">
-        <div class="sec-a" style="margin-bottom:14px;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-p" onclick="openCourseModal()"><i class="fas fa-plus"></i> Nouvelle course</button>
-          <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="ds-q" oninput="renderDispatch()"></div>
-          <select class="fsel" id="ds-s" onchange="renderDispatch()">
-            <option value="">Tous statuts</option>
-            <option value="nouvelle">🆕 Nouvelle</option>
-            <option value="en_attente">⏳ En attente</option>
-            <option value="attribuee">👤 Attribuée</option>
-            <option value="acceptee">✅ Accepté</option>
-            <option value="en_route">🚗 En route</option>
-            <option value="sur_place">📍 Sur place</option>
-            <option value="onboard">👤 Client à bord</option>
-            <option value="depose">🏁 Déposé</option>
-            <option value="terminee">✔ Terminée</option>
-            <option value="facturee">📄 Facturée</option>
-            <option value="payee">💚 Payée</option>
-            <option value="annulee">✗ Annulée</option>
-            <option value="noshow">👻 No-show</option>
-          </select>
-          <select class="fsel" id="ds-t" onchange="renderDispatch()">
-            <option value="">Tous types</option>
-            <option value="transfert">Transfert</option>
-            <option value="mad">Mise à disposition</option>
-          </select>
-          <select class="fsel" id="ds-v" onchange="switchView(this.value)">
-            <option value="table">Liste</option><option value="kanban">Kanban</option>
-          </select>
-          <span class="bdg bdg-muted" id="ds-cnt">0 courses</span>
-          <button class="btn btn-g btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
-          <label class="btn btn-s btn-sm" style="cursor:pointer"><i class="fas fa-file-upload"></i> Importer Excel<input type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
-          <div style="position:relative">
-            <button class="btn btn-s btn-sm" onclick="toggleColMenu()" id="col-btn"><i class="fas fa-columns"></i> Colonnes</button>
+
+        <!-- VUE PLANNING STYLE GOOGLE AGENDA (défaut pour dispatch) -->
+        <div id="dv-planning-agenda">
+          <!-- Header navigation date -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <button class="btn btn-ghost btn-sm" onclick="agendaDay(-1)"><i class="fas fa-chevron-left"></i></button>
+              <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700" id="agenda-date-title"></div>
+              <button class="btn btn-ghost btn-sm" onclick="agendaDay(1)"><i class="fas fa-chevron-right"></i></button>
+              <button class="btn btn-ghost btn-sm" onclick="agendaToday()">Aujourd'hui</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-p btn-sm" onclick="openCourseModal()"><i class="fas fa-plus"></i> Nouvelle course</button>
+              <button class="btn btn-s btn-sm" onclick="switchDispatchView('table')"><i class="fas fa-table"></i> Tableau</button>
+              <span class="bdg bdg-muted" id="agenda-cnt">0 courses</span>
+            </div>
+          </div>
+
+          <!-- Mini calendrier semaine -->
+          <div id="agenda-week-strip" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px"></div>
+
+          <!-- Liste courses du jour style agenda -->
+          <div id="agenda-list"></div>
+        </div>
+
+        <!-- VUE TABLEAU (admin) -->
+        <div id="dv-planning-table" style="display:none">
+          <div class="sec-a" style="margin-bottom:14px;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-p" onclick="openCourseModal()"><i class="fas fa-plus"></i> Nouvelle course</button>
+            <button class="btn btn-s btn-sm" onclick="switchDispatchView('agenda')"><i class="fas fa-calendar-alt"></i> Planning</button>
+            <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="ds-q" oninput="renderDispatch()"></div>
+            <select class="fsel" id="ds-s" onchange="renderDispatch()">
+              <option value="">Tous statuts</option>
+              <option value="nouvelle">🆕 Nouvelle</option>
+              <option value="en_attente">⏳ En attente</option>
+              <option value="attribuee">👤 Attribuée</option>
+              <option value="acceptee">✅ Accepté</option>
+              <option value="en_route">🚗 En route</option>
+              <option value="sur_place">📍 Sur place</option>
+              <option value="onboard">👤 Client à bord</option>
+              <option value="depose">🏁 Déposé</option>
+              <option value="terminee">✔ Terminée</option>
+              <option value="facturee">📄 Facturée</option>
+              <option value="payee">💚 Payée</option>
+              <option value="annulee">✗ Annulée</option>
+              <option value="noshow">👻 No-show</option>
+            </select>
+            <select class="fsel" id="ds-t" onchange="renderDispatch()">
+              <option value="">Tous types</option>
+              <option value="transfert">Transfert</option>
+              <option value="mad">Mise à disposition</option>
+            </select>
+            <select class="fsel" id="ds-v" onchange="switchView(this.value)">
+              <option value="table">Liste</option><option value="kanban">Kanban</option>
+            </select>
+            <span class="bdg bdg-muted" id="ds-cnt">0 courses</span>
+            <button class="btn btn-g btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Export Excel</button>
+            <label class="btn btn-s btn-sm" style="cursor:pointer"><i class="fas fa-file-upload"></i> Importer Excel<input type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
+            <div style="position:relative">
+              <button class="btn btn-s btn-sm" onclick="toggleColMenu()" id="col-btn"><i class="fas fa-columns"></i> Colonnes</button>
             <div id="col-menu" style="display:none;position:absolute;top:36px;right:0;background:var(--card);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px;z-index:200;min-width:180px;box-shadow:var(--shadow)">
               <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Afficher / Masquer</div>
               <label class="col-toggle" data-col="col-ref"><input type="checkbox" checked onchange="toggleCol('col-ref',this.checked)"> Référence</label>
@@ -495,6 +541,7 @@ tr:last-child td{border-bottom:none}
         </div>
         <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><div class="drv-wrap" style="min-width:220px"><input type="text" id="groupe-drv-input" class="drv-input" placeholder="Rechercher un chauffeur..." autocomplete="off" oninput="filterDrv('groupe-drv',this.value)" onfocus="openDrv('groupe-drv')" onblur="setTimeout(()=>closeDrv('groupe-drv'),200)"><input type="hidden" id="groupe-drv" value=""><div class="drv-drop" id="drv-drop-groupe-drv"></div></div><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th class="col-ref">Réf.</th><th class="col-dt">Date/H</th><th class="col-client">Client</th><th class="col-type">Type</th><th class="col-dep">Départ</th><th class="col-arr">Arrivée/Durée</th><th class="col-term">Term.</th><th class="col-chauff">Chauffeur</th><th class="col-veh">Véh</th><th class="col-pax">Pax</th><th class="col-ttc">TTC</th><th class="col-statut">Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
         <div id="dv-kanban" style="display:none"><div class="kb" id="kb-dispatch"></div></div>
+        </div><!-- end dv-planning-table -->
       </div>
 
       <!-- PLANNING -->
@@ -560,10 +607,10 @@ tr:last-child td{border-bottom:none}
             <div class="sec-t"><i class="fas fa-users"></i> Clients</div>
             <div class="sec-a">
               <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="cl-q" oninput="renderClients()"></div>
-              <button class="btn btn-p btn-sm" onclick="openMo('client')"><i class="fas fa-plus"></i> Ajouter</button>
+              <button class="btn btn-p btn-sm" onclick="openClientModal()"><i class="fas fa-plus"></i> Ajouter</button>
             </div>
           </div>
-          <div class="tw"><table><thead><tr><th>Client</th><th>Téléphone</th><th>Email</th><th>Type</th><th>Courses</th><th>CA TTC</th><th>Actions</th></tr></thead><tbody id="tb-cl"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>Société</th><th>Contact</th><th>Téléphone</th><th>Email</th><th>Infos légales</th><th>Facturation</th><th>Activité</th><th>Actions</th></tr></thead><tbody id="tb-cl"></tbody></table></div>
         </div>
       </div>
 
@@ -608,9 +655,9 @@ tr:last-child td{border-bottom:none}
         <div class="sec">
           <div class="sec-h">
             <div class="sec-t"><i class="fas fa-users-cog"></i> Comptes Dispatch</div>
-            <button class="btn btn-p btn-sm" onclick="openMo('dispatch-account')"><i class="fas fa-plus"></i> Créer un compte</button>
+            <button class="btn btn-p btn-sm" onclick="openDispatchAccountModal()"><i class="fas fa-plus"></i> Créer un compte</button>
           </div>
-          <div class="tw"><table><thead><tr><th>Identifiant</th><th>Nom</th><th>Créé le</th><th>Actions</th></tr></thead><tbody id="tb-comptes"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>Identifiant</th><th>Nom</th><th>Créé le</th><th>Modifié</th><th>Actions</th></tr></thead><tbody id="tb-comptes"></tbody></table></div>
         </div>
         <div style="margin-top:14px;padding:12px 16px;background:var(--blue-dim);border:1px solid rgba(91,156,246,0.2);border-radius:var(--r-sm);font-size:12px;color:var(--blue)">
           <i class="fas fa-shield-alt"></i> Seul l'admin peut créer des comptes Dispatch. Ils ont accès aux courses et chauffeurs mais pas à la facturation ni aux paramètres.
@@ -748,7 +795,13 @@ tr:last-child td{border-bottom:none}
         </div>
         <div class="sec" style="margin-top:16px">
           <div class="sec-h"><div class="sec-t"><i class="fas fa-list"></i> Détail par course</div></div>
-          <div class="tw"><table><thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Trajet</th><th>Statut</th></tr></thead><tbody id="tb-rev-detail"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Trajet</th><th>Mon prix</th><th>Paiement</th><th>À reverser</th><th>Statut</th></tr></thead><tbody id="tb-rev-detail"></tbody></table></div>
+        </div>
+        <!-- TOTAL À REVERSER -->
+        <div id="reverser-wrap" style="margin-top:14px;padding:14px 18px;background:var(--orange-dim);border:1px solid rgba(240,147,74,0.3);border-radius:var(--r-sm)">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--orange);margin-bottom:6px"><i class="fas fa-hand-holding-usd"></i> Total à reverser à SimplyCab</div>
+          <div style="font-size:24px;font-weight:800;color:var(--orange);font-family:'Syne',sans-serif" id="rev-reverser">0€</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Courses payées directement par les clients</div>
         </div>
       </div>
 
@@ -979,7 +1032,58 @@ tr:last-child td{border-bottom:none}
         </div>
         <div class="fld"><label>N° Véhicule jour</label><input type="text" id="fc-numveh" placeholder="B1, V2..." oninput="genRef()"></div>
         <div class="fld"><label>Référence (auto)</label><input type="text" id="fc-ref" readonly style="opacity:0.8;background:var(--dark);font-weight:700;color:var(--gold);font-size:11px" placeholder="Auto"></div>
-        <div class="fld"><label>Prix TTC (€)</label><input type="number" id="fc-prix" placeholder="0" oninput="calcHT()"></div>
+        <div class="fld">
+          <label>Prix client TTC (€)</label>
+          <input type="number" id="fc-prix" placeholder="0" oninput="calcMarge()">
+          <div style="font-size:10px;color:var(--muted);margin-top:3px">Prix facturé au client</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px">
+        <div class="fld">
+          <label style="color:var(--green)">Prix chauffeur TTC (€) *</label>
+          <input type="number" id="fc-prix-chauffeur" placeholder="0" oninput="calcMarge()"
+            style="background:var(--dark);border:2px solid var(--green);border-radius:var(--r-xs);padding:9px 12px;color:var(--green);font-size:14px;font-weight:700;outline:none;width:100%">
+          <div style="font-size:10px;color:var(--muted);margin-top:3px">Ce que voit le chauffeur</div>
+        </div>
+        <div class="fld">
+          <label style="color:var(--gold)">Votre marge (€)</label>
+          <input type="text" id="fc-marge" readonly placeholder="—"
+            style="background:var(--dark);border:1px solid var(--gold);border-radius:var(--r-xs);padding:9px 12px;color:var(--gold);font-size:14px;font-weight:700;outline:none;width:100%;opacity:0.85">
+          <div style="font-size:10px;color:var(--muted);margin-top:3px">Différence automatique</div>
+        </div>
+        <div class="fld">
+          <label>% commission</label>
+          <input type="text" id="fc-commission-pct" readonly placeholder="—"
+            style="background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:9px 12px;color:var(--muted2);font-size:13px;outline:none;width:100%;opacity:0.7">
+          <div style="font-size:10px;color:var(--muted);margin-top:3px">Calculé automatiquement</div>
+        </div>
+      </div>
+
+      <!-- MODE DE PAIEMENT -->
+      <div style="margin-bottom:10px">
+        <label style="font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;display:block;margin-bottom:6px">Mode de paiement</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div id="pay-simplycab" onclick="selPayMode('simplycab')"
+            style="padding:10px 14px;background:var(--gold-dim);border:2px solid var(--gold);border-radius:var(--r-sm);cursor:pointer;display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">🏢</span>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--gold)">Facturé SimplyCab</div>
+              <div style="font-size:9px;color:var(--muted)">Client paie SimplyCab</div>
+            </div>
+          </div>
+          <div id="pay-direct" onclick="selPayMode('direct')"
+            style="padding:10px 14px;background:var(--card2);border:2px solid var(--border);border-radius:var(--r-sm);cursor:pointer;display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">🚗</span>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--muted2)">Direct chauffeur</div>
+              <div style="font-size:9px;color:var(--muted)">Client paie le chauffeur</div>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="fc-pay-mode" value="simplycab">
+        <div id="pay-direct-info" style="display:none;margin-top:7px;padding:8px 11px;background:var(--orange-dim);border:1px solid rgba(240,147,74,0.3);border-radius:var(--r-xs);font-size:11px;color:var(--orange)">
+          <i class="fas fa-exclamation-circle"></i> Le chauffeur encaisse <strong id="pay-total-info">—</strong> et reverse <strong id="pay-marge-info">—</strong> à SimplyCab
+        </div>
       </div>
       <div id="prix-suggest" style="display:none;padding:7px 10px;background:var(--gold-dim);border-radius:var(--r-xs);font-size:11px;color:var(--gold);margin-bottom:8px"></div>
       <div class="fld"><label>Notes générales</label><textarea id="fc-notes" rows="1" placeholder="Infos générales sur la course..."></textarea></div>
@@ -1040,13 +1144,80 @@ tr:last-child td{border-bottom:none}
 
 <!-- CLIENT -->
 <div class="mo" id="mo-client">
-  <div class="mo-box" style="width:460px">
-    <div class="mo-h"><div class="mo-t"><i class="fas fa-user" style="color:var(--gold)"></i> Ajouter client</div><div class="mo-x" onclick="closeMo('client')"><i class="fas fa-times"></i></div></div>
-    <div class="mo-b">
-      <div class="fg2"><div class="fld"><label>Nom *</label><input type="text" id="cl-nom" placeholder="Nom complet"></div><div class="fld"><label>Téléphone</label><input type="tel" id="cl-tel" placeholder="+33 6 00 00 00 00"></div></div>
-      <div class="fg2"><div class="fld"><label>Email</label><input type="email" id="cl-email" placeholder="email@exemple.com"></div><div class="fld"><label>Type</label><select id="cl-type"><option value="standard">Standard</option><option value="premium">Premium</option><option value="corporate">Corporate</option></select></div></div>
+  <div class="mo-box" style="width:640px">
+    <div class="mo-h">
+      <div class="mo-t"><i class="fas fa-building" style="color:var(--gold)"></i> <span id="mo-client-title">Ajouter client</span></div>
+      <div class="mo-x" onclick="closeMo('client')"><i class="fas fa-times"></i></div>
     </div>
-    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('client')">Annuler</button><button class="btn btn-p" onclick="saveClient()"><i class="fas fa-save"></i> Enregistrer</button></div>
+    <div class="mo-b">
+      <input type="hidden" id="cl-edit-id">
+
+      <!-- INFOS SOCIÉTÉ -->
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">🏢 Informations société</div>
+      <div class="fg2">
+        <div class="fld"><label>Raison sociale *</label><input type="text" id="cl-nom" placeholder="DUEMEA SAS"></div>
+        <div class="fld"><label>Nom commercial</label><input type="text" id="cl-commercial" placeholder="DUEMEA"></div>
+      </div>
+      <div class="fg2">
+        <div class="fld"><label>SIRET</label><input type="text" id="cl-siret" placeholder="123 456 789 00012"></div>
+        <div class="fld"><label>N° TVA intracommunautaire</label><input type="text" id="cl-tva" placeholder="FR12345678901"></div>
+      </div>
+      <div class="fld"><label>Adresse</label><input type="text" id="cl-adresse" placeholder="15 rue de la Paix"></div>
+      <div class="fg3">
+        <div class="fld"><label>Code postal</label><input type="text" id="cl-cp" placeholder="75001"></div>
+        <div class="fld"><label>Ville</label><input type="text" id="cl-ville" placeholder="Paris"></div>
+        <div class="fld"><label>Pays</label><input type="text" id="cl-pays" placeholder="France" value="France"></div>
+      </div>
+
+      <!-- CONTACT -->
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:14px 0 10px">👤 Contact principal</div>
+      <div class="fg2">
+        <div class="fld"><label>Nom & Prénom</label><input type="text" id="cl-contact" placeholder="Jean Dupont"></div>
+        <div class="fld"><label>Poste</label><input type="text" id="cl-poste" placeholder="Responsable transport"></div>
+      </div>
+      <div class="fg2">
+        <div class="fld"><label>Téléphone</label><input type="tel" id="cl-tel" placeholder="+33 1 23 45 67 89"></div>
+        <div class="fld"><label>Email</label><input type="email" id="cl-email" placeholder="contact@societe.com"></div>
+      </div>
+      <div class="fld"><label>Email facturation</label><input type="email" id="cl-email-fac" placeholder="compta@societe.com"></div>
+
+      <!-- FACTURATION -->
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:14px 0 10px">💶 Facturation</div>
+      <div class="fg3">
+        <div class="fld"><label>Type</label>
+          <select id="cl-type">
+            <option value="corporate">🏢 Corporate</option>
+            <option value="premium">⭐ Premium</option>
+            <option value="standard">Standard</option>
+          </select>
+        </div>
+        <div class="fld"><label>Mode facturation</label>
+          <select id="cl-mode-fac">
+            <option value="mensuel">Mensuel</option>
+            <option value="hebdo">Hebdomadaire</option>
+            <option value="course">Par course</option>
+            <option value="prepaye">Prépayé</option>
+          </select>
+        </div>
+        <div class="fld"><label>Délai paiement</label>
+          <select id="cl-delai">
+            <option value="30">30 jours</option>
+            <option value="45">45 jours</option>
+            <option value="60">60 jours</option>
+            <option value="0">Immédiat</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg2">
+        <div class="fld"><label>Commission appliquée (%)</label><input type="number" id="cl-commission" placeholder="ex: 10" min="0" max="100"></div>
+        <div class="fld"><label>Référence client interne</label><input type="text" id="cl-ref" placeholder="CLI-001"></div>
+      </div>
+      <div class="fld"><label>Notes internes</label><textarea id="cl-notes" rows="2" placeholder="Informations importantes, conditions particulières..."></textarea></div>
+    </div>
+    <div class="mo-f">
+      <button class="btn btn-ghost" onclick="closeMo('client')">Annuler</button>
+      <button class="btn btn-p" onclick="saveClient()"><i class="fas fa-save"></i> Enregistrer</button>
+    </div>
   </div>
 </div>
 
@@ -1085,13 +1256,24 @@ tr:last-child td{border-bottom:none}
 <!-- DISPATCH ACCOUNT -->
 <div class="mo" id="mo-dispatch-account">
   <div class="mo-box" style="width:400px">
-    <div class="mo-h"><div class="mo-t"><i class="fas fa-user-tie" style="color:var(--gold)"></i> Compte Dispatch</div><div class="mo-x" onclick="closeMo('dispatch-account')"><i class="fas fa-times"></i></div></div>
+    <div class="mo-h">
+      <div class="mo-t"><i class="fas fa-user-tie" style="color:var(--gold)"></i> <span id="da-modal-title">Compte Dispatch</span></div>
+      <div class="mo-x" onclick="closeMo('dispatch-account')"><i class="fas fa-times"></i></div>
+    </div>
     <div class="mo-b">
+      <input type="hidden" id="da-edit-id">
       <div class="fld"><label>Identifiant *</label><input type="text" id="da-user" placeholder="dispatch01"></div>
       <div class="fld"><label>Nom complet</label><input type="text" id="da-nom" placeholder="Sophie Martin"></div>
-      <div class="fld"><label>Mot de passe *</label><input type="password" id="da-pass" placeholder="Min. 6 caractères"></div>
+      <div class="fld">
+        <label id="da-pass-label">Mot de passe *</label>
+        <input type="password" id="da-pass" placeholder="Min. 6 caractères">
+        <div id="da-pass-hint" style="display:none;font-size:10px;color:var(--muted);margin-top:3px">Laisser vide pour ne pas changer le mot de passe</div>
+      </div>
     </div>
-    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('dispatch-account')">Annuler</button><button class="btn btn-p" onclick="saveDispatchAccount()"><i class="fas fa-save"></i> Créer</button></div>
+    <div class="mo-f">
+      <button class="btn btn-ghost" onclick="closeMo('dispatch-account')">Annuler</button>
+      <button class="btn btn-p" id="da-save-btn" onclick="saveDispatchAccount()"><i class="fas fa-save"></i> Créer</button>
+    </div>
   </div>
 </div>
 
@@ -1188,6 +1370,7 @@ function renderAll() {
   renderTarifs(); renderFact(); renderVehicules(); renderMesCourses();
   renderRapports(); renderHistorique(); renderPlanning(); renderComptes();
   renderConvList(); renderDirigeant(); renderReservations(); renderRevenus();
+  renderAgenda();
   updateBadges(); buildDriverSelects();
 }
 
@@ -1329,6 +1512,8 @@ function startApp() {
     document.querySelectorAll('.admin-only').forEach(n => n.style.display = 'none');
     document.getElementById('btn-new').style.display = 'flex';
     gp('dispatch', document.querySelector('[data-p=dispatch]'));
+    // Show agenda view by default for dispatch
+    setTimeout(()=>switchDispatchView('agenda'), 300);
   } else {
     document.getElementById('btn-new').style.display = 'flex';
   }
@@ -1572,6 +1757,12 @@ window.selClient = function(nom, tel) {
   document.getElementById('fc-client-input').value = nom;
   document.getElementById('fc-client').value = nom;
   if(tel) document.getElementById('fc-tel').value = tel;
+  // Auto-fill commission if client has one
+  const c = D.clients.find(x=>x.nom===nom);
+  if(c?.commission) {
+    const commPct = document.getElementById('fc-commission-pct');
+    // Just note it - admin sets prices manually
+  }
   closeClientDrop();
 };
 
@@ -1633,7 +1824,11 @@ function renderDispatch() {
       <td class="col-chauff" style="font-size:11px">${c.chauffeur||'<span style="color:var(--muted)">—</span>'}</td>
       <td class="col-veh" style="font-size:11px">${vI(c.vehicule)}</td>
       <td class="col-pax" style="font-size:11px">${c.pax||1}</td>
-      <td class="col-ttc text-gold fw7" style="font-size:11px">${fp(c.prix)}</td>
+      <td class="col-ttc text-gold fw7" style="font-size:11px">
+        ${fp(c.prix)}
+        ${c.payMode==='direct'?`<br><span style="font-size:9px;color:var(--orange)">🚗 Direct</span>`:''}
+        ${c.marge>0?`<br><span style="font-size:9px;color:var(--gold)">Marge: ${parseFloat(c.marge).toFixed(0)}€</span>`:''}
+      </td>
       <td class="col-statut">${sBdg(c.statut)}</td>
       <td>
         <div style="display:flex;gap:3px;flex-wrap:wrap">
@@ -1669,7 +1864,204 @@ function renderDispatch() {
   }
 }
 
-function switchView(v){document.getElementById('dv-table').style.display=v==='table'?'block':'none';document.getElementById('dv-kanban').style.display=v==='kanban'?'block':'none';}
+// ── VUE AGENDA DISPATCH ──
+let agendaDate = new Date();
+
+const AGENDA_COLORS = {
+  nouvelle:'#7c5de8', en_attente:'#f0934a', attribuee:'#5b9cf6',
+  acceptee:'#2ecc8a', en_route:'#2ecc8a', sur_place:'#c9a84c',
+  onboard:'#2ecc8a', depose:'#5b9cf6', terminee:'#5a5d65',
+  facturee:'#5b9cf6', payee:'#2ecc8a', annulee:'#e05c5c', noshow:'#e05c5c'
+};
+
+// Couleurs par client — arrivée (pleine) / départ (variante)
+const CLIENT_PALETTE = {
+  'DUEMEA':     { arr:'#7b5fc8', dep:'#b39ddb', label:'DUEMEA' },
+  'MSP':        { arr:'#f0a030', dep:'#ffcc80', label:'MSP' },
+  'LVV':        { arr:'#2ecc8a', dep:'#80e8bc', label:'LVV' },
+  'DC_GM':      { arr:'#1565c0', dep:'#5b9cf6', label:'DC_GM' },
+  'DREAM CASTLE':{ arr:'#1565c0', dep:'#5b9cf6', label:'Dream Castle' },
+  'GRAND MAGIC':{ arr:'#1565c0', dep:'#5b9cf6', label:'Grand Magic' },
+  'RENFORT MAGICAL':{ arr:'#c0392b', dep:'#e57373', label:'Renfort Magical' },
+  'HOTELS DISNEY':{ arr:'#c9a84c', dep:'#f0d080', label:'Hotels Disney' },
+  'DELOITTE':   { arr:'#00897b', dep:'#4db6ac', label:'Deloitte' },
+  'B&B':        { arr:'#e91e63', dep:'#f48fb1', label:'B&B Hotels' },
+  'KTS':        { arr:'#5e35b1', dep:'#9575cd', label:'KTS' },
+  'KI SPACE':   { arr:'#00838f', dep:'#4dd0e1', label:'Ki Space' },
+  'GLOBAL BUZZ':{ arr:'#2e7d32', dep:'#66bb6a', label:'Global Buzz' },
+  'PULLMAN':    { arr:'#37474f', dep:'#78909c', label:'Pullman' },
+  'STAYCITY':   { arr:'#6a1b9a', dep:'#ab47bc', label:'Staycity' },
+};
+
+// Détecter si c'est une arrivée ou un départ
+function isArrival(course) {
+  const dep = (course.depart||'').toLowerCase();
+  const arr = (course.arrivee||'').toLowerCase();
+  const client = (course.client||'').toLowerCase();
+  // Arrivée = vient de CDG/Orly/gare vers hôtel/ville
+  // Départ = va vers CDG/Orly/gare
+  const airports = ['cdg','orly','charles de gaulle','roissy','orly'];
+  const gares = ['gare','montparnasse','nord','lyon','st lazare'];
+  const isFromAirport = airports.some(a=>dep.includes(a)) || gares.some(g=>dep.includes(g));
+  const isToAirport = airports.some(a=>arr.includes(a)) || gares.some(g=>arr.includes(g));
+  if(isFromAirport) return true;  // vient de l'aéroport = arrivée
+  if(isToAirport) return false;   // va vers l'aéroport = départ
+  return true; // défaut arrivée
+}
+
+function getClientInfo(clientName) {
+  const name = (clientName||'').toUpperCase();
+  for(const [key, val] of Object.entries(CLIENT_PALETTE)) {
+    if(name.includes(key)) return val;
+  }
+  return { arr:'#7c5de8', dep:'#9e86e8', label:clientName||'—' };
+}
+
+function getClientColor(clientName, course) {
+  const info = getClientInfo(clientName);
+  if(!course) return info.arr;
+  return isArrival(course) ? info.arr : info.dep;
+}
+
+function getDirectionIcon(course) {
+  return isArrival(course) ? '🛬' : '🛫';
+}
+
+
+window.switchDispatchView = function(view) {
+  const agenda = document.getElementById('dv-planning-agenda');
+  const table = document.getElementById('dv-planning-table');
+  if(view === 'agenda') {
+    if(agenda) agenda.style.display = 'block';
+    if(table) table.style.display = 'none';
+    renderAgenda();
+  } else {
+    if(agenda) agenda.style.display = 'none';
+    if(table) table.style.display = 'block';
+    renderDispatch();
+  }
+};
+
+window.agendaDay = function(d) { agendaDate.setDate(agendaDate.getDate()+d); renderAgenda(); };
+window.agendaToday = function() { agendaDate = new Date(); renderAgenda(); };
+
+function renderAgenda() {
+  const today = new Date();
+  const sel = agendaDate;
+  const selStr = sel.toISOString().split('T')[0];
+
+  // Date title
+  const titleEl = document.getElementById('agenda-date-title');
+  if(titleEl) {
+    const isToday = sel.toDateString() === today.toDateString();
+    titleEl.textContent = (isToday ? 'Aujourd\'hui — ' : '') +
+      sel.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  }
+
+  // Week strip — 7 days centered on selected
+  const strip = document.getElementById('agenda-week-strip');
+  if(strip) {
+    const days = [];
+    for(let i=-3; i<=3; i++) {
+      const d = new Date(sel); d.setDate(sel.getDate()+i);
+      days.push(d);
+    }
+    const jours = ['D','L','M','M','J','V','S'];
+    strip.innerHTML = days.map(d => {
+      const ds = d.toISOString().split('T')[0];
+      const isToday = d.toDateString() === today.toDateString();
+      const isSel = d.toDateString() === sel.toDateString();
+      const dayCourses = D.courses.filter(c=>c.datetime&&c.datetime.startsWith(ds)&&!['terminee','annulee','noshow','payee'].includes(c.statut));
+      const dots = dayCourses.slice(0,4).map(c=>`<div class="dot" style="background:${getClientColor(c.client,c)}"></div>`).join('');
+      return `<div class="week-day ${isToday?'today':''} ${isSel?'selected':''}" onclick="agendaDate=new Date('${ds}');renderAgenda()">
+        <div class="dn">${jours[d.getDay()]}</div>
+        <div class="dd">${d.getDate()}</div>
+        <div class="dots">${dots}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Courses du jour triées par heure
+  const courses = D.courses.filter(c=>c.datetime&&c.datetime.startsWith(selStr))
+    .sort((a,b)=>a.datetime.localeCompare(b.datetime));
+
+  const cnt = document.getElementById('agenda-cnt');
+  if(cnt) cnt.textContent = `${courses.length} course${courses.length!==1?'s':''}`;
+
+  const list = document.getElementById('agenda-list');
+  if(!list) return;
+
+  if(!courses.length) {
+    list.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--muted)">
+      <i class="fas fa-calendar-check" style="font-size:48px;opacity:0.3;display:block;margin-bottom:12px"></i>
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px">Aucune course</div>
+      <div style="font-size:12px">Pas de transfert planifié pour cette journée</div>
+      <button class="btn btn-p btn-sm" style="margin-top:16px" onclick="openCourseModal()"><i class="fas fa-plus"></i> Ajouter une course</button>
+    </div>`;
+    return;
+  }
+
+  // Legend
+  const clientsToday = [...new Set(courses.map(c=>c.client))];
+  const legendHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+    ${clientsToday.map(c=>{
+      const info = getClientInfo(c);
+      return `<div style="display:flex;align-items:center;gap:5px">
+        <div style="display:flex;gap:2px">
+          <div style="width:10px;height:18px;border-radius:3px;background:${info.arr}"></div>
+          <div style="width:10px;height:18px;border-radius:3px;background:${info.dep};opacity:0.7"></div>
+        </div>
+        <span style="font-size:11px;font-weight:600;color:var(--white2)">${info.label}</span>
+      </div>`;
+    }).join('')}
+    <div style="display:flex;align-items:center;gap:5px;margin-left:8px;padding-left:8px;border-left:1px solid var(--border)">
+      <span style="font-size:11px">🛬</span><span style="font-size:10px;color:var(--muted)">Arrivée</span>
+      <span style="font-size:11px;margin-left:6px">🛫</span><span style="font-size:10px;color:var(--muted)">Départ</span>
+    </div>
+  </div>`;
+
+  // Group by hour
+  const byHour = {};
+  courses.forEach(c => {
+    const h = c.datetime?.slice(11,13)||'00';
+    if(!byHour[h]) byHour[h] = [];
+    byHour[h].push(c);
+  });
+
+  list.innerHTML = legendHtml + Object.entries(byHour).sort().map(([h, items]) => `
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;padding-left:4px">${h}h00</div>
+      ${items.map(c => {
+        const color = getClientColor(c.client, c);
+        const dirIcon = getDirectionIcon(c);
+        const time = c.datetime?.slice(11,16)||'—';
+        const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+        const pax = c.passagers?.length || c.pax || 1;
+        const terminals = c.terminaux ? ` • ${c.terminaux}` : '';
+        const info = getClientInfo(c.client);
+        return `<div class="agenda-item" onclick="editCourse('${c._id}')">
+          <div class="agenda-stripe" style="background:${color}"></div>
+          <div class="agenda-body" style="background:${color}22;border:1px solid ${color}55;border-left:none">
+            <div style="font-size:18px;flex-shrink:0">${dirIcon}</div>
+            <div class="agenda-time">${time}</div>
+            <div class="agenda-info">
+              <div class="agenda-title">${c.depart||c.lieu||'—'} → ${c.arrivee||c.duree||'—'}${terminals}</div>
+              <div class="agenda-sub">
+                <span style="background:${color};color:#fff;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:700;margin-right:5px">${info.label}</span>
+                ${c.ref?`<span style="opacity:0.8">${c.ref}</span> • `:''}${pax} pax${c.vol?' • ✈️ '+c.vol:''}
+              </div>
+            </div>
+            <div class="agenda-right">
+              <span style="font-size:12px;font-weight:700">${vehIco} ${c.chauffeur||'<span style="opacity:0.5">À assigner</span>'}</span>
+              ${sBdg(c.statut)}
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+
 
 async function updStatut(id, statut) {
   if(!statut)return;
@@ -1719,7 +2111,7 @@ window.doAssign = async function() {
 window.openCourseModal = function() {
   const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
   document.getElementById('fc-dt').value = now.toISOString().slice(0,16);
-  ['fc-dep','fc-arr','fc-lieu','fc-notes','fc-prix','fc-prix-mad','fc-numveh','fc-ref','fc-tel'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fc-dep','fc-arr','fc-lieu','fc-notes','fc-prix','fc-prix-mad','fc-numveh','fc-ref','fc-tel','fc-prix-chauffeur','fc-marge','fc-commission-pct'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.querySelectorAll('.term-chk').forEach(c=>c.checked=false);
   document.getElementById('prix-suggest').style.display='none';
   document.getElementById('pax-notes').value='';
@@ -1733,6 +2125,8 @@ window.openCourseModal = function() {
   const fcHid = document.getElementById('fc-ch');
   if(fcInp) fcInp.value='';
   if(fcHid) fcHid.value='';
+  // Reset payment mode
+  selPayMode('simplycab');
   selType('transfert');
   buildDriverSelects();
   openMo('course');
@@ -1850,14 +2244,56 @@ window.selType = function(t) {
 
 window.calcHT = function() {
   const ttc = parseFloat(document.getElementById('fc-prix').value)||0;
-  document.getElementById('fc-ht').value = ttc ? ht(ttc).toFixed(2)+'€ HT' : '';
-  // suggest price
+  calcMarge();
   const cat = document.getElementById('fc-cat').value;
   const veh = document.getElementById('fc-veh').value;
   const t = D.tarifs.find(x=>x.categorie===cat);
   const ps = document.getElementById('prix-suggest');
-  if(t){const p={berline:t.berline,van:t.van,sprinter:t.sprinter,bus:t.bus}[veh];if(p){ps.style.display='block';ps.innerHTML=`💡 Tarif suggéré : <strong>${p}€ TTC</strong> (${t.route})`;}}
+  if(t){const p={berline:t.berline,van:t.van,sprinter:t.sprinter,bus:t.bus}[veh];if(p){ps.style.display='block';ps.innerHTML=`💡 Tarif suggéré client : <strong>${p}€ TTC</strong> (${t.route})`;}}
   else ps.style.display='none';
+};
+
+window.selPayMode = function(mode) {
+  document.getElementById('fc-pay-mode').value = mode;
+  const s = document.getElementById('pay-simplycab');
+  const d = document.getElementById('pay-direct');
+  const info = document.getElementById('pay-direct-info');
+  if(mode === 'direct') {
+    s.style.cssText = s.style.cssText.replace('var(--gold-dim)','var(--card2)').replace('2px solid var(--gold)','2px solid var(--border)');
+    s.querySelector('div div:first-child').style.color = 'var(--muted2)';
+    d.style.cssText = d.style.cssText.replace('var(--card2)','var(--orange-dim)').replace('2px solid var(--border)','2px solid var(--orange)');
+    d.querySelector('div div:first-child').style.color = 'var(--orange)';
+    info.style.display = 'block';
+    updatePayInfo();
+  } else {
+    s.style.background = 'var(--gold-dim)'; s.style.borderColor = 'var(--gold)';
+    s.querySelector('div div:first-child').style.color = 'var(--gold)';
+    d.style.background = 'var(--card2)'; d.style.borderColor = 'var(--border)';
+    d.querySelector('div div:first-child').style.color = 'var(--muted2)';
+    info.style.display = 'none';
+  }
+};
+
+function updatePayInfo() {
+  const prix = parseFloat(document.getElementById('fc-prix')?.value)||0;
+  const prixCh = parseFloat(document.getElementById('fc-prix-chauffeur')?.value)||0;
+  const marge = prix - prixCh;
+  const e1 = document.getElementById('pay-total-info');
+  const e2 = document.getElementById('pay-marge-info');
+  if(e1) e1.textContent = prix > 0 ? prix.toFixed(2)+'€' : '—';
+  if(e2) e2.textContent = marge > 0 ? marge.toFixed(2)+'€' : '—';
+}
+
+window.calcMarge = function() {
+  const prixClient = parseFloat(document.getElementById('fc-prix')?.value)||0;
+  const prixChauffeur = parseFloat(document.getElementById('fc-prix-chauffeur')?.value)||0;
+  const marge = prixClient - prixChauffeur;
+  const pct = prixClient > 0 ? ((marge/prixClient)*100).toFixed(0) : 0;
+  const elM = document.getElementById('fc-marge');
+  const elP = document.getElementById('fc-commission-pct');
+  if(elM) elM.value = prixClient && prixChauffeur ? marge.toFixed(2)+'€' : '';
+  if(elP) elP.value = prixClient && prixChauffeur ? pct+'%' : '';
+  updatePayInfo();
 };
 
 window.saveCourse = async function() {
@@ -1871,6 +2307,8 @@ window.saveCourse = async function() {
   // Get passengers from textarea
   const passagers = getPaxList();
   const prix = type==='mad' ? parseFloat(document.getElementById('fc-prix-mad').value)||0 : parseFloat(document.getElementById('fc-prix').value)||0;
+  const prixChauffeur = parseFloat(document.getElementById('fc-prix-chauffeur')?.value)||0;
+  const marge = prix - prixChauffeur;
   const ch = document.getElementById('fc-ch').value;
   const terminaux = [...document.querySelectorAll('.term-chk:checked')].map(c=>c.value).join('-');
   const numveh = document.getElementById('fc-numveh').value.trim();
@@ -1894,7 +2332,9 @@ window.saveCourse = async function() {
     pax: passagers.length,
     bags: 0,
     chauffeur: ch,
-    prix, cat: document.getElementById('fc-cat').value,
+    prix, prixChauffeur, marge,
+    payMode: document.getElementById('fc-pay-mode')?.value||'simplycab',
+    cat: document.getElementById('fc-cat').value,
     terminaux, numveh, ref,
     passagers,
     notes: document.getElementById('fc-notes').value,
@@ -2031,31 +2471,126 @@ async function delVehicule(id) {
 // ── CLIENTS ──
 function renderClients() {
   const q=(document.getElementById('cl-q')?.value||'').toLowerCase();
-  let list=D.clients.filter(c=>!q||(c.nom||'').toLowerCase().includes(q)||(c.tel||'').includes(q));
+  let list=D.clients.filter(c=>!q||(c.nom||'').toLowerCase().includes(q)||(c.tel||'').includes(q)||(c.siret||'').includes(q));
   const tb=document.getElementById('tb-cl');if(!tb)return;
-  if(!list.length){tb.innerHTML=`<tr><td colspan="7" class="t-empty"><i class="fas fa-users"></i><p>Aucun client</p></td></tr>`;return;}
+  if(!list.length){tb.innerHTML=`<tr><td colspan="8" class="t-empty"><i class="fas fa-building"></i><p>Aucun client</p></td></tr>`;return;}
   tb.innerHTML=list.map(c=>{
     const courses=D.courses.filter(x=>x.client===c.nom).length;
     const ca=D.courses.filter(x=>x.client===c.nom&&x.statut==='terminee').reduce((s,x)=>s+(parseFloat(x.prix)||0),0);
-    const av=(c.nom||'?').split(' ').map(n=>n[0]||'').join('').slice(0,2).toUpperCase();
+    const av=(c.commercial||c.nom||'?').slice(0,2).toUpperCase();
     return`<tr>
-      <td><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:'Syne',sans-serif;color:#fff;flex-shrink:0">${av}</div><strong>${c.nom}</strong></div></td>
-      <td>${c.tel||'—'}</td><td style="font-size:11px">${c.email||'—'}</td>
-      <td>${sBdg(c.type||'standard')}</td>
-      <td><span class="bdg bdg-blue">${courses}</span></td>
-      <td class="text-gold fw7">${ca.toFixed(0)}€</td>
-      <td><button class="btn btn-d btn-xs" onclick="delClient('${c._id}')"><i class="fas fa-trash"></i></button></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Syne',sans-serif;color:#fff;flex-shrink:0">${av}</div>
+          <div>
+            <div style="font-weight:700;font-size:13px">${c.nom}</div>
+            ${c.commercial?`<div style="font-size:10px;color:var(--muted)">${c.commercial}</div>`:''}
+            ${c.ref?`<div style="font-size:10px;color:var(--gold)">${c.ref}</div>`:''}
+          </div>
+        </div>
+      </td>
+      <td>
+        <div style="font-size:11px">${c.contact||'—'}</div>
+        ${c.poste?`<div style="font-size:10px;color:var(--muted)">${c.poste}</div>`:''}
+      </td>
+      <td style="font-size:11px">${c.tel||'—'}</td>
+      <td style="font-size:11px">
+        ${c.email?`<div>${c.email}</div>`:''}
+        ${c.emailFac?`<div style="color:var(--muted)">${c.emailFac}</div>`:''}
+      </td>
+      <td>
+        ${c.siret?`<div style="font-size:10px;color:var(--muted2)">SIRET: ${c.siret}</div>`:''}
+        ${c.tva?`<div style="font-size:10px;color:var(--muted2)">TVA: ${c.tva}</div>`:''}
+        ${c.ville?`<div style="font-size:10px;color:var(--muted2)">📍 ${c.cp||''} ${c.ville}</div>`:''}
+      </td>
+      <td>
+        ${sBdg(c.type||'corporate')}
+        ${c.modeFac?`<div style="font-size:10px;color:var(--muted);margin-top:3px">${{mensuel:'📅 Mensuel',hebdo:'📅 Hebdo',course:'🚗 Par course',prepaye:'💳 Prépayé'}[c.modeFac]||c.modeFac}</div>`:''}
+        ${c.commission?`<div style="font-size:10px;color:var(--gold)">Commission: ${c.commission}%</div>`:''}
+        ${c.delai?`<div style="font-size:10px;color:var(--muted)">Délai: ${c.delai}j</div>`:''}
+      </td>
+      <td><span class="bdg bdg-blue">${courses} course${courses!==1?'s':''}</span><br><span class="text-gold fw7" style="font-size:12px">${ca.toFixed(0)}€</span></td>
+      <td>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-s btn-xs" onclick="openClientModal('${c._id}')"><i class="fas fa-edit"></i> Modifier</button>
+          <button class="btn btn-d btn-xs" onclick="delClient('${c._id}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
     </tr>`;
   }).join('');
 }
 
+window.openClientModal = function(id) {
+  const fields = ['cl-nom','cl-commercial','cl-siret','cl-tva','cl-adresse','cl-cp','cl-ville','cl-pays','cl-contact','cl-poste','cl-tel','cl-email','cl-email-fac','cl-ref','cl-notes','cl-commission'];
+  fields.forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
+  const pays = document.getElementById('cl-pays');if(pays)pays.value='France';
+  document.getElementById('cl-edit-id').value = '';
+  document.getElementById('mo-client-title').textContent = 'Ajouter client';
+
+  if(id) {
+    const c = D.clients.find(x=>x._id===id);
+    if(!c) return;
+    document.getElementById('cl-edit-id').value = id;
+    document.getElementById('mo-client-title').textContent = 'Modifier client';
+    document.getElementById('cl-nom').value = c.nom||'';
+    document.getElementById('cl-commercial').value = c.commercial||'';
+    document.getElementById('cl-siret').value = c.siret||'';
+    document.getElementById('cl-tva').value = c.tva||'';
+    document.getElementById('cl-adresse').value = c.adresse||'';
+    document.getElementById('cl-cp').value = c.cp||'';
+    document.getElementById('cl-ville').value = c.ville||'';
+    document.getElementById('cl-pays').value = c.pays||'France';
+    document.getElementById('cl-contact').value = c.contact||'';
+    document.getElementById('cl-poste').value = c.poste||'';
+    document.getElementById('cl-tel').value = c.tel||'';
+    document.getElementById('cl-email').value = c.email||'';
+    document.getElementById('cl-email-fac').value = c.emailFac||'';
+    document.getElementById('cl-type').value = c.type||'corporate';
+    document.getElementById('cl-mode-fac').value = c.modeFac||'mensuel';
+    document.getElementById('cl-delai').value = c.delai||'30';
+    document.getElementById('cl-commission').value = c.commission||'';
+    document.getElementById('cl-ref').value = c.ref||'';
+    document.getElementById('cl-notes').value = c.notes||'';
+  }
+  openMo('client');
+};
+
 window.saveClient = async function() {
   const nom = document.getElementById('cl-nom').value.trim();
-  if(!nom){showToast('Nom obligatoire',true);return;}
+  if(!nom){showToast('Raison sociale obligatoire',true);return;}
+  const editId = document.getElementById('cl-edit-id').value;
+  const data = {
+    nom,
+    commercial: document.getElementById('cl-commercial').value,
+    siret: document.getElementById('cl-siret').value,
+    tva: document.getElementById('cl-tva').value,
+    adresse: document.getElementById('cl-adresse').value,
+    cp: document.getElementById('cl-cp').value,
+    ville: document.getElementById('cl-ville').value,
+    pays: document.getElementById('cl-pays').value||'France',
+    contact: document.getElementById('cl-contact').value,
+    poste: document.getElementById('cl-poste').value,
+    tel: document.getElementById('cl-tel').value,
+    email: document.getElementById('cl-email').value,
+    emailFac: document.getElementById('cl-email-fac').value,
+    type: document.getElementById('cl-type').value,
+    modeFac: document.getElementById('cl-mode-fac').value,
+    delai: document.getElementById('cl-delai').value,
+    commission: document.getElementById('cl-commission').value,
+    ref: document.getElementById('cl-ref').value,
+    notes: document.getElementById('cl-notes').value,
+    updatedAt: new Date().toISOString()
+  };
   closeMo('client');
-  await fbPush('clients', {nom, tel:document.getElementById('cl-tel').value, email:document.getElementById('cl-email').value, type:document.getElementById('cl-type').value, createdAt:new Date().toISOString()});
+  if(editId) {
+    await fbUpdate('clients', editId, data);
+    showToast('Client mis à jour ✓');
+  } else {
+    data.createdAt = new Date().toISOString();
+    await fbPush('clients', data);
+    showToast('Client ajouté ✓');
+  }
   await loadAll();
-  showToast('Client ajouté ✓');
 };
 
 async function delClient(id){showConfirm('Supprimer ?','',async()=>{await fbDelete('clients',id);await loadAll();showToast('Client supprimé');});}
@@ -2065,20 +2600,42 @@ function renderTarifs() {
   const g=document.getElementById('cg-tf');if(!g)return;
   if(!D.tarifs.length){g.innerHTML=`<div class="t-empty" style="grid-column:1/-1"><i class="fas fa-tags"></i><p>Aucun tarif</p></div>`;return;}
   const catCls={cdg:'bdg-blue',orly:'bdg-blue',disney:'bdg-gold',paris:'bdg-green',autre:'bdg-muted'};
-  g.innerHTML=D.tarifs.map(t=>`
-    <div class="ic">
-      <div class="ic-h">
-        <div style="width:36px;height:36px;border-radius:var(--r-xs);background:var(--gold-dim);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:13px;flex-shrink:0"><i class="fas fa-tag"></i></div>
-        <div><div class="ic-t">${t.route||'—'}</div><div class="ic-s"><span class="bdg ${catCls[t.categorie]||'bdg-muted'}">${(t.categorie||'autre').toUpperCase()}</span></div></div>
+  // Group by client
+  const byClient = {};
+  D.tarifs.forEach(t=>{const c=t.client||'Général';if(!byClient[c])byClient[c]=[];byClient[c].push(t);});
+  g.innerHTML=Object.entries(byClient).map(([clientName, tarifs])=>`
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden">
+      <div style="padding:10px 14px;background:linear-gradient(135deg,rgba(130,50,160,0.3),rgba(130,50,160,0.1));border-bottom:1px solid var(--border)">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#d4a0f0;letter-spacing:1px">${clientName}</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
-        ${t.berline?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:16px">${t.berline}€</div><div style="font-size:9px;color:var(--muted)">🚗 Berline TTC</div></div>`:''}
-        ${t.van?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:16px">${t.van}€</div><div style="font-size:9px;color:var(--muted)">🚐 Van TTC</div></div>`:''}
-        ${t.sprinter?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:16px">${t.sprinter}€</div><div style="font-size:9px;color:var(--muted)">🚌 Sprinter TTC</div></div>`:''}
-        ${t.bus?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:16px">${t.bus}€</div><div style="font-size:9px;color:var(--muted)">🚍 Bus TTC</div></div>`:''}
+      ${tarifs.map(t=>`
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-size:11px;font-weight:600;color:var(--white2)">${t.route||'—'}</div>
+            <span class="bdg ${catCls[t.categorie]||'bdg-muted'}" style="font-size:9px">${(t.categorie||'').toUpperCase()}</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            ${t.berline?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:5px 10px;text-align:center;border:1px solid var(--border)">
+              <div class="text-gold fw7 ff-syne" style="font-size:15px">${t.berline}€</div>
+              <div style="font-size:9px;color:var(--muted)">🚗 Berline jour</div>
+              ${t.berline_nuit?`<div style="font-size:10px;color:var(--blue);margin-top:2px">🌙 ${t.berline_nuit}€ nuit</div>`:''}
+              ${t.prixChauffeur_berline?`<div style="font-size:10px;color:var(--green);margin-top:3px;border-top:1px solid var(--border);padding-top:3px">Ch: ${t.prixChauffeur_berline}€</div>`:''}
+            </div>`:''}
+            ${t.van?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:5px 10px;text-align:center;border:1px solid var(--border)">
+              <div class="text-gold fw7 ff-syne" style="font-size:15px">${t.van}€</div>
+              <div style="font-size:9px;color:var(--muted)">🚐 Van jour</div>
+              ${t.van_nuit?`<div style="font-size:10px;color:var(--blue);margin-top:2px">🌙 ${t.van_nuit}€ nuit</div>`:''}
+              ${t.prixChauffeur_van?`<div style="font-size:10px;color:var(--green);margin-top:3px;border-top:1px solid var(--border);padding-top:3px">Ch: ${t.prixChauffeur_van}€</div>`:''}
+            </div>`:''}
+            ${t.eco?`<div style="background:var(--dark);border-radius:var(--r-xs);padding:5px 10px;text-align:center;border:1px solid var(--border)"><div style="font-size:15px;font-weight:700;color:var(--green)">${t.eco}€</div><div style="font-size:9px;color:var(--muted)">💚 Eco</div></div>`:''}
+          </div>
+          ${t.commission?`<div style="font-size:10px;color:var(--gold);margin-top:5px">💼 Commission : ${t.commission}%</div>`:''}
+          ${t.terminal_supp?`<div style="font-size:10px;color:var(--orange);margin-top:3px">➕ Terminal supplémentaire : +${t.terminal_supp}€</div>`:''}
+          ${t.attente?`<div style="font-size:10px;color:var(--blue);margin-top:3px">⏱ Attente : ${t.attente}</div>`:''}
+        </div>`).join('')}
+      <div style="padding:8px 14px;display:flex;justify-content:flex-end">
+        <button class="btn btn-d btn-xs" onclick="delClientTarifs('${clientName}')"><i class="fas fa-trash"></i> Supprimer</button>
       </div>
-      ${t.nuit?`<div style="font-size:10px;color:var(--orange);margin-bottom:8px">🌙 Nuit : +${t.nuit}€ TTC</div>`:''}
-      <div class="ic-foot"><button class="btn btn-d btn-xs" style="margin-left:auto" onclick="delTarif('${t._id}')"><i class="fas fa-trash"></i></button></div>
     </div>`).join('');
 }
 
@@ -2093,6 +2650,13 @@ window.saveTarif = async function() {
 
 async function delTarif(id){showConfirm('Supprimer ?','',async()=>{await fbDelete('tarifs',id);await loadAll();showToast('Tarif supprimé');});}
 
+async function delClientTarifs(clientName){
+  showConfirm(`Supprimer tous les tarifs de ${clientName} ?`,'',async()=>{
+    const toDelete = D.tarifs.filter(t=>t.client===clientName);
+    for(const t of toDelete) await fbDelete('tarifs',t._id);
+    await loadAll();showToast(`Tarifs ${clientName} supprimés`);
+  });
+}
 // ── FACTURATION ──
 function renderFact() {
   const s=document.getElementById('fac-s')?.value||'';
@@ -2555,56 +3119,68 @@ function renderRevenus() {
   const name = SESSION.name;
   const mine = D.courses.filter(c=>c.chauffeur===name&&c.statut==='terminee');
   const now = new Date();
+  // Toujours utiliser prixChauffeur, jamais le prix client
+  const myPrice = c => parseFloat(c.prixChauffeur||0);
 
-  // Cette semaine
   const startWeek = new Date(now);
   startWeek.setDate(now.getDate()-now.getDay());
   startWeek.setHours(0,0,0,0);
-  const weekCA = mine.filter(c=>new Date(c.datetime)>=startWeek).reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
-  const monthCA = mine.filter(c=>new Date(c.datetime).getMonth()===now.getMonth()&&new Date(c.datetime).getFullYear()===now.getFullYear()).reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
-  const totalCA = mine.reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
+  const weekCA = mine.filter(c=>new Date(c.datetime)>=startWeek).reduce((s,c)=>s+myPrice(c),0);
+  const monthCA = mine.filter(c=>new Date(c.datetime).getMonth()===now.getMonth()&&new Date(c.datetime).getFullYear()===now.getFullYear()).reduce((s,c)=>s+myPrice(c),0);
+  const totalCA = mine.reduce((s,c)=>s+myPrice(c),0);
 
   const e1=document.getElementById('rev-week');const e2=document.getElementById('rev-month');const e3=document.getElementById('rev-total');
   if(e1)e1.textContent=weekCA.toFixed(0)+'€';
   if(e2)e2.textContent=monthCA.toFixed(0)+'€';
   if(e3)e3.textContent=totalCA.toFixed(0)+'€';
 
-  // Detail table
   const tb = document.getElementById('tb-rev-detail');
   if(tb){
-    const recent = mine.sort((a,b)=>new Date(b.datetime)-new Date(a.datetime)).slice(0,20);
-    tb.innerHTML = recent.map(c=>`<tr>
-      <td style="font-size:11px">${fdt(c.datetime)}</td>
-      <td style="font-size:12px;font-weight:600">${c.client||'—'}</td>
-      <td>${tBdg(c.type)}</td>
-      <td style="font-size:11px">${(c.depart||c.lieu||'').slice(0,20)} → ${(c.arrivee||c.duree||'').slice(0,15)}</td>
-      <td>${sBdg(c.statut)}</td>
-    </tr>`).join('') || '<tr><td colspan="5" class="t-empty"><i class="fas fa-chart-line"></i><p>Aucune course terminée</p></td></tr>';
+    const recent = mine.sort((a,b)=>new Date(b.datetime)-new Date(a.datetime)).slice(0,30);
+    const totalReverser = mine.filter(c=>c.payMode==='direct'&&c.marge>0).reduce((s,c)=>s+(parseFloat(c.marge)||0),0);
+    const elR = document.getElementById('rev-reverser');
+    if(elR) elR.textContent = totalReverser.toFixed(2)+'€';
+    tb.innerHTML = recent.map(c=>{
+      const mp = myPrice(c);
+      const isDirect = c.payMode==='direct';
+      const reverser = isDirect && c.marge ? parseFloat(c.marge).toFixed(2)+'€' : '—';
+      return `<tr style="${isDirect?'background:rgba(240,147,74,0.05)':''}">
+        <td style="font-size:11px">${fdt(c.datetime)}</td>
+        <td style="font-size:12px;font-weight:600">${c.client||'—'}</td>
+        <td>${tBdg(c.type)}</td>
+        <td style="font-size:11px">${(c.depart||c.lieu||'').slice(0,20)} → ${(c.arrivee||c.duree||'').slice(0,15)}</td>
+        <td class="text-gold fw7">${mp>0?mp.toFixed(0)+'€':'—'}</td>
+        <td>${isDirect?'<span class="bdg bdg-orange">🚗 Direct</span>':'<span class="bdg bdg-blue">🏢 SimplyCab</span>'}</td>
+        <td style="color:var(--orange);font-weight:700">${reverser}</td>
+        <td>${sBdg(c.statut)}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="8" class="t-empty"><i class="fas fa-chart-line"></i><p>Aucune course terminée</p></td></tr>';
   }
 
-  // Charts
   setTimeout(()=>{
-    drawRevChart('chart-rev-week', getWeeklyData(mine), 'S');
-    drawRevChart('chart-rev-month', getMonthlyData(mine), 'M');
+    drawRevChart('chart-rev-week', getWeeklyData(mine, myPrice), 'S');
+    drawRevChart('chart-rev-month', getMonthlyData(mine, myPrice), 'M');
   }, 100);
 }
 
-function getWeeklyData(mine) {
+function getWeeklyData(mine, priceFunc) {
+  const pf = priceFunc || (c=>parseFloat(c.prixChauffeur||0));
   const now = new Date();
   const weeks = [];
   for(let i=7;i>=0;i--){
     const d=new Date(now);d.setDate(now.getDate()-i*7);
     const start=new Date(d);start.setDate(d.getDate()-d.getDay());start.setHours(0,0,0,0);
     const end=new Date(start);end.setDate(start.getDate()+7);
-    weeks.push({label:`S${8-i}`,val:mine.filter(c=>{const dt=new Date(c.datetime);return dt>=start&&dt<end;}).reduce((s,c)=>s+(parseFloat(c.prix)||0),0)});
+    weeks.push({label:`S${8-i}`,val:mine.filter(c=>{const dt=new Date(c.datetime);return dt>=start&&dt<end;}).reduce((s,c)=>s+pf(c),0)});
   }
   return weeks;
 }
 
-function getMonthlyData(mine) {
+function getMonthlyData(mine, priceFunc) {
+  const pf = priceFunc || (c=>parseFloat(c.prixChauffeur||0));
   const now = new Date();
   const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
-  return months.map((lbl,i)=>({label:lbl,val:mine.filter(c=>new Date(c.datetime).getMonth()===i&&new Date(c.datetime).getFullYear()===now.getFullYear()).reduce((s,c)=>s+(parseFloat(c.prix)||0),0)}));
+  return months.map((lbl,i)=>({label:lbl,val:mine.filter(c=>new Date(c.datetime).getMonth()===i&&new Date(c.datetime).getFullYear()===now.getFullYear()).reduce((s,c)=>s+pf(c),0)}));
 }
 
 function drawRevChart(id, data, prefix) {
@@ -2986,6 +3562,54 @@ function renderHistMC() {
   </tr>`).join('');
 }
 
+// ── TWILIO SMS CONFIG ──
+const TWILIO_SID = 'AC8edd2de02e73dae8780ede1607fb8bfe';
+const TWILIO_TOKEN = 'f852e1c9526826fa573ccb8cd10b06a1';
+const TWILIO_FROM = '+14422005004';
+
+// Message templates by client
+function getSMSTemplate(clientName, chauffeurName, chauffeurTel, destination) {
+  const client = (clientName||'').toUpperCase();
+  const isLVV = client.includes('LVV') || destination.toLowerCase().includes('vall');
+  const isDCGM = client.includes('DC_GM') || client.includes('DREAM') || client.includes('GRAND MAGIC') || client.includes('DREAM CASTLE');
+
+  if(isLVV) {
+    return (prenom) => `Dear ${prenom},\nI am ${chauffeurName}, your private chauffeur for your transfer to La Vallée Village.\nI am currently waiting for you at the hotel's main entrance.\nShould you need to reach me directly, please don't hesitate to contact me: ${chauffeurTel}\nI look forward to providing you with a smooth and comfortable journey.\nWarm regards,\n${chauffeurName}`;
+  }
+
+  // Detect hotel/client name for message
+  let dest = 'DUEMEA';
+  if(client.includes('MSP')) dest = 'MSP';
+  else if(client.includes('LVV')) dest = 'La Vallée Village';
+  else if(client.includes('RENFORT')) dest = 'Renfort Magical';
+  else if(client.includes('HOTELS DISNEY') || client.includes('HOTEL DISNEY')) dest = 'the Disney Hotel';
+  else if(client.includes('DREAM CASTLE')) dest = 'Dream Castle Hotel';
+  else if(client.includes('GRAND MAGIC')) dest = 'Grand Magic Hotel';
+  else if(client.includes('DC_GM')) dest = 'the Hotel';
+  else if(destination) dest = destination.split(',')[0];
+
+  return (prenom) => `Hello${prenom?' '+prenom:''},\nI am ${chauffeurName}, your driver for your transfer to ${dest}.\nI am waiting for you at the transfer meeting point.\nIn case you need to reach me: ${chauffeurTel}`;
+}
+
+async function sendTwilioSMS(to, body) {
+  // Twilio requires a proxy due to CORS - use a simple approach
+  try {
+    const credentials = btoa(`${TWILIO_SID}:${TWILIO_TOKEN}`);
+    const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({From: TWILIO_FROM, To: to, Body: body})
+    });
+    const data = await r.json();
+    return data.sid ? true : data.message||'Erreur';
+  } catch(e) {
+    return e.message;
+  }
+}
+
 window.driverUpd = async function(id, statut, note) {
   const update = {updatedAt:new Date().toISOString()};
   if(statut) update.statut = statut;
@@ -3000,32 +3624,163 @@ window.driverUpd = async function(id, statut, note) {
   if(note && note.trim()) { const el=document.getElementById('note-'+id); if(el)el.value=''; }
   await loadAll();
   showToast(statut?'Statut mis à jour ✓':'Note ajoutée ✓');
+
+  // Si sur_place → proposer d'envoyer SMS aux passagers
+  if(statut === 'sur_place') {
+    const c = D.courses.find(x=>x._id===id);
+    if(c && c.passagers && c.passagers.length > 0) {
+      showSMSPopup(c);
+    }
+  }
+};
+
+window.showSMSPopup = function(c) {
+  const chauffeur = D.chauffeurs.find(ch=>(ch.prenom+(ch.nom?' '+ch.nom:''))===SESSION.name);
+  const chauffeurTel = chauffeur?.tel || SESSION.name;
+  const tpl = getSMSTemplate(c.client, SESSION.name, chauffeurTel, c.arrivee||c.depart||'');
+  const passagers = c.passagers.filter(p=>p.present!==false && p.tel);
+
+  if(!passagers.length) {
+    showToast('Aucun passager avec numéro de téléphone', true);
+    return;
+  }
+
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)';
+  ov.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);width:560px;max-width:100%;max-height:90vh;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700">💬 Envoyer un message aux passagers</div>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);width:30px;height:30px;color:var(--muted2);cursor:pointer">✕</button>
+      </div>
+      <div style="padding:16px 20px;overflow-y:auto;flex:1">
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:14px">
+          Sélectionne les passagers à qui envoyer un message :
+        </div>
+        <!-- Aperçu message -->
+        <div style="background:var(--dark);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:14px;font-size:12px;color:var(--white2);white-space:pre-line;line-height:1.6" id="sms-preview">${tpl(passagers[0]?.prenom||'')}</div>
+        <!-- Liste passagers -->
+        <div id="sms-pax-list">
+          ${passagers.map((p,i)=>`
+            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:7px">
+              <input type="checkbox" id="sms-chk-${i}" checked style="width:16px;height:16px;cursor:pointer;flex-shrink:0">
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:600">${p.prenom||''} ${p.nom||''}</div>
+                <div style="font-size:11px;color:var(--muted2)">${p.tel}</div>
+              </div>
+              <span id="sms-status-${i}" style="font-size:11px;color:var(--muted)">En attente</span>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div style="font-size:11px;color:var(--muted)">via Twilio SMS • ${passagers.length} passager(s) avec numéro</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="this.closest('div[style*=fixed]').remove()" class="btn btn-ghost btn-sm">Annuler</button>
+          <button onclick="doSendSMS(${JSON.stringify(passagers).replace(/"/g,'&quot;')}, '${c.client}', '${c.arrivee||c.depart||''}', '${SESSION.name}', '${chauffeurTel}')" class="btn btn-p btn-sm"><i class="fas fa-paper-plane"></i> Envoyer</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+};
+
+window.doSendSMS = async function(passagers, client, destination, chauffeurName, chauffeurTel) {
+  const tpl = getSMSTemplate(client, chauffeurName, chauffeurTel, destination);
+  let sent = 0, failed = 0;
+  for(let i=0; i<passagers.length; i++) {
+    const chk = document.getElementById('sms-chk-'+i);
+    const st = document.getElementById('sms-status-'+i);
+    if(!chk?.checked) continue;
+    if(st) { st.textContent = '⏳ Envoi...'; st.style.color = 'var(--orange)'; }
+    const p = passagers[i];
+    const msg = tpl(p.prenom||'');
+    const result = await sendTwilioSMS(p.tel, msg);
+    if(result === true) {
+      sent++;
+      if(st) { st.textContent = '✅ Envoyé'; st.style.color = 'var(--green)'; }
+    } else {
+      failed++;
+      if(st) { st.textContent = '❌ Échec'; st.style.color = 'var(--red)'; }
+      console.log('SMS error:', result);
+    }
+  }
+  showToast(`${sent} SMS envoyé(s)${failed>0?' • '+failed+' échec(s)':''}`);
 };
 
 // ── COMPTES DISPATCH ──
 function renderComptes() {
   const tb=document.getElementById('tb-comptes');if(!tb)return;
-  if(!D.dispatch_accounts.length){tb.innerHTML=`<tr><td colspan="4" class="t-empty"><i class="fas fa-users-cog"></i><p>Aucun compte dispatch</p></td></tr>`;return;}
+  if(!D.dispatch_accounts.length){tb.innerHTML=`<tr><td colspan="5" class="t-empty"><i class="fas fa-users-cog"></i><p>Aucun compte dispatch</p></td></tr>`;return;}
   tb.innerHTML=D.dispatch_accounts.map(d=>`<tr>
     <td><strong>${d.user||'—'}</strong></td>
     <td>${d.nom||'—'}</td>
     <td style="font-size:11px;color:var(--muted)">${d.createdAt?new Date(d.createdAt).toLocaleDateString('fr-FR'):'—'}</td>
-    <td><button class="btn btn-d btn-xs" onclick="delDispatch('${d._id}')"><i class="fas fa-trash"></i></button></td>
+    <td style="font-size:11px;color:var(--muted)">${d.updatedAt?'Modifié '+new Date(d.updatedAt).toLocaleDateString('fr-FR'):'—'}</td>
+    <td>
+      <div style="display:flex;gap:5px">
+        <button class="btn btn-s btn-xs" onclick="openDispatchAccountModal('${d._id}')"><i class="fas fa-edit"></i> Modifier</button>
+        <button class="btn btn-d btn-xs" onclick="delDispatch('${d._id}')"><i class="fas fa-trash"></i></button>
+      </div>
+    </td>
   </tr>`).join('');
 }
 
+window.openDispatchAccountModal = function(id) {
+  // Reset
+  document.getElementById('da-edit-id').value = '';
+  document.getElementById('da-user').value = '';
+  document.getElementById('da-nom').value = '';
+  document.getElementById('da-pass').value = '';
+  document.getElementById('da-user').disabled = false;
+
+  if(id) {
+    const d = D.dispatch_accounts.find(x=>x._id===id);
+    if(!d) return;
+    document.getElementById('da-edit-id').value = id;
+    document.getElementById('da-user').value = d.user||'';
+    document.getElementById('da-nom').value = d.nom||'';
+    document.getElementById('da-user').disabled = true; // can't change username
+    document.getElementById('da-modal-title').textContent = 'Modifier compte Dispatch';
+    document.getElementById('da-pass-label').textContent = 'Nouveau mot de passe';
+    document.getElementById('da-pass-hint').style.display = 'block';
+    document.getElementById('da-save-btn').innerHTML = '<i class="fas fa-save"></i> Enregistrer';
+  } else {
+    document.getElementById('da-modal-title').textContent = 'Nouveau compte Dispatch';
+    document.getElementById('da-pass-label').textContent = 'Mot de passe *';
+    document.getElementById('da-pass-hint').style.display = 'none';
+    document.getElementById('da-save-btn').innerHTML = '<i class="fas fa-save"></i> Créer';
+  }
+  openMo('dispatch-account');
+};
+
 window.saveDispatchAccount = async function() {
-  const user=document.getElementById('da-user').value.trim();
-  const pass=document.getElementById('da-pass').value.trim();
-  const nom=document.getElementById('da-nom').value.trim();
-  if(!user||!pass){showToast('Identifiant et mot de passe requis',true);return;}
-  if(pass.length<6){showToast('Mot de passe min. 6 caractères',true);return;}
-  if(D.dispatch_accounts.find(d=>d.user===user)){showToast('Identifiant déjà utilisé',true);return;}
-  closeMo('dispatch-account');
-  await fbPush('dispatch_accounts',{user,pass,nom,createdAt:new Date().toISOString()});
-  await addLog(`Compte dispatch créé : ${user}`);
-  await loadAll();
-  showToast(`Compte "${user}" créé ✓`);
+  const editId = document.getElementById('da-edit-id').value;
+  const user = document.getElementById('da-user').value.trim();
+  const pass = document.getElementById('da-pass').value.trim();
+  const nom = document.getElementById('da-nom').value.trim();
+
+  if(editId) {
+    // MODIFIER
+    const update = { nom, updatedAt: new Date().toISOString() };
+    if(pass) {
+      if(pass.length < 6){showToast('Mot de passe min. 6 caractères',true);return;}
+      update.pass = pass;
+    }
+    await fbUpdate('dispatch_accounts', editId, update);
+    await addLog(`Compte dispatch modifié : ${user}`);
+    closeMo('dispatch-account');
+    await loadAll();
+    showToast(`Compte "${user}" mis à jour ✓`);
+  } else {
+    // CRÉER
+    if(!user||!pass){showToast('Identifiant et mot de passe requis',true);return;}
+    if(pass.length<6){showToast('Mot de passe min. 6 caractères',true);return;}
+    if(D.dispatch_accounts.find(d=>d.user===user)){showToast('Identifiant déjà utilisé',true);return;}
+    closeMo('dispatch-account');
+    await fbPush('dispatch_accounts',{user,pass,nom,createdAt:new Date().toISOString()});
+    await addLog(`Compte dispatch créé : ${user}`);
+    await loadAll();
+    showToast(`Compte "${user}" créé ✓`);
+  }
 };
 
 async function delDispatch(id){showConfirm('Supprimer ce compte ?','',async()=>{await fbDelete('dispatch_accounts',id);await loadAll();showToast('Compte supprimé');});}
@@ -3058,7 +3813,43 @@ window.loadDemoData = async function() {
     for(const c of ch) await fbPush('chauffeurs',{...c,createdAt:new Date().toISOString()});
   }
   if(!D.tarifs.length){
-    const tr=[{route:'CDG → Paris Centre',berline:'82.50',van:'104.50',sprinter:'165',bus:'275',categorie:'cdg',nuit:'16.50'},{route:'Orly → Paris Centre',berline:'71.50',van:'93.50',sprinter:'143',bus:'220',categorie:'orly',nuit:'13.20'},{route:'Disneyland → CDG',berline:'99',van:'132',sprinter:'198',bus:'330',categorie:'disney',nuit:'22'},{route:'Paris → Versailles',berline:'60.50',van:'82.50',sprinter:'132',bus:'220',categorie:'paris',nuit:'11'}];
+    const tr=[
+      // DUEMEA
+      {client:'DUEMEA',route:'DUEMEA → Chessy',berline:'18',van:'23',categorie:'disney',attente:'20€/30min après 20min',createdAt:new Date().toISOString()},
+      {client:'DUEMEA',route:'DUEMEA → CDG/Orly',berline:'80',van:'100',categorie:'cdg',terminal_supp:'10',attente:'24€/30min après 1h',createdAt:new Date().toISOString()},
+      {client:'DUEMEA',route:'DUEMEA → Paris',berline:'90',van:'110',categorie:'paris',attente:'24€/30min après 30min',createdAt:new Date().toISOString()},
+      // MSP
+      {client:'MSP',route:'MSP → CDG/Orly',berline:'75',van:'95',categorie:'cdg',attente:'24€/30min après 90min',createdAt:new Date().toISOString()},
+      {client:'MSP',route:'MSP → Paris',berline:'90',van:'105',categorie:'paris',attente:'24€/30min après 90min',createdAt:new Date().toISOString()},
+      // LVV
+      {client:'LVV',route:'LVV → Chessy',berline:'15',van:'20',categorie:'disney',createdAt:new Date().toISOString()},
+      {client:'LVV',route:'LVV → CDG',berline:'90',van:'100',categorie:'cdg',createdAt:new Date().toISOString()},
+      {client:'LVV',route:'LVV → Paris',berline:'90',van:'110',categorie:'paris',createdAt:new Date().toISOString()},
+      // RENFORT MAGICAL
+      {client:'RENFORT MAGICAL',route:'RENFORT MAGICAL → CDG',berline:'75',van:'100',categorie:'cdg',createdAt:new Date().toISOString()},
+      {client:'RENFORT MAGICAL',route:'RENFORT MAGICAL → Paris',berline:'80',van:'100',categorie:'paris',createdAt:new Date().toISOString()},
+      // HOTELS DISNEY
+      {client:'HOTELS DISNEY',route:'Hotels Disney → CDG',berline:'80',van:'90',categorie:'cdg',createdAt:new Date().toISOString()},
+      {client:'HOTELS DISNEY',route:'Hotels Disney → Orly',berline:'90',van:'100',categorie:'orly',createdAt:new Date().toISOString()},
+      {client:'HOTELS DISNEY',route:'Hotels Disney → Paris',berline:'90',van:'100',categorie:'paris',createdAt:new Date().toISOString()},
+      // PARIS
+      {client:'PARIS',route:'Paris → CDG',berline:'80',van:'90',categorie:'cdg',eco:'70',createdAt:new Date().toISOString()},
+      {client:'PARIS',route:'Paris → Orly',berline:'80',van:'90',categorie:'orly',eco:'60',createdAt:new Date().toISOString()},
+      {client:'PARIS',route:'Paris → Paris',berline:'50',van:'60',categorie:'paris',eco:'45',createdAt:new Date().toISOString()},
+      // DC_GM — Dream Castle / Grand Magic Hotel — Commission 15%
+      // Prix client | Prix chauffeur (-15%) | Heure de jour 08:00-19:00
+      {client:'DC_GM',route:'DC_GM → CDG/Orly',berline:'90',van:'105',berline_nuit:'100',van_nuit:'115',prixChauffeur_berline:'76.50',prixChauffeur_van:'94.5',prixChauffeur_berline_nuit:'85.00',prixChauffeur_van_nuit:'103.5',commission:'10',categorie:'cdg',attente:'30 min après arrivée vol (aéroport) / 15 min gares',createdAt:new Date().toISOString()},
+      {client:'DC_GM',route:'DC_GM → Paris',berline:'100',van:'115',berline_nuit:'115',van_nuit:'125',prixChauffeur_berline:'85.00',prixChauffeur_van:'103.5',prixChauffeur_berline_nuit:'103.5',prixChauffeur_van_nuit:'112.5',commission:'10',categorie:'paris',createdAt:new Date().toISOString()},
+      {client:'DC_GM',route:'DC_GM → Zone Disney',berline:'15',van:'20',berline_nuit:'20',van_nuit:'20',prixChauffeur_berline:'13.5',prixChauffeur_van:'17.00',commission:'10',categorie:'disney',createdAt:new Date().toISOString()},
+      {client:'DC_GM',route:'DC_GM → Beauvais',berline:'180',van:'200',berline_nuit:'210',van_nuit:'230',prixChauffeur_berline:'153.00',prixChauffeur_van:'170.00',prixChauffeur_berline_nuit:'178.50',prixChauffeur_van_nuit:'195.50',commission:'10',categorie:'autre',createdAt:new Date().toISOString()},
+      {client:'DC_GM',route:'DC_GM → Pharmacie Torcy',berline:'35',van:'35',berline_nuit:'40',van_nuit:'40',prixChauffeur_berline:'31.5',prixChauffeur_van:'31.5',commission:'10',categorie:'autre',createdAt:new Date().toISOString()},
+      {client:'DC_GM',route:'DC_GM → Parc Félins',berline:'50',van:'60',berline_nuit:'50',van_nuit:'60',prixChauffeur_berline:'42.50',prixChauffeur_van:'51.00',commission:'10',categorie:'autre',createdAt:new Date().toISOString()},
+      {client:'DC_GM',route:'DC_GM → Versailles',berline:'140',van:'160',berline_nuit:'160',van_nuit:'180',prixChauffeur_berline:'119.00',prixChauffeur_van:'136.00',prixChauffeur_berline_nuit:'136.00',prixChauffeur_van_nuit:'153.00',commission:'10',categorie:'paris',createdAt:new Date().toISOString()},
+      {client:'DC_GM',route:'DC_GM → Parc Astérix',berline:'130',van:'160',berline_nuit:'140',van_nuit:'170',prixChauffeur_berline:'110.50',prixChauffeur_van:'136.00',prixChauffeur_berline_nuit:'119.00',prixChauffeur_van_nuit:'144.50',commission:'10',categorie:'autre',createdAt:new Date().toISOString()},
+      {client:'DC_GM',route:'DC_GM → Forfait 2h Paris A/R',berline:'300',van:'350',berline_nuit:'320',van_nuit:'350',prixChauffeur_berline:'255.00',prixChauffeur_van:'297.50',commission:'10',categorie:'paris',createdAt:new Date().toISOString()},
+      {client:'DC_GM',route:'DC_GM → Forfait 4h Paris A/R',berline:'400',van:'450',berline_nuit:'420',van_nuit:'450',prixChauffeur_berline:'340.00',prixChauffeur_van:'382.50',commission:'10',categorie:'paris',createdAt:new Date().toISOString()},
+      {client:'DC_GM',route:'DC_GM → Heure supplémentaire',berline:'50',van:'60',berline_nuit:'55',van_nuit:'65',prixChauffeur_berline:'42.50',prixChauffeur_van:'51.00',commission:'10',categorie:'autre',createdAt:new Date().toISOString()},
+    ];
     for(const t of tr) await fbPush('tarifs',{...t,createdAt:new Date().toISOString()});
   }
   const demos=[
