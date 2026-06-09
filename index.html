@@ -605,7 +605,7 @@ tr:last-child td{border-bottom:none}
       <!-- VEHICULES -->
       <div class="page" id="page-vehicules">
         <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
-          <button class="btn btn-p btn-sm" onclick="openMo('vehicule')"><i class="fas fa-plus"></i> Ajouter véhicule</button>
+          <button class="btn btn-p btn-sm" onclick="openVehiculeModal()"><i class="fas fa-plus"></i> Ajouter véhicule</button>
         </div>
         <div class="cg" id="cg-vh"></div>
       </div>
@@ -1266,8 +1266,12 @@ tr:last-child td{border-bottom:none}
 <!-- VEHICULE -->
 <div class="mo" id="mo-vehicule">
   <div class="mo-box" style="width:460px">
-    <div class="mo-h"><div class="mo-t"><i class="fas fa-car" style="color:var(--gold)"></i> Ajouter véhicule</div><div class="mo-x" onclick="closeMo('vehicule')"><i class="fas fa-times"></i></div></div>
+    <div class="mo-h">
+      <div class="mo-t"><i class="fas fa-car" style="color:var(--gold)"></i> <span id="mo-vh-title">Ajouter véhicule</span></div>
+      <div class="mo-x" onclick="closeMo('vehicule')"><i class="fas fa-times"></i></div>
+    </div>
     <div class="mo-b">
+      <input type="hidden" id="vh-edit-id">
       <div class="fg2"><div class="fld"><label>Marque *</label><input type="text" id="vh-marque" placeholder="Mercedes"></div><div class="fld"><label>Modèle</label><input type="text" id="vh-modele" placeholder="Classe E"></div></div>
       <div class="fg2"><div class="fld"><label>Immatriculation</label><input type="text" id="vh-immat" placeholder="AB-123-CD"></div><div class="fld"><label>Année</label><input type="number" id="vh-annee" placeholder="2024"></div></div>
       <div class="fg2">
@@ -1276,7 +1280,7 @@ tr:last-child td{border-bottom:none}
       </div>
       <div class="fld"><label>Chauffeur</label><select id="vh-ch"><option value="">— Non assigné —</option></select></div>
     </div>
-    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('vehicule')">Annuler</button><button class="btn btn-p" onclick="saveVehicule()"><i class="fas fa-save"></i> Enregistrer</button></div>
+    <div class="mo-f"><button class="btn btn-ghost" onclick="closeMo('vehicule')">Annuler</button><button class="btn btn-p" onclick="saveVehicule()"><i class="fas fa-save"></i> <span id="vh-save-lbl">Enregistrer</span></button></div>
   </div>
 </div>
 
@@ -2618,33 +2622,61 @@ async function delChauffeur(id) {
 function renderVehicules() {
   const g=document.getElementById('cg-vh');if(!g)return;
   if(!D.vehicules.length){g.innerHTML=`<div class="t-empty" style="grid-column:1/-1"><i class="fas fa-car"></i><p>Aucun véhicule</p></div>`;return;}
-  g.innerHTML=D.vehicules.map(v=>`
-    <div class="ic">
+  g.innerHTML=D.vehicules.map(v=>{
+    const age = v.annee ? new Date().getFullYear() - parseInt(v.annee) : null;
+    const isOld = age !== null && age > 6;
+    return `
+    <div class="ic" style="${isOld?'border-color:var(--orange)':''}">
       <div class="ic-h">
         <div style="width:38px;height:38px;border-radius:var(--r-xs);background:var(--blue-dim);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚗</div>
         <div><div class="ic-t">${v.marque||'—'} ${v.modele||''}</div><div class="ic-s">${v.immat||'—'}</div></div>
         ${sBdg(v.statut||'actif')}
       </div>
+      ${isOld?`<div style="background:var(--orange-dim);border:1px solid rgba(240,147,74,0.4);border-radius:var(--r-xs);padding:7px 10px;font-size:11px;color:var(--orange);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="fas fa-exclamation-triangle"></i> Véhicule de <strong>${age} ans</strong> — vérifier la conformité VTC</div>`:''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:14px">${v.annee||'—'}</div><div style="font-size:9px;color:var(--muted)">Année</div></div>
+        <div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="fw7 ff-syne" style="font-size:14px;color:${isOld?'var(--orange)':'var(--gold)'}">${v.annee||'—'}</div><div style="font-size:9px;color:var(--muted)">Année ${age?'('+age+' ans)':''}</div></div>
         <div style="background:var(--dark);border-radius:var(--r-xs);padding:8px;border:1px solid var(--border);text-align:center"><div class="text-gold fw7 ff-syne" style="font-size:14px">${v.km?parseInt(v.km).toLocaleString('fr-FR'):'-'}</div><div style="font-size:9px;color:var(--muted)">Km</div></div>
       </div>
       <div style="font-size:11px;color:var(--muted2);margin-bottom:10px">👤 ${v.chauffeur||'Non assigné'}</div>
       <div class="ic-foot">
         <span class="bdg bdg-muted">${{van:'🚐 Van',sprinter:'🚌 Sprinter',bus:'🚍 Bus'}[v.type]||'🚗 Berline'}</span>
-        <button class="btn btn-d btn-xs" style="margin-left:auto" onclick="delVehicule('${v._id}')"><i class="fas fa-trash"></i></button>
+        <button class="btn btn-s btn-xs" onclick="openVehiculeModal('${v._id}')"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-d btn-xs" onclick="delVehicule('${v._id}')"><i class="fas fa-trash"></i></button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
+
+window.openVehiculeModal = function(id) {
+  document.getElementById('vh-edit-id').value = '';
+  ['vh-marque','vh-modele','vh-immat','vh-annee','vh-km'].forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
+  buildDriverSelects();
+  if(id){
+    const v=D.vehicules.find(x=>x._id===id);if(!v)return;
+    document.getElementById('vh-edit-id').value=id;
+    document.getElementById('vh-marque').value=v.marque||'';document.getElementById('vh-modele').value=v.modele||'';
+    document.getElementById('vh-immat').value=v.immat||'';document.getElementById('vh-annee').value=v.annee||'';
+    document.getElementById('vh-km').value=v.km||'';document.getElementById('vh-type').value=v.type||'berline';
+    document.getElementById('vh-ch').value=v.chauffeur||'';
+    document.getElementById('mo-vh-title').textContent='Modifier véhicule';
+    document.getElementById('vh-save-lbl').textContent='Enregistrer';
+  } else {
+    document.getElementById('mo-vh-title').textContent='Ajouter véhicule';
+    document.getElementById('vh-save-lbl').textContent='Ajouter';
+  }
+  openMo('vehicule');
+};
+window.openVehiculeModal=window.openVehiculeModal;
 
 window.saveVehicule = async function() {
   const marque = document.getElementById('vh-marque').value.trim();
   if(!marque){showToast('Marque obligatoire',true);return;}
+  const editId = document.getElementById('vh-edit-id').value;
+  const data = {marque,modele:document.getElementById('vh-modele').value,immat:document.getElementById('vh-immat').value,annee:document.getElementById('vh-annee').value,type:document.getElementById('vh-type').value,km:document.getElementById('vh-km').value,chauffeur:document.getElementById('vh-ch').value,updatedAt:new Date().toISOString()};
   closeMo('vehicule');
-  showToast('Enregistrement...');
-  await fbPush('vehicules', {marque, modele:document.getElementById('vh-modele').value, immat:document.getElementById('vh-immat').value, annee:document.getElementById('vh-annee').value, type:document.getElementById('vh-type').value, km:document.getElementById('vh-km').value, chauffeur:document.getElementById('vh-ch').value, statut:'actif', createdAt:new Date().toISOString()});
+  if(editId){await fbUpdate('vehicules',editId,data);showToast('Véhicule mis à jour ✓');}
+  else{data.statut='actif';data.createdAt=new Date().toISOString();await fbPush('vehicules',data);showToast('Véhicule ajouté ✓');}
   await loadAll();
-  showToast('Véhicule ajouté ✓');
 };
 
 async function delVehicule(id) {
