@@ -1031,7 +1031,7 @@ tr:last-child td{border-bottom:none}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <div class="fld"><label>Date & Heure *</label><input type="datetime-local" id="fc-dt"></div>
         <div class="fld"><label>Véhicule</label>
-          <select id="fc-veh" onchange="genRef();updatePaxMax()">
+          <select id="fc-veh" onchange="genRef();updatePaxMax();autoFillPrix()">
             <option value="berline">🚗 Berline (3 pax)</option>
             <option value="van">🚐 Van (7 pax)</option>
             <option value="sprinter">🚌 Sprinter (16 pax)</option>
@@ -1050,7 +1050,7 @@ tr:last-child td{border-bottom:none}
       <div id="f-transfert">
         <div class="fg2">
           <div class="fld"><label>Départ *</label><input type="text" id="fc-dep" placeholder="Ex: 15 rue de Rivoli, Paris"></div>
-          <div class="fld"><label>Arrivée *</label><input type="text" id="fc-arr" placeholder="Ex: CDG Terminal 2E, Roissy"></div>
+          <div class="fld"><label>Arrivée *</label><input type="text" id="fc-arr" placeholder="Ex: CDG Terminal 2E, Roissy" oninput="autoFillPrix()"></div>
         </div>
 
       </div>
@@ -1072,7 +1072,7 @@ tr:last-child td{border-bottom:none}
       <!-- RÉFÉRENCE + PRIX -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
         <div class="fld"><label>Catégorie</label>
-          <select id="fc-cat" onchange="genRef()">
+          <select id="fc-cat" onchange="genRef();autoFillPrix()">
             <option value="cdg">✈️ CDG</option><option value="orly">✈️ Orly</option>
             <option value="disney">🏰 Disneyland</option><option value="paris">🗼 Paris</option>
             <option value="gare">🚉 Gare</option><option value="corporate">🏢 Corporate</option><option value="autre">📍 Autre</option>
@@ -1922,13 +1922,8 @@ window.selClient = function(nom, tel) {
   document.getElementById('fc-client-input').value = nom;
   document.getElementById('fc-client').value = nom;
   if(tel) document.getElementById('fc-tel').value = tel;
-  // Auto-fill commission if client has one
-  const c = D.clients.find(x=>x.nom===nom);
-  if(c?.commission) {
-    const commPct = document.getElementById('fc-commission-pct');
-    // Just note it - admin sets prices manually
-  }
   closeClientDrop();
+  setTimeout(autoFillPrix, 100);
 };
 
 async function addLog(text) {
@@ -2448,7 +2443,73 @@ window.selType = function(t) {
   }
 };
 
-window.calcHT = function() {
+// ── AUTO PRIX DEPUIS TARIFS ──
+function autoFillPrix() {
+  const client = document.getElementById('fc-client')?.value || document.getElementById('fc-client-input')?.value || '';
+  const veh = document.getElementById('fc-veh')?.value || 'berline';
+  const cat = document.getElementById('fc-cat')?.value || '';
+  const arr = (document.getElementById('fc-arr')?.value||'').toLowerCase();
+  const dep = (document.getElementById('fc-dep')?.value||'').toLowerCase();
+
+  if(!client) return;
+
+  // Find matching tarif
+  const clientUpper = client.toUpperCase();
+  const tarif = D.tarifs.find(t => {
+    if(!t.client) return false;
+    const tc = t.client.toUpperCase();
+    if(!clientUpper.includes(tc) && !tc.includes(clientUpper.split(' ')[0])) return false;
+    const route = (t.route||'').toLowerCase();
+    // Match by category
+    if(cat === 'cdg' && (route.includes('cdg') || route.includes('orly'))) return true;
+    if(cat === 'orly' && (route.includes('orly') || route.includes('cdg'))) return true;
+    if(cat === 'disney' && (route.includes('chessy') || route.includes('disney') || route.includes('zone'))) return true;
+    if(cat === 'paris' && route.includes('paris')) return true;
+    if(cat === 'gare' && (route.includes('gdn') || route.includes('gare') || route.includes('gde') || route.includes('gdl') || route.includes('gdln'))) return true;
+    // Match by destination text
+    if(arr.includes('cdg') || arr.includes('charles de gaulle') || arr.includes('roissy')) {
+      if(route.includes('cdg') || route.includes('orly')) return true;
+    }
+    if(arr.includes('orly')) {
+      if(route.includes('orly') || route.includes('cdg')) return true;
+    }
+    if(arr.includes('chessy') || arr.includes('disney') || dep.includes('chessy') || dep.includes('disney')) {
+      if(route.includes('chessy') || route.includes('disney') || route.includes('zone')) return true;
+    }
+    if(arr.includes('paris') || dep.includes('paris')) {
+      if(route.includes('paris')) return true;
+    }
+    return false;
+  });
+
+  if(!tarif) return;
+
+  // Get prix client
+  const prixClient = parseFloat(tarif[veh])||0;
+  const prixChauffeur = parseFloat(tarif[`prixChauffeur_${veh}`])||0;
+  const commission = parseFloat(tarif.commission)||0;
+
+  const elPrix = document.getElementById('fc-prix');
+  const elCh = document.getElementById('fc-prix-chauffeur');
+  const ps = document.getElementById('prix-suggest');
+
+  if(prixClient > 0 && elPrix) {
+    elPrix.value = prixClient;
+    if(prixChauffeur > 0 && elCh) {
+      elCh.value = prixChauffeur;
+    } else if(commission > 0 && elCh) {
+      elCh.value = (prixClient * (1 - commission/100)).toFixed(2);
+    } else if(elCh) {
+      elCh.value = prixClient;
+    }
+    calcMarge();
+    if(ps) {
+      ps.style.display = 'block';
+      ps.innerHTML = `💡 Tarif auto : <strong>${prixClient}€</strong> client${prixChauffeur>0?' | <strong>'+prixChauffeur+'€</strong> chauffeur':''} (${tarif.route})`;
+    }
+  }
+}
+
   const ttc = parseFloat(document.getElementById('fc-prix').value)||0;
   calcMarge();
   const cat = document.getElementById('fc-cat').value;
@@ -2640,7 +2701,6 @@ window.saveChauffeur = async function() {
   if(!prenom){showToast('Prénom obligatoire',true);return;}
   if(pin && pin.length!==6){showToast('Le code doit faire 6 chiffres',true);return;}
   if(pin && !/^\d{6}$/.test(pin)){showToast('Le code doit contenir uniquement des chiffres',true);return;}
-  if(pin && D.chauffeurs.find(c=>c.pin===pin&&c._id!==editId)){showToast('Code déjà utilisé par un autre chauffeur',true);return;}
   const data = {prenom, nom:document.getElementById('ch-nom').value, tel:document.getElementById('ch-tel').value, email:document.getElementById('ch-email').value, vehicule:document.getElementById('ch-veh').value, updatedAt:new Date().toISOString()};
   if(pin) data.pin = pin;
   closeMo('chauffeur');
