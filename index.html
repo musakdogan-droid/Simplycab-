@@ -3188,7 +3188,16 @@ function renderMesCourses() {
   if(e3) e3.textContent=ca.toFixed(0)+'€';
 
   const active = mine.filter(c=>!['terminee','annulee','noshow','payee','facturee'].includes(c.statut))
-    .sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+    .sort((a,b)=>{
+      // Priorité : course active (en_route/sur_place/onboard/depose) en premier
+      const activeStatuts = ['en_route','sur_place','onboard','depose'];
+      const aActive = activeStatuts.includes(a.statut);
+      const bActive = activeStatuts.includes(b.statut);
+      if(aActive && !bActive) return -1;
+      if(!aActive && bActive) return 1;
+      // Ensuite par heure
+      return new Date(a.datetime) - new Date(b.datetime);
+    });
 
   const container = document.getElementById('mc-cards-list');
   if(!container) return;
@@ -3243,7 +3252,11 @@ function renderMesCourses() {
         + '<button onclick="driverUpd(\''+c._id+'\',null,document.getElementById(\'note-'+c._id+'\').value)" style="background:#b8860b;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;color:#fff;font-weight:700">OK</button></div>';
     }
 
-    return '<div style="background:#fff;border:1px solid #e0e3e8;border-radius:16px;margin-bottom:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">'
+    const isActiveCourse = ['en_route','sur_place','onboard','depose'].includes(c.statut);
+
+    return '<div style="background:#fff;border:'+(isActiveCourse?'2px solid '+clientColor:'1px solid #e0e3e8')+';border-radius:16px;margin-bottom:14px;overflow:hidden;box-shadow:'+(isActiveCourse?'0 4px 20px '+clientColor+'44':'0 2px 12px rgba(0,0,0,0.08)')+'">'
+      // EN COURS banner
+      + (isActiveCourse ? '<div style="background:'+clientColor+';padding:6px 16px;text-align:center;font-family:Syne,sans-serif;font-size:11px;font-weight:800;color:#fff;letter-spacing:2px;text-transform:uppercase">&#9679; COURSE EN COURS</div>' : '')
       // Header
       + '<div style="background:'+clientColor+';padding:12px 16px;display:flex;justify-content:space-between;align-items:center">'
       + '<div style="font-family:Syne,sans-serif;font-size:13px;font-weight:800;color:#fff">'+( c.client||'—')+'</div>'
@@ -4730,7 +4743,57 @@ window.resetCols = function() {
 // ── GESTION COURSE COMPLÈTE ──
 let currentEditCourse = null;
 
-window.viewPax = function(id) { editCourse(id); };
+window.viewPax = function(id) {
+  // Chauffeur — vue simplifiée : présent/absent uniquement
+  if(SESSION.role === 'chauffeur') {
+    const c = D.courses.find(x=>x._id===id);
+    if(!c||!c.passagers?.length) return;
+
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:0';
+    ov.innerHTML = '<div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column">'
+      + '<div style="padding:16px 20px;border-bottom:1px solid #f0f2f5;display:flex;align-items:center;justify-content:space-between">'
+      + '<div style="font-family:Syne,sans-serif;font-size:16px;font-weight:800">&#128101; Passagers</div>'
+      + '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="background:#f0f2f5;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>'
+      + '</div>'
+      + '<div style="overflow-y:auto;padding:16px;flex:1">'
+      + c.passagers.map((p,i) => {
+          const isPresent = p.present !== false;
+          return '<div style="display:flex;align-items:center;gap:12px;padding:14px;background:#f8f9fa;border-radius:12px;margin-bottom:8px">'
+            + '<div style="flex:1">'
+            + '<div style="font-size:14px;font-weight:700;color:#111">'+(p.prenom||'')+' '+(p.nom||'')+'</div>'
+            + (p.vol ? '<div style="font-size:11px;color:#777;margin-top:2px">✈️ '+p.vol+(p.terminal?' • '+p.terminal:'')+'</div>' : '')
+            + (p.tel ? '<div style="font-size:11px;color:#777">📞 '+p.tel+'</div>' : '')
+            + '</div>'
+            + '<div style="display:flex;gap:8px">'
+            + '<button onclick="chauffeurSetPax(\''+id+'\','+i+',true,this)" style="padding:8px 14px;border-radius:10px;border:2px solid '+(isPresent?'#22c55e':'#e0e3e8')+';background:'+(isPresent?'#22c55e':'#fff')+';color:'+(isPresent?'#fff':'#999')+';font-size:13px;font-weight:700;cursor:pointer">✓</button>'
+            + '<button onclick="chauffeurSetPax(\''+id+'\','+i+',false,this)" style="padding:8px 14px;border-radius:10px;border:2px solid '+(isPresent?'#e0e3e8':'#e05c5c')+';background:'+(isPresent?'#fff':'#e05c5c')+';color:'+(isPresent?'#999':'#fff')+';font-size:13px;font-weight:700;cursor:pointer">✗</button>'
+            + '</div>'
+            + '</div>';
+        }).join('')
+      + '</div>'
+      + '</div>';
+    document.body.appendChild(ov);
+    return;
+  }
+  // Admin/Dispatch — vue complète
+  editCourse(id);
+};
+
+window.chauffeurSetPax = async function(courseId, paxIndex, present, btn) {
+  const c = D.courses.find(x=>x._id===courseId);
+  if(!c||!c.passagers) return;
+  c.passagers[paxIndex].present = present;
+  await fbUpdate('courses', courseId, {passagers: c.passagers});
+  // Update button styles
+  const row = btn.closest('div[style*="display:flex;align-items:center;gap:12px"]');
+  if(row) {
+    const btns = row.querySelectorAll('button');
+    if(btns[0]) { btns[0].style.background = present?'#22c55e':'#fff'; btns[0].style.borderColor = present?'#22c55e':'#e0e3e8'; btns[0].style.color = present?'#fff':'#999'; }
+    if(btns[1]) { btns[1].style.background = present?'#fff':'#e05c5c'; btns[1].style.borderColor = present?'#e0e3e8':'#e05c5c'; btns[1].style.color = present?'#999':'#fff'; }
+  }
+  showToast(present ? '✓ Présent' : '✗ Absent');
+};
 
 window.editCourse = function(id) {
   const c = D.courses.find(x=>x._id===id);
