@@ -549,7 +549,7 @@ tr:last-child td{border-bottom:none}
             </div>
           </div>
         </div>
-        <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><div class="drv-wrap" style="min-width:220px"><input type="text" id="groupe-drv-input" class="drv-input" placeholder="Rechercher un chauffeur..." autocomplete="off" oninput="filterDrv('groupe-drv',this.value)" onfocus="openDrv('groupe-drv')" onblur="setTimeout(()=>closeDrv('groupe-drv'),200)"><input type="hidden" id="groupe-drv" value=""><div class="drv-drop" id="drv-drop-groupe-drv"></div></div><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th class="col-ref">Réf.</th><th class="col-dt">Date/H</th><th class="col-client">Client</th><th class="col-type">Type</th><th class="col-dep">Départ</th><th class="col-arr">Arrivée/Durée</th><th class="col-term">Term.</th><th class="col-chauff">Chauffeur</th><th class="col-veh">Véh</th><th class="col-pax">Pax</th><th class="col-ttc">TTC</th><th class="col-statut">Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
+        <div id="dv-table"><div id="groupe-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="sel-count">0</span> course(s) sélectionnée(s)</span><div class="drv-wrap" style="min-width:220px"><input type="text" id="groupe-drv-input" class="drv-input" placeholder="Rechercher un chauffeur..." autocomplete="off" oninput="filterDrv('groupe-drv',this.value)" onfocus="openDrv('groupe-drv')" onblur="setTimeout(()=>closeDrv('groupe-drv'),200)"><input type="hidden" id="groupe-drv" value=""><div class="drv-drop" id="drv-drop-groupe-drv"></div></div><button class="btn btn-p btn-sm" onclick="assignGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button><button class="btn btn-ghost btn-sm" onclick="clearSelection()"><i class="fas fa-times"></i> Annuler</button></div><div class="sec"><div class="tw"><table><thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="cursor:pointer;width:14px;height:14px"></th><th class="col-dt">Date / Heure</th><th class="col-dep">Départ</th><th class="col-arr">Arrivée</th><th class="col-veh">Véhicule</th><th class="col-chauff">Chauffeur</th><th class="col-term">Terminaux</th><th class="col-client">Client</th><th class="col-pax">Pax</th><th class="col-ttc">TTC</th><th class="col-statut">Statut</th><th>Actions</th></tr></thead><tbody id="tb-dispatch"></tbody></table></div></div></div>
         <div id="dv-kanban" style="display:none"><div class="kb" id="kb-dispatch"></div></div>
         </div><!-- end dv-planning-table -->
       </div>
@@ -1965,17 +1965,14 @@ function renderDispatch() {
     if(!list.length){tb.innerHTML=`<tr><td colspan="11" class="t-empty"><i class="fas fa-inbox"></i><p>Aucune course</p></td></tr>`;}
     else tb.innerHTML=list.map(c=>`<tr>
       <td><input type="checkbox" class="row-chk" data-id="${c._id}" onchange="onChkChange()" style="cursor:pointer;width:14px;height:14px"></td>
-      <td class="col-ref" style="font-size:10px;color:var(--gold);font-family:'Syne',sans-serif;font-weight:600;white-space:nowrap">${c.ref||'—'}</td>
       <td class="col-dt" style="font-size:10px;white-space:nowrap">${fdt(c.datetime)}</td>
-      <td class="col-client"><strong style="font-size:12px">${c.client||'—'}</strong><br>
-        <span style="color:var(--muted);font-size:10px">${c.tel||''}</span>
-        ${c.passagers&&c.passagers.length?`<br><span style="font-size:10px;color:var(--blue)">${c.passagers.filter(p=>p.present!==false).length}/${c.passagers.length} pax <button onclick="viewPax('${c._id}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:10px;padding:0">👥 voir</button></span>`:''}</td>
-      <td class="col-type">${tBdg(c.type)}</td>
-      <td class="col-dep" style="font-size:11px;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.depart||c.lieu||'—'}</td>
-      <td class="col-arr" style="font-size:11px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.arrivee||c.duree||'—'}</td>
-      <td class="col-term" style="font-size:10px;color:var(--blue)">${c.terminaux||'—'}</td>
-      <td class="col-chauff" style="font-size:11px">${c.chauffeur||'<span style="color:var(--muted)">—</span>'}</td>
+      <td class="col-dep" style="font-size:11px;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.depart||c.lieu||'—'}</td>
+      <td class="col-arr" style="font-size:11px;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.arrivee||c.duree||'—'}</td>
       <td class="col-veh" style="font-size:11px">${vI(c.vehicule)}</td>
+      <td class="col-chauff" style="font-size:11px">${c.chauffeur||'<span style="color:var(--muted)">—</span>'}</td>
+      <td class="col-term" style="font-size:10px;color:var(--blue)">${c.terminaux||'—'}</td>
+      <td class="col-client"><strong style="font-size:12px">${c.client||'—'}</strong>
+        ${c.passagers&&c.passagers.length?`<br><span style="font-size:10px;color:var(--blue)">${c.passagers.filter(p=>p.present!==false).length}/${c.passagers.length} pax <button onclick="viewPax('${c._id}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:10px;padding:0">👥 voir</button></span>`:''}</td>
       <td class="col-pax" style="font-size:11px">${c.pax||1}</td>
       <td class="col-ttc text-gold fw7" style="font-size:11px">
         ${fp(c.prix)}
