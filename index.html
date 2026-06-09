@@ -314,6 +314,7 @@ tr:last-child td{border-bottom:none}
           <button class="ltab on" id="lt-admin" onclick="switchTab('admin')">Administrateur</button>
           <button class="ltab" id="lt-dispatch" onclick="switchTab('dispatch')">Dispatch</button>
           <button class="ltab" id="lt-chauffeur" onclick="switchTab('chauffeur')">Chauffeur PIN</button>
+          <button class="ltab" id="lt-client" onclick="switchTab('client')">Espace Client</button>
         </div>
         <div id="pane-admin">
           <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px">Connexion Admin</div>
@@ -350,6 +351,14 @@ tr:last-child td{border-bottom:none}
           </div>
           <div class="lerr" id="pin-err"></div>
         </div>
+        <div id="pane-client" style="display:none">
+          <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px">Espace Client</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Réservation & suivi de vos transferts</div>
+          <div class="fld"><label>Identifiant</label><input type="text" id="cl-login-user" placeholder="duemea_sophie" onkeydown="if(event.key==='Enter')doClientLogin()"></div>
+          <div class="fld"><label>Mot de passe</label><input type="password" id="cl-login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doClientLogin()"></div>
+          <button class="btn-login" onclick="doClientLogin()">Accéder à mon espace →</button>
+          <div class="lerr" id="cl-err"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -383,6 +392,7 @@ tr:last-child td{border-bottom:none}
       <button class="ni admin-only" data-p="dirigeant" onclick="gp('dirigeant',this)"><i style="width:16px;text-align:center" class="fas fa-chart-bar"></i> Dashboard dirigeant</button>
       <div class="nsec">Système</div>
       <button class="ni admin-only" data-p="reservation" onclick="gp('reservation',this)"><i style="width:16px;text-align:center" class="fas fa-globe"></i> App cliente</button>
+      <button class="ni admin-only" data-p="comptes-clients" onclick="gp('comptes-clients',this)"><i style="width:16px;text-align:center" class="fas fa-building"></i> Comptes Clients</button>
       <button class="ni admin-only" data-p="comptes" onclick="gp('comptes',this)"><i style="width:16px;text-align:center" class="fas fa-users-cog"></i> Comptes Dispatch</button>
       <button class="ni" data-p="historique" onclick="gp('historique',this)"><i style="width:16px;text-align:center" class="fas fa-history"></i> Historique</button>
       <button class="ni" data-p="parametres" onclick="gp('parametres',this)"><i style="width:16px;text-align:center" class="fas fa-cog"></i> Paramètres</button>
@@ -851,6 +861,63 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+      <!-- ESPACE CLIENT -->
+      <div class="page" id="page-clientportal">
+        <!-- Header client -->
+        <div style="background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--gold)" id="cp-company-name">—</div>
+            <div style="font-size:12px;color:var(--muted2);margin-top:3px">Bienvenue, <span id="cp-user-name" style="color:var(--white);font-weight:600"></span></div>
+          </div>
+          <button class="btn btn-p" onclick="openClientBooking()"><i class="fas fa-plus"></i> Nouvelle réservation</button>
+        </div>
+
+        <!-- Stats rapides -->
+        <div class="sg" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">
+          <div class="sc cg"><div class="sc-val" id="cp-total">0</div><div class="sc-lbl">Mes transferts</div></div>
+          <div class="sc cb"><div class="sc-val" id="cp-active">0</div><div class="sc-lbl">En cours</div></div>
+          <div class="sc cgr"><div class="sc-val" id="cp-done">0</div><div class="sc-lbl">Terminés</div></div>
+        </div>
+
+        <!-- Transferts en cours -->
+        <div class="sec" style="margin-bottom:16px">
+          <div class="sec-h">
+            <div class="sec-t"><i class="fas fa-route" style="color:var(--gold)"></i> Transferts en cours</div>
+            <button class="btn btn-ghost btn-sm" onclick="loadAll()"><i class="fas fa-sync-alt"></i> Actualiser</button>
+          </div>
+          <div id="cp-active-list" style="padding:16px"></div>
+        </div>
+
+        <!-- Historique -->
+        <div class="sec">
+          <div class="sec-h">
+            <div class="sec-t"><i class="fas fa-history"></i> Historique</div>
+            <div class="sec-a">
+              <select class="fsel" id="cp-filter" onchange="renderClientPortal()">
+                <option value="">Tous</option>
+                <option value="terminee">Terminés</option>
+                <option value="annulee">Annulés</option>
+              </select>
+            </div>
+          </div>
+          <div class="tw"><table><thead><tr><th>Date</th><th>Trajet</th><th>Passagers</th><th>Véhicule</th><th>Chauffeur</th><th>Statut</th><th>Créé par</th></tr></thead><tbody id="cp-hist-list"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- COMPTES CLIENTS (admin) -->
+      <div class="page" id="page-comptes-clients">
+        <div class="sec">
+          <div class="sec-h">
+            <div class="sec-t"><i class="fas fa-building" style="color:var(--gold)"></i> Comptes Clients</div>
+            <button class="btn btn-p btn-sm" onclick="openClientAccountModal()"><i class="fas fa-plus"></i> Créer un compte</button>
+          </div>
+          <div class="tw"><table><thead><tr><th>Identifiant</th><th>Nom</th><th>Société (client)</th><th>Créé le</th><th>Actions</th></tr></thead><tbody id="tb-comptes-clients"></tbody></table></div>
+        </div>
+        <div style="margin-top:14px;padding:12px 16px;background:var(--blue-dim);border:1px solid rgba(91,156,246,0.2);border-radius:var(--r-sm);font-size:12px;color:var(--blue)">
+          <i class="fas fa-info-circle"></i> Chaque société peut avoir plusieurs utilisateurs. Ils voient uniquement les courses associées à leur société.
+        </div>
+      </div>
+
       <!-- MES COURSES (chauffeur) -->
       <div class="page" id="page-mescourses">
         <div class="sg" style="grid-template-columns:repeat(4,1fr)">
@@ -1109,8 +1176,79 @@ tr:last-child td{border-bottom:none}
 </div>
 
 
-<!-- CHAUFFEUR -->
-<div class="mo" id="mo-chauffeur">
+<!-- COMPTE CLIENT -->
+<div class="mo" id="mo-client-account">
+  <div class="mo-box" style="width:460px">
+    <div class="mo-h">
+      <div class="mo-t"><i class="fas fa-building" style="color:var(--gold)"></i> <span id="ca-modal-title">Compte Client</span></div>
+      <div class="mo-x" onclick="closeMo('client-account')"><i class="fas fa-times"></i></div>
+    </div>
+    <div class="mo-b">
+      <input type="hidden" id="ca-edit-id">
+      <div class="fld"><label>Identifiant *</label><input type="text" id="ca-user" placeholder="duemea_sophie"></div>
+      <div class="fg2">
+        <div class="fld"><label>Prénom *</label><input type="text" id="ca-prenom" placeholder="Sophie"></div>
+        <div class="fld"><label>Nom *</label><input type="text" id="ca-nom-field" placeholder="Martin"></div>
+      </div>
+      <div class="fld"><label>Société *</label>
+        <select id="ca-societe"><option value="">— Choisir —</option></select>
+      </div>
+      <div class="fg2">
+        <div class="fld"><label>Email</label><input type="email" id="ca-email" placeholder="sophie@societe.com"></div>
+        <div class="fld"><label>Téléphone</label><input type="tel" id="ca-tel" placeholder="+33 1 23 45 67 89"></div>
+      </div>
+      <div class="fld">
+        <label id="ca-pass-label">Mot de passe *</label>
+        <input type="password" id="ca-pass" placeholder="Min. 6 caractères">
+        <div id="ca-pass-hint" style="display:none;font-size:10px;color:var(--muted);margin-top:3px">Laisser vide pour ne pas changer</div>
+      </div>
+    </div>
+    <div class="mo-f">
+      <button class="btn btn-ghost" onclick="closeMo('client-account')">Annuler</button>
+      <button class="btn btn-p" onclick="saveClientAccount()"><i class="fas fa-save"></i> <span id="ca-save-lbl">Créer</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- RÉSERVATION CLIENT -->
+<div class="mo" id="mo-client-booking">
+  <div class="mo-box" style="width:580px">
+    <div class="mo-h">
+      <div class="mo-t"><i class="fas fa-route" style="color:var(--gold)"></i> Nouvelle réservation</div>
+      <div class="mo-x" onclick="closeMo('client-booking')"><i class="fas fa-times"></i></div>
+    </div>
+    <div class="mo-b">
+      <div class="fg2">
+        <div class="fld"><label>Date & Heure *</label><input type="datetime-local" id="cb-dt"></div>
+        <div class="fld"><label>Véhicule</label>
+          <select id="cb-veh">
+            <option value="berline">🚗 Berline (1-3 pax)</option>
+            <option value="van">🚐 Van (1-7 pax)</option>
+            <option value="sprinter">🚌 Sprinter (1-16 pax)</option>
+          </select>
+        </div>
+      </div>
+      <div class="fld"><label>Départ *</label><input type="text" id="cb-dep" placeholder="Adresse de départ"></div>
+      <div class="fld"><label>Arrivée *</label><input type="text" id="cb-arr" placeholder="Adresse d'arrivée"></div>
+      <div class="fg2">
+        <div class="fld"><label>N° de vol</label><input type="text" id="cb-vol" placeholder="AF1234"></div>
+        <div class="fld"><label>Nb passagers</label><input type="number" id="cb-pax" value="1" min="1" max="60"></div>
+      </div>
+      <div class="fld"><label>Passagers (une ligne par personne)</label>
+        <textarea id="cb-pax-notes" rows="4" placeholder="07:30 / AF1234 / CDG2F / REF-001 / Jean Dupont / +33612345678"
+          style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px;color:var(--white);font-size:12px;outline:none;resize:vertical;font-family:'DM Sans',sans-serif"></textarea>
+      </div>
+      <div class="fld"><label>Notes</label><textarea id="cb-notes" rows="2" placeholder="Informations complémentaires..."
+        style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px;color:var(--white);font-size:12px;outline:none;resize:none"></textarea></div>
+    </div>
+    <div class="mo-f">
+      <button class="btn btn-ghost" onclick="closeMo('client-booking')">Annuler</button>
+      <button class="btn btn-p" onclick="submitClientBooking()"><i class="fas fa-paper-plane"></i> Envoyer la demande</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAUFFEUR --><div class="mo" id="mo-chauffeur">
   <div class="mo-box" style="width:460px">
     <div class="mo-h"><div class="mo-t"><i class="fas fa-id-card" style="color:var(--gold)"></i> Ajouter chauffeur</div><div class="mo-x" onclick="closeMo('chauffeur')"><i class="fas fa-times"></i></div></div>
     <div class="mo-b">
@@ -1346,9 +1484,10 @@ async function fbDel(path) {
 async function loadAll() {
   try {
     document.getElementById('fb-status').innerHTML = '<span style="color:var(--orange);font-size:11px">⏳</span>';
-    const [courses, chauffeurs, clients, tarifs, vehicules, logs, dispatch_accounts] = await Promise.all([
+    const [courses, chauffeurs, clients, tarifs, vehicules, logs, dispatch_accounts, client_accounts, messages] = await Promise.all([
       fbGet('courses'), fbGet('chauffeurs'), fbGet('clients'),
-      fbGet('tarifs'), fbGet('vehicules'), fbGet('logs'), fbGet('dispatch_accounts')
+      fbGet('tarifs'), fbGet('vehicules'), fbGet('logs'), fbGet('dispatch_accounts'),
+      fbGet('client_accounts'), fbGet('messages')
     ]);
     D.courses = courses.sort((a,b) => new Date(b.datetime||0) - new Date(a.datetime||0));
     D.chauffeurs = chauffeurs;
@@ -1357,6 +1496,8 @@ async function loadAll() {
     D.vehicules = vehicules;
     D.logs = logs.sort((a,b) => new Date(b.at||0) - new Date(a.at||0));
     D.dispatch_accounts = dispatch_accounts;
+    D.client_accounts = client_accounts;
+    D.messages = messages;
     document.getElementById('fb-status').innerHTML = '<span style="color:var(--green);font-size:11px">● Firebase</span>';
     renderAll();
   } catch(e) {
@@ -1370,7 +1511,7 @@ function renderAll() {
   renderTarifs(); renderFact(); renderVehicules(); renderMesCourses();
   renderRapports(); renderHistorique(); renderPlanning(); renderComptes();
   renderConvList(); renderDirigeant(); renderReservations(); renderRevenus();
-  renderAgenda();
+  renderAgenda(); renderComptesClients(); renderClientPortal();
   updateBadges(); buildDriverSelects();
 }
 
@@ -1490,7 +1631,24 @@ function startApp() {
   const roleEl = document.getElementById('sb-role');
   roleEl.textContent = SESSION.role === 'admin' ? 'Administrateur' : SESSION.role === 'dispatch' ? 'Dispatch' : 'Chauffeur';
   roleEl.className = 'sb-role role-' + SESSION.role;
-  if (SESSION.role === 'chauffeur') {
+  if (SESSION.role === 'client') {
+    // Client portal — simplified nav
+    document.querySelectorAll('.ni').forEach(n => n.style.display = 'none');
+    const nav = document.getElementById('main-nav');
+    const btn = document.createElement('button');
+    btn.className = 'ni on'; btn.dataset.p = 'clientportal';
+    btn.innerHTML = '<i style="width:16px;text-align:center" class="fas fa-route"></i> Mes transferts';
+    btn.onclick = () => gp('clientportal', btn);
+    const btnM = document.createElement('button');
+    btnM.className = 'ni'; btnM.dataset.p = 'messagerie';
+    btnM.innerHTML = '<i style="width:16px;text-align:center" class="fas fa-comments"></i> Messagerie';
+    btnM.onclick = () => gp('messagerie', btnM);
+    nav.prepend(btnM); nav.prepend(btn);
+    document.getElementById('btn-new').style.display = 'none';
+    const roleEl = document.getElementById('sb-role');
+    if(roleEl){roleEl.textContent=SESSION.societe||'Client';roleEl.className='sb-role role-dispatch';}
+    gp('clientportal', btn);
+  } else if (SESSION.role === 'chauffeur') {
     document.querySelectorAll('.ni').forEach(n => n.style.display = 'none');
     const nav = document.getElementById('main-nav');
     const btn = document.createElement('button');
@@ -3379,6 +3537,145 @@ window.assignAgendaGroupe = async function() {
   showToast(`${ids.length} course(s) assignées à ${drv} ✓`);
 };
 
+// ══════════════════════════════════════════
+// PORTAIL CLIENT
+// ══════════════════════════════════════════
+
+window.doClientLogin = async function() {
+  const user = document.getElementById('cl-login-user').value.trim();
+  const pass = document.getElementById('cl-login-pass').value.trim();
+  const err = document.getElementById('cl-err');
+  err.textContent = '';
+  if(!user||!pass){err.textContent='Identifiant et mot de passe requis';return;}
+  const accounts = await fbGet('client_accounts');
+  const found = accounts.find(a=>a.user===user&&a.pass===pass);
+  if(found){
+    SESSION = {role:'client',name:`${found.prenom||''} ${found.nom||''}`.trim(),uid:'client_'+found._id,societe:found.societe,clientUser:found.user};
+    localStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+    startApp();
+  } else {
+    err.textContent = 'Identifiant ou mot de passe incorrect';
+  }
+};
+
+function renderClientPortal() {
+  if(SESSION.role!=='client') return;
+  const societe = SESSION.societe;
+  const cpName=document.getElementById('cp-company-name');const cpUser=document.getElementById('cp-user-name');
+  if(cpName)cpName.textContent=societe||'Mon espace';if(cpUser)cpUser.textContent=SESSION.name;
+  const myCourses=D.courses.filter(c=>{
+    const cn=(c.client||'').toUpperCase();const sn=(societe||'').toUpperCase();
+    return cn.includes(sn)||sn.includes(cn.split(' ')[0]);
+  });
+  const active=myCourses.filter(c=>!['terminee','annulee','noshow','payee'].includes(c.statut));
+  const done=myCourses.filter(c=>['terminee','payee'].includes(c.statut));
+  const e1=document.getElementById('cp-total');const e2=document.getElementById('cp-active');const e3=document.getElementById('cp-done');
+  if(e1)e1.textContent=myCourses.length;if(e2)e2.textContent=active.length;if(e3)e3.textContent=done.length;
+  const activeList=document.getElementById('cp-active-list');
+  if(activeList){
+    if(!active.length){activeList.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px"><i class="fas fa-check-circle" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.5;color:var(--green)"></i>Aucun transfert en cours</div>';}
+    else {
+      activeList.innerHTML=active.sort((a,b)=>a.datetime?.localeCompare(b.datetime||'')||0).map(c=>{
+        const color=getClientColor(c.client,c);const dirIcon=getDirectionIcon(c);
+        const vehIco={berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+        const time=c.datetime?.slice(11,16)||'—';
+        const date=c.datetime?new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}):'—';
+        const steps=[{k:'nouvelle',l:'Demande'},{k:'attribuee',l:'Assignée'},{k:'acceptee',l:'Acceptée'},{k:'en_route',l:'En route'},{k:'sur_place',l:'Sur place'},{k:'onboard',l:'À bord'},{k:'depose',l:'Déposé'},{k:'terminee',l:'Terminée'}];
+        const statusOrder=steps.map(s=>s.k);const currentIdx=Math.max(statusOrder.indexOf(c.statut),0);
+        const timeline=`<div style="display:flex;align-items:center;margin-top:10px;overflow-x:auto;padding-bottom:2px">
+          ${steps.map((s,i)=>{const done2=i<=currentIdx;const cur=i===currentIdx;return`<div style="display:flex;align-items:center;flex-shrink:0"><div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:${cur?12:8}px;height:${cur?12:8}px;border-radius:50%;background:${done2?color:'var(--border2)'};${cur?'box-shadow:0 0 0 3px '+color+'44':''}"></div><div style="font-size:8px;color:${done2?'var(--white2)':'var(--muted)'};white-space:nowrap;font-weight:${cur?700:400}">${s.l}</div></div>${i<steps.length-1?`<div style="width:18px;height:2px;background:${i<currentIdx?color:'var(--border2)'};flex-shrink:0;margin-bottom:12px"></div>`:''}</div>`;}).join('')}
+        </div>`;
+        return`<div style="background:${color}11;border:1px solid ${color}44;border-radius:var(--r-sm);padding:14px;margin-bottom:10px;border-left:4px solid ${color}">
+          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div><div style="font-size:14px;font-weight:700">${dirIcon} ${date} à ${time}</div>
+              <div style="font-size:12px;color:var(--white2);margin-top:3px">${c.depart||c.lieu||'—'} → ${c.arrivee||c.duree||'—'}</div>
+              ${c.terminaux?`<div style="font-size:11px;color:var(--muted2)">📍 ${c.terminaux}</div>`:''}
+            </div>
+            <div style="text-align:right">${sBdg(c.statut)}<div style="font-size:11px;color:var(--muted2);margin-top:4px">${vehIco} ${c.chauffeur||'Assignation en cours...'}</div>${c.ref?`<div style="font-size:10px;color:var(--gold)">${c.ref}</div>`:''}</div>
+          </div>${timeline}
+          ${c.createdByClient?`<div style="font-size:10px;color:var(--muted);margin-top:6px;border-top:1px solid ${color}22;padding-top:6px">Créé par ${c.createdByClient}</div>`:''}
+        </div>`;
+      }).join('');
+    }
+  }
+  const filterS=document.getElementById('cp-filter')?.value||'';
+  const hist=myCourses.filter(c=>['terminee','annulee','noshow','payee','facturee'].includes(c.statut)&&(!filterS||c.statut===filterS));
+  const tb=document.getElementById('cp-hist-list');
+  if(tb){tb.innerHTML=hist.length?hist.sort((a,b)=>b.datetime?.localeCompare(a.datetime||'')||0).map(c=>`<tr>
+    <td style="font-size:11px">${fdt(c.datetime)}</td>
+    <td style="font-size:12px">${c.depart||c.lieu||'—'} → ${c.arrivee||c.duree||'—'}</td>
+    <td style="font-size:11px">${c.pax||1} pax</td>
+    <td style="font-size:11px">${{berline:'🚗 Berline',van:'🚐 Van',sprinter:'🚌 Sprinter',bus:'🚍 Bus'}[c.vehicule]||'—'}</td>
+    <td style="font-size:11px">${c.chauffeur||'—'}</td>
+    <td>${sBdg(c.statut)}</td>
+    <td style="font-size:10px;color:var(--muted)">${c.createdByClient||'—'}</td>
+  </tr>`).join(''):'<tr><td colspan="7" class="t-empty"><i class="fas fa-history"></i><p>Aucun historique</p></td></tr>';}
+}
+
+window.openClientBooking=function(){const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());document.getElementById('cb-dt').value=now.toISOString().slice(0,16);['cb-dep','cb-arr','cb-vol','cb-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('cb-pax').value=1;document.getElementById('cb-pax-notes').value='';openMo('client-booking');};
+
+window.submitClientBooking=async function(){
+  const dep=document.getElementById('cb-dep').value.trim();const arr=document.getElementById('cb-arr').value.trim();const dt=document.getElementById('cb-dt').value;
+  if(!dep||!arr||!dt){showToast('Départ, arrivée et date obligatoires',true);return;}
+  const paxText=document.getElementById('cb-pax-notes').value;
+  const passagers=paxText?paxText.split('\n').filter(l=>l.trim()).map(line=>{const p=line.split('/').map(s=>s.trim());return{harrivee:p[0]||'',vol:p[1]||'',terminal:p[2]||'',refClient:p[3]||'',prenom:(p[4]||'').split(' ')[0],nom:(p[4]||'').split(' ').slice(1).join(' '),tel:p[5]||'',present:true};}):[]; 
+  closeMo('client-booking');showToast('Envoi en cours...');
+  await fbPush('courses',{type:'transfert',client:SESSION.societe||SESSION.name,datetime:dt,depart:dep,arrivee:arr,vehicule:document.getElementById('cb-veh').value,pax:parseInt(document.getElementById('cb-pax').value)||1,vol:document.getElementById('cb-vol').value,notes:document.getElementById('cb-notes').value,passagers,statut:'nouvelle',source:'client',createdByClient:SESSION.name,clientUser:SESSION.clientUser,createdAt:new Date().toISOString()});
+  await sendPushNotification('🆕 Demande client',`${SESSION.societe} — ${SESSION.name} — ${dep} → ${arr}`);
+  await loadAll();showToast('Demande envoyée ✓');
+};
+
+function renderComptesClients(){
+  const tb=document.getElementById('tb-comptes-clients');if(!tb)return;
+  const accounts=D.client_accounts||[];
+  if(!accounts.length){tb.innerHTML=`<tr><td colspan="5" class="t-empty"><i class="fas fa-building"></i><p>Aucun compte client</p></td></tr>`;return;}
+  tb.innerHTML=accounts.map(a=>`<tr>
+    <td><strong>${a.user||'—'}</strong></td>
+    <td>${a.prenom||''} ${a.nom||''}</td>
+    <td><span class="bdg bdg-gold">${a.societe||'—'}</span></td>
+    <td style="font-size:11px;color:var(--muted)">${a.createdAt?new Date(a.createdAt).toLocaleDateString('fr-FR'):'—'}</td>
+    <td><div style="display:flex;gap:5px"><button class="btn btn-s btn-xs" onclick="openClientAccountModal('${a._id}')"><i class="fas fa-edit"></i></button><button class="btn btn-d btn-xs" onclick="delClientAccount('${a._id}')"><i class="fas fa-trash"></i></button></div></td>
+  </tr>`).join('');
+}
+
+window.openClientAccountModal=function(id){
+  const sel=document.getElementById('ca-societe');
+  sel.innerHTML='<option value="">— Choisir —</option>'+D.clients.map(c=>`<option value="${c.nom}">${c.commercial||c.nom}</option>`).join('');
+  document.getElementById('ca-edit-id').value='';
+  ['ca-user','ca-prenom','ca-nom-field','ca-email','ca-tel','ca-pass'].forEach(id2=>{const el=document.getElementById(id2);if(el)el.value='';});
+  document.getElementById('ca-user').disabled=false;
+  if(id){
+    const a=(D.client_accounts||[]).find(x=>x._id===id);if(!a)return;
+    document.getElementById('ca-edit-id').value=id;document.getElementById('ca-user').value=a.user||'';document.getElementById('ca-prenom').value=a.prenom||'';document.getElementById('ca-nom-field').value=a.nom||'';document.getElementById('ca-societe').value=a.societe||'';document.getElementById('ca-email').value=a.email||'';document.getElementById('ca-tel').value=a.tel||'';document.getElementById('ca-user').disabled=true;
+    document.getElementById('ca-modal-title').textContent='Modifier compte Client';document.getElementById('ca-pass-label').textContent='Nouveau mot de passe';document.getElementById('ca-pass-hint').style.display='block';document.getElementById('ca-save-lbl').textContent='Enregistrer';
+  } else {
+    document.getElementById('ca-modal-title').textContent='Nouveau compte Client';document.getElementById('ca-pass-label').textContent='Mot de passe *';document.getElementById('ca-pass-hint').style.display='none';document.getElementById('ca-save-lbl').textContent='Créer';
+  }
+  openMo('client-account');
+};
+
+window.saveClientAccount=async function(){
+  const editId=document.getElementById('ca-edit-id').value;
+  const user=document.getElementById('ca-user').value.trim();const prenom=document.getElementById('ca-prenom').value.trim();
+  const nom=document.getElementById('ca-nom-field').value.trim();const societe=document.getElementById('ca-societe').value;
+  const pass=document.getElementById('ca-pass').value.trim();const email=document.getElementById('ca-email').value.trim();const tel=document.getElementById('ca-tel').value.trim();
+  if(!prenom||!societe){showToast('Prénom et société obligatoires',true);return;}
+  if(editId){
+    const update={prenom,nom,societe,email,tel,updatedAt:new Date().toISOString()};
+    if(pass){if(pass.length<6){showToast('Min. 6 caractères',true);return;}update.pass=pass;}
+    await fbUpdate('client_accounts',editId,update);closeMo('client-account');await loadAll();showToast('Compte mis à jour ✓');
+  } else {
+    if(!user||!pass){showToast('Identifiant et mot de passe requis',true);return;}
+    if(pass.length<6){showToast('Min. 6 caractères',true);return;}
+    const existing=await fbGet('client_accounts');
+    if(existing.find(a=>a.user===user)){showToast('Identifiant déjà utilisé',true);return;}
+    await fbPush('client_accounts',{user,pass,prenom,nom,societe,email,tel,createdAt:new Date().toISOString()});
+    closeMo('client-account');await loadAll();showToast(`Compte "${user}" créé ✓`);
+  }
+};
+
+async function delClientAccount(id){showConfirm('Supprimer ce compte ?','',async()=>{await fbDelete('client_accounts',id);await loadAll();showToast('Compte supprimé');});}
+
 let gpsInterval = null;
 let gpsActive = false;
 
@@ -3983,14 +4280,14 @@ function gp(name, btn) {
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('on');
   if(btn)btn.classList.add('on');
-  const titles={dashboard:'Dashboard',dispatch:'Dispatch',planning:'Planning',chauffeurs:'Chauffeurs',vehicules:'Véhicules',clients:'Clients',tarifs:'Tarifs',facturation:'Facturation',rapports:'Rapports',comptes:'Comptes Dispatch',historique:'Historique',parametres:'Paramètres',mescourses:'Mes courses',messagerie:'Messagerie',dirigeant:'Dashboard Dirigeant',reservation:'App Cliente',revenus:'Mes revenus'};
+  const titles={dashboard:'Dashboard',dispatch:'Dispatch',planning:'Planning',chauffeurs:'Chauffeurs',vehicules:'Véhicules',clients:'Clients',tarifs:'Tarifs',facturation:'Facturation',rapports:'Rapports',comptes:'Comptes Dispatch',historique:'Historique',parametres:'Paramètres',mescourses:'Mes courses',messagerie:'Messagerie',dirigeant:'Dashboard Dirigeant',reservation:'App Cliente',revenus:'Mes revenus','comptes-clients':'Comptes Clients',clientportal:'Mon espace'};
   document.getElementById('page-title').textContent=titles[name]||name;
   closeMob();
   loadAll(); // reload on every page change
 }
 window.gp=gp;window.loadAll=loadAll;window.renderDispatch=renderDispatch;window.renderClients=renderClients;window.renderFact=renderFact;window.updStatut=updStatut;window.delCourse=delCourse;window.updChauffStatut=updChauffStatut;window.delChauffeur=delChauffeur;window.delVehicule=delVehicule;window.delClient=delClient;window.delTarif=delTarif;window.delDispatch=delDispatch;
 
-function switchTab(t){document.querySelectorAll('.ltab').forEach(x=>x.classList.remove('on'));document.getElementById('lt-'+t).classList.add('on');['admin','dispatch','chauffeur'].forEach(p=>{const el=document.getElementById('pane-'+p);if(el)el.style.display=p===t?'block':'none';});}
+function switchTab(t){document.querySelectorAll('.ltab').forEach(x=>x.classList.remove('on'));document.getElementById('lt-'+t).classList.add('on');['admin','dispatch','chauffeur','client'].forEach(p=>{const el=document.getElementById('pane-'+p);if(el)el.style.display=p===t?'block':'none';});}
 window.switchTab=switchTab;
 
 function openMo(n){document.getElementById('mo-'+n).classList.add('on');}
