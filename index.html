@@ -1468,7 +1468,19 @@ async function fbUpdate(path, key, data) {
 }
 
 async function fbDelete(path, key) {
-  await fetch(`${FB_URL}/${path}${key?'/'+key:''}.json`, {method:'DELETE'});
+  try {
+    const url = `${FB_URL}/${path}${key?'/'+key:''}.json`;
+    const r = await fetch(url, {method:'DELETE', headers:{'Content-Type':'application/json'}});
+    if(!r.ok) {
+      const err = await r.text();
+      console.error('fbDelete error:', r.status, err);
+      return false;
+    }
+    return true;
+  } catch(e) {
+    console.error('fbDelete exception:', e);
+    return false;
+  }
 }
 
 async function fbDel(path) {
@@ -2252,11 +2264,23 @@ async function updStatut(id, statut) {
 }
 
 async function delCourse(id) {
-  showConfirm('Supprimer cette course ?','',async()=>{
-    await fbDelete('courses', id);
-    await loadAll();
-    showToast('Course supprimée');
-  });
+  const c = D.courses.find(x=>x._id===id);
+  const label = c ? `${c.client||''} — ${c.datetime?.slice(11,16)||''}` : id;
+  showConfirm(
+    '🗑️ Supprimer cette course ?',
+    `${label}\nCette action est irréversible.`,
+    async()=>{
+      showToast('Suppression...');
+      const ok = await fbDelete('courses', id);
+      if(ok) {
+        await addLog(`Course supprimée : ${label}`);
+        await loadAll();
+        showToast('✓ Course supprimée');
+      } else {
+        showToast('❌ Erreur — vérifiez les règles Firebase', true);
+      }
+    }
+  );
 }
 
 window.openAssign = function(id) {
