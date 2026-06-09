@@ -1542,7 +1542,7 @@ function renderAll() {
 
 // ── AUTH ──
 function checkSession() {
-  const s = localStorage.getItem(ADMIN_KEY);
+  const s = sessionStorage.getItem(ADMIN_KEY);
   if (s) {
     try {
       const d = JSON.parse(s);
@@ -1565,7 +1565,7 @@ window.doAdminLogin = async function() {
     const validPass = stored || DEFAULT_PASS;
     if (pass === validPass) {
       SESSION = { role:'admin', name:'Mustafa', uid:'admin' };
-      localStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+      sessionStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
       startApp();
     } else {
       err.textContent = 'Mot de passe incorrect';
@@ -1574,7 +1574,7 @@ window.doAdminLogin = async function() {
     // If Firebase not accessible, use default
     if (pass === DEFAULT_PASS) {
       SESSION = { role:'admin', name:'Mustafa', uid:'admin' };
-      localStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+      sessionStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
       startApp();
     } else {
       err.textContent = 'Mot de passe incorrect';
@@ -1592,7 +1592,7 @@ window.doDispatchLogin = async function() {
   const found = accounts.find(a => a.user === user && a.pass === pass);
   if (found) {
     SESSION = { role:'dispatch', name:found.nom||found.user, uid:'dispatch_'+found._id };
-    localStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+    sessionStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
     startApp();
   } else {
     err.textContent = 'Identifiant ou mot de passe incorrect';
@@ -1629,7 +1629,7 @@ async function checkPin() {
   );
   if (found) {
     SESSION = { role:'chauffeur', name:found.prenom+(found.nom?' '+found.nom:''), uid:'driver_'+found._id };
-    localStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+    sessionStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
     startApp();
   } else {
     e.textContent = 'Prénom ou code incorrect';
@@ -1640,7 +1640,7 @@ async function checkPin() {
 
 window.doLogout = function() {
   if (!confirm('Se déconnecter ?')) return;
-  localStorage.removeItem(ADMIN_KEY);
+  sessionStorage.removeItem(ADMIN_KEY);
   SESSION = { role:null, name:null, uid:null };
   document.getElementById('app').style.display = 'none';
   document.getElementById('login').style.display = 'flex';
@@ -4038,7 +4038,7 @@ window.doClientLogin = async function() {
   const found = accounts.find(a=>a.user===user&&a.pass===pass);
   if(found){
     SESSION = {role:'client',name:`${found.prenom||''} ${found.nom||''}`.trim(),uid:'client_'+found._id,societe:found.societe,clientUser:found.user};
-    localStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+    sessionStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
     startApp();
   } else {
     err.textContent = 'Identifiant ou mot de passe incorrect';
