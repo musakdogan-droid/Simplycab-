@@ -1469,7 +1469,7 @@ async function fbUpdate(path, key, data) {
 
 async function fbDelete(path, key) {
   try {
-    const url = `${FB_URL}/${path}${key?'/'+key:''}.json`;
+    const url = key ? `${FB_URL}/${path}/${key}.json` : `${FB_URL}/${path}.json`;
     const r = await fetch(url, {method:'DELETE', headers:{'Content-Type':'application/json'}});
     if(!r.ok) {
       const err = await r.text();
