@@ -4852,14 +4852,18 @@ window.importExcel = async function(input) {
         const depDue = g.depDue.slice(0,5);
         const datetime = `${g.date}T${depDue.includes(':')?depDue:'08:00'}`;
 
-        // Vehicle
+        // Vehicle detection
         let veh = 'berline';
         for(const r of g.rows) {
           if(r[idxVeh]) {
-            const v = r[idxVeh].toString().toLowerCase();
-            if(v.includes('van')) veh='van';
-            else if(v.includes('sprinter')) veh='sprinter';
-            else if(v.includes('bus')) veh='bus';
+            const v = r[idxVeh].toString().toLowerCase().trim();
+            if(v === 'v' || v === 'van') veh = 'van';
+            else if(v === 'b' || v === 'berline') veh = 'berline';
+            else if(v === 'sp' || v === 'sprinter') veh = 'sprinter';
+            else if(v === 'bu' || v === 'bus') veh = 'bus';
+            else if(v.includes('van')) veh = 'van';
+            else if(v.includes('sprinter')) veh = 'sprinter';
+            else if(v.includes('bus')) veh = 'bus';
             break;
           }
         }
