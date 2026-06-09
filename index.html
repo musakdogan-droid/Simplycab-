@@ -1160,9 +1160,9 @@ tr:last-child td{border-bottom:none}
           <span id="pax-cap-warn" style="font-size:11px;color:var(--red);display:none"><i class="fas fa-exclamation-triangle"></i> Capacité max atteinte</span>
         </div>
         <div style="font-size:10px;color:var(--muted);margin-bottom:8px">
-          Une ligne par passager — format libre. Exemple : <span style="color:var(--gold)">12:00 / AF0456 / CDG2F / REF-001 / Jean Dupont / +33612345678</span>
+          Une ligne par passager — format libre. Exemple : <span style="color:var(--gold)">07:20 / TO3910 / 3 / R4N7XF3F5KF / Angela Bruciafreddo Italy +393491972346</span>
         </div>
-        <textarea id="pax-notes" rows="6" placeholder="Colle tes passagers ici, une ligne par personne :&#10;12:00 / AF0456 / CDG2F / REF-001 / Jean Dupont / +33612345678&#10;14:30 / BA1234 / ORY4 / REF-002 / Marie Martin / +33698765432&#10;..."
+        <textarea id="pax-notes" rows="6" placeholder="Colle tes passagers ici, une ligne par personne :&#10;07:20 / TO3910 / 3 / R4N7XF3F5KF / Angela Bruciafreddo Italy +393491972346&#10;14:30 / BA1234 / ORY4 / REF-002 / Marie Martin / +33698765432&#10;..."
           style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px;color:var(--white);font-size:12px;outline:none;resize:vertical;font-family:'DM Sans',sans-serif;line-height:1.7"
           oninput="updatePaxCount()"></textarea>
         <div id="pax-list" style="display:none"></div>
@@ -1233,7 +1233,7 @@ tr:last-child td{border-bottom:none}
         <div class="fld"><label>Nb passagers</label><input type="number" id="cb-pax" value="1" min="1" max="60"></div>
       </div>
       <div class="fld"><label>Passagers (une ligne par personne)</label>
-        <textarea id="cb-pax-notes" rows="4" placeholder="07:30 / AF1234 / CDG2F / REF-001 / Jean Dupont / +33612345678"
+        <textarea id="cb-pax-notes" rows="4" placeholder="07:20 / TO3910 / 3 / R4N7XF3F5KF / Angela Bruciafreddo Italy +393491972346"
           style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px;color:var(--white);font-size:12px;outline:none;resize:vertical;font-family:'DM Sans',sans-serif"></textarea>
       </div>
       <div class="fld"><label>Notes</label><textarea id="cb-notes" rows="2" placeholder="Informations complémentaires..."
@@ -2555,7 +2555,7 @@ window.addPax = function() {
   row.style.cssText = 'background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:7px;display:flex;align-items:center;gap:8px';
   row.innerHTML = `
     <div style="font-size:11px;color:var(--gold);font-family:'Syne',sans-serif;font-weight:700;flex-shrink:0;width:22px">${id}</div>
-    <input type="text" id="pax-line-${id}" placeholder="12:00 / AF0456 / CDG2F / REF-001 / Jean Dupont / +33612345678"
+    <input type="text" id="pax-line-${id}" placeholder="07:20 / TO3910 / 3 / R4N7XF3F5KF / Angela Bruciafreddo Italy +393491972346"
       style="flex:1;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-xs);padding:9px 12px;color:var(--white);font-size:12px;outline:none;font-family:'DM Sans',sans-serif"
       oninput="previewPax(${id})" onpaste="setTimeout(()=>previewPax(${id}),50)">
     <div id="pax-preview-${id}" style="font-size:10px;color:var(--muted2);white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis"></div>
@@ -4118,42 +4118,41 @@ window.submitClientBooking=async function(){
   const paxText=document.getElementById('cb-pax-notes').value;
   const passagers=paxText?paxText.split('\n').filter(l=>l.trim()).map(line=>{
     const p=line.split('/').map(s=>s.trim());
-    // Format: heure / vol / terminal / ref / Prenom Nom [Pays] / tel
-    // Le téléphone est toujours le dernier champ qui commence par + ou des chiffres
-    let tel='', nomComplet='', harrivee='', vol='', terminal='', refClient='';
-    harrivee=p[0]||'';
-    vol=p[1]||'';
-    terminal=p[2]||'';
-    refClient=p[3]||'';
-    // Chercher le téléphone — dernier champ avec + ou chiffres
-    for(let i=p.length-1;i>=4;i--){
-      const v=p[i].replace(/[\s\-\(\)\.]/g,'');
-      if(v.match(/^[\+\d]{7,15}$/)){tel=p[i];break;}
-    }
-    // Le nom est en p[4], enlever le pays si présent à la fin (mot sans chiffres ni +)
-    if(p[4]){
-      const parts=p[4].trim().split(/\s+/);
-      // Enlever dernier mot si c'est un pays (majuscule, pas de chiffres, >= 3 lettres)
-      if(parts.length>1){
-        const last=parts[parts.length-1];
-        if(last.match(/^[A-Za-zÀ-ÿ]{3,}$/)&&last===last.charAt(0).toUpperCase()+last.slice(1)&&parts.length>2){
-          // Possible pays — vérifier si ça ressemble à un nom de pays
-          const pays=['Italy','France','Germany','Spain','UK','USA','Belgium','Netherlands','Switzerland','Portugal','Sweden','Norway','Denmark','Finland','Austria','Poland','Brazil'];
-          if(pays.some(pay=>pay.toLowerCase()===last.toLowerCase())){
-            nomComplet=parts.slice(0,-1).join(' ');
-          } else {
-            nomComplet=p[4].trim();
-          }
-        } else {
-          nomComplet=p[4].trim();
-        }
+    const harrivee=p[0]||'';
+    const vol=p[1]||'';
+    const terminal=p[2]||'';
+    const refClient=p[3]||'';
+    // Champ 5 contient: "Prenom Nom [Pays] [+tel]" ou "Prenom Nom" / "+tel"
+    const raw5=(p[4]||'').trim();
+    const raw6=(p[5]||'').trim();
+    // Extraire le téléphone — chercher +XXXX ou suite de chiffres à la fin
+    let tel='', nomComplet='';
+    // Cas 1: téléphone dans p[5]
+    if(raw6 && raw6.replace(/[\s\-\(\)\.]/g,'').match(/^[\+\d]{7,15}$/)){
+      tel=raw6;
+      nomComplet=raw5;
+    } else {
+      // Cas 2: téléphone collé à la fin de p[4] ex: "Angela Bruciafreddo Italy +393491972346"
+      const telMatch=raw5.match(/(\+[\d\s\-\.]{7,18}|\b[\d]{8,15})$/);
+      if(telMatch){
+        tel=telMatch[1].trim();
+        nomComplet=raw5.slice(0,raw5.lastIndexOf(telMatch[1])).trim();
       } else {
-        nomComplet=p[4].trim();
+        nomComplet=raw5;
       }
     }
-    const nomParts=nomComplet.split(/\s+/);
-    const prenom=nomParts[0]||'';
-    const nom=nomParts.slice(1).join(' ');
+    // Enlever le pays à la fin du nom (mot en majuscule sans chiffres)
+    const pays=['Italy','France','Germany','Spain','UK','USA','Belgium','Netherlands','Switzerland','Portugal','Sweden','Norway','Denmark','Finland','Austria','Poland','Brazil','Ireland','Australia','Canada'];
+    const words=nomComplet.split(/\s+/);
+    if(words.length>1){
+      const last=words[words.length-1];
+      if(pays.some(c=>c.toLowerCase()===last.toLowerCase())){
+        nomComplet=words.slice(0,-1).join(' ');
+      }
+    }
+    const parts=nomComplet.split(/\s+/);
+    const prenom=parts[0]||'';
+    const nom=parts.slice(1).join(' ');
     return{harrivee,vol,terminal,refClient,prenom,nom,tel,present:true};
   }):[];
   closeMo('client-booking');showToast('Envoi en cours...');
