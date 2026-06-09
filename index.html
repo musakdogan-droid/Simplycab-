@@ -2265,22 +2265,22 @@ async function updStatut(id, statut) {
 
 async function delCourse(id) {
   const c = D.courses.find(x=>x._id===id);
-  const label = c ? `${c.client||''} — ${c.datetime?.slice(11,16)||''}` : id;
-  showConfirm(
-    '🗑️ Supprimer cette course ?',
-    `${label}\nCette action est irréversible.`,
-    async()=>{
-      showToast('Suppression...');
-      const ok = await fbDelete('courses', id);
-      if(ok) {
-        await addLog(`Course supprimée : ${label}`);
+  const label = c ? `${c.client||''} ${c.datetime?.slice(0,10)||''}` : '';
+  // confirm() bloqué sur GitHub Pages - on utilise showConfirm custom
+  showConfirm('Supprimer cette course ?', label, async()=>{
+    showToast('Suppression...');
+    try {
+      const r = await fetch(`${FB_URL}/courses/${id}.json`, {method:'DELETE'});
+      if(r.ok) {
         await loadAll();
         showToast('✓ Course supprimée');
       } else {
-        showToast('❌ Erreur — vérifiez les règles Firebase', true);
+        showToast('Erreur : ' + r.status, true);
       }
+    } catch(e) {
+      showToast('Erreur : ' + e.message, true);
     }
-  );
+  });
 }
 
 window.openAssign = function(id) {
@@ -4352,8 +4352,15 @@ function showConfirm(title,msg,cb){
   confCb=cb;
   document.getElementById('conf-ov').classList.add('on');
 }
-function closeConf(){document.getElementById('conf-ov').classList.remove('on');confCb=null;}
-function doConfirm(){closeConf();if(confCb){try{confCb();}catch(e){console.error('Confirm cb error:',e);showToast('Erreur: '+e.message,true);}}}
+function closeConf(){
+  document.getElementById('conf-ov').classList.remove('on');
+}
+function doConfirm(){
+  const cb = confCb;
+  confCb = null;
+  closeConf();
+  if(cb) cb();
+}
 window.showConfirm=showConfirm;window.closeConf=closeConf;window.doConfirm=doConfirm;
 
 function toggleMob(){document.getElementById('sidebar').classList.toggle('on');document.getElementById('mob-ov').classList.toggle('on');}
