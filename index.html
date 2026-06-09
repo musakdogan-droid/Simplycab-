@@ -4350,16 +4350,23 @@ function showConfirm(title,msg,cb){
   document.getElementById('conf-t').textContent=title;
   document.getElementById('conf-m').textContent=msg||'Cette action est irréversible.';
   confCb=cb;
-  document.getElementById('conf-ov').classList.add('on');
+  const ov=document.getElementById('conf-ov');
+  ov.style.display='flex';
+  ov.style.position='fixed';
+  ov.style.inset='0';
+  ov.style.zIndex='9999';
+  ov.style.background='rgba(0,0,0,0.65)';
+  ov.style.alignItems='center';
+  ov.style.justifyContent='center';
 }
 function closeConf(){
-  document.getElementById('conf-ov').classList.remove('on');
+  document.getElementById('conf-ov').style.display='none';
 }
 function doConfirm(){
-  const cb = confCb;
-  confCb = null;
+  const cb=confCb;
+  confCb=null;
   closeConf();
-  if(cb) cb();
+  if(cb)cb();
 }
 window.showConfirm=showConfirm;window.closeConf=closeConf;window.doConfirm=doConfirm;
 
