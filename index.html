@@ -2289,7 +2289,7 @@ window.doAssign = async function() {
 window.openCourseModal = function() {
   const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
   document.getElementById('fc-dt').value = now.toISOString().slice(0,16);
-  ['fc-dep','fc-arr','fc-lieu','fc-notes','fc-prix','fc-prix-mad','fc-numveh','fc-ref','fc-tel','fc-prix-chauffeur','fc-marge','fc-commission-pct'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fc-dep','fc-arr','fc-lieu','fc-notes','fc-prix','fc-prix-mad','fc-numveh','fc-tel','fc-prix-chauffeur','fc-marge','fc-commission-pct'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.querySelectorAll('.term-chk').forEach(c=>c.checked=false);
   document.getElementById('prix-suggest').style.display='none';
   document.getElementById('pax-notes').value='';
@@ -2299,7 +2299,7 @@ window.openCourseModal = function() {
   if(btnCS){btnCS.innerHTML='<i class="fas fa-user-circle"></i> Choisir un client';btnCS.style.borderColor='';}
   document.getElementById('client-search-drop').style.display='none';
   // Auto-generate reference
-  setTimeout(()=>{ const ref = genRefVal(); const el = document.getElementById('fc-ref'); if(el&&!el.value) el.value = ref; }, 200);
+
   // Reset chauffeur autocomplete
   const fcInp = document.getElementById('fc-ch-input');
   const fcHid = document.getElementById('fc-ch');
@@ -2492,7 +2492,7 @@ window.saveCourse = async function() {
   const ch = document.getElementById('fc-ch').value;
   const terminaux = [...document.querySelectorAll('.term-chk:checked')].map(c=>c.value).join('-');
   const numveh = document.getElementById('fc-numveh').value.trim();
-  const ref = document.getElementById('fc-ref').value || genRefVal();
+  const ref = genRefVal();
 
   // Client = champ client ou premier passager
   const fcClient = document.getElementById('fc-client')?.value?.trim();
