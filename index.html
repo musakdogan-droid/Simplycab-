@@ -3296,39 +3296,67 @@ function renderMesCourses() {
         ${c.notes?`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400e"><i class="fas fa-info-circle"></i> ${c.notes.replace(/\n/g,'<br>')}</div>`:''}
 
         <!-- Bouton action principal - sens unique -->
-        ${flow?`
-        <div style="display:flex;gap:8px">
-          <button onclick="driverNextStep('${c._id}','${flow.next}')"
-            style="flex:1;background:${flow.color};border:none;border-radius:12px;padding:16px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff;cursor:pointer;letter-spacing:0.3px;box-shadow:0 4px 12px ${flow.color}44">
-            ${flow.label}
-          </button>
-          <button onclick="driverNoShow('${c._id}')"
-            style="background:#f5f6f8;border:1px solid #e0e3e8;border-radius:12px;padding:16px;font-size:12px;font-weight:700;color:#777;cursor:pointer">
-            👻
-          </button>
-        </div>
-        <!-- Note rapide -->
-        <div style="display:flex;gap:6px;margin-top:8px">
-          <input type="text" placeholder="Note pour le dispatch..." id="note-${c._id}"
-            style="flex:1;background:#f8f9fa;border:1px solid #e0e3e8;border-radius:10px;padding:10px 14px;font-size:12px;color:#111;outline:none"
-            onkeydown="if(event.key==='Enter'){driverUpd('${c._id}',null,this.value);this.value=''}">
-          <button onclick="driverUpd('${c._id}',null,document.getElementById('note-${c._id}').value);document.getElementById('note-${c._id}').value=''"
-            style="background:var(--gold);border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;color:#fff;font-weight:700">✓</button>
-        </div>`:''}
-      </div>
-    </div>`;
+        ${(()=>{
+          if(!flow) return '';
+          // Vérifier si une autre course est déjà active
+          const activeStatuts = ['en_route','sur_place','onboard','depose'];
+          const autreActive = D.courses.find(x=>
+            x._id !== c._id &&
+            x.chauffeur === SESSION.name &&
+            activeStatuts.includes(x.statut)
+          );
+          const isBlocked = autreActive && activeStatuts.includes(flow.next);
+          return `
+          <div style="display:flex;gap:8px">
+            <button onclick="driverNextStep('${c._id}','${flow.next}')"
+              ${isBlocked?'disabled':''}
+              style="flex:1;background:${isBlocked?'#e0e3e8':flow.color};border:none;border-radius:12px;padding:16px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:${isBlocked?'#999':'#fff'};cursor:${isBlocked?'not-allowed':'pointer'};letter-spacing:0.3px;box-shadow:${isBlocked?'none':'0 4px 12px '+flow.color+'44'}">
+              ${isBlocked?'⛔ Terminez la course en cours':''}${!isBlocked?flow.label:''}
+            </button>
+            ${!isBlocked?`<button onclick="driverNoShow('${c._id}')"
+              style="background:#f5f6f8;border:1px solid #e0e3e8;border-radius:12px;padding:16px;font-size:12px;font-weight:700;color:#777;cursor:pointer">
+              👻
+            </button>`:''}
+          </div>
+          <!-- Note rapide -->
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <input type="text" placeholder="Note pour le dispatch..." id="note-${c._id}"
+              style="flex:1;background:#f8f9fa;border:1px solid #e0e3e8;border-radius:10px;padding:10px 14px;font-size:12px;color:#111;outline:none"
+              onkeydown="if(event.key==='Enter'){driverUpd('${c._id}',null,this.value);this.value=''}">
+            <button onclick="driverUpd('${c._id}',null,document.getElementById('note-${c._id}').value);document.getElementById('note-${c._id}').value=''"
+              style="background:var(--gold);border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;color:#fff;font-weight:700">✓</button>
+          </div>`;
+        })()}
   }).join('');
 }
 
-// Bouton sens unique — avance seulement
+// Bouton sens unique — avance seulement, une course à la fois
 window.driverNextStep = async function(id, nextStatut) {
   const c = D.courses.find(x=>x._id===id);
   if(!c) return;
+
   // Vérifier qu'on avance bien dans le bon sens
   const order = ['nouvelle','en_attente','attribuee','acceptee','en_route','sur_place','onboard','depose','terminee'];
   const cur = order.indexOf(c.statut);
   const nxt = order.indexOf(nextStatut);
   if(nxt <= cur) { showToast('Impossible de revenir en arrière',true); return; }
+
+  // Bloquer si une autre course est déjà en cours (statut actif avancé)
+  const activeStatuts = ['en_route','sur_place','onboard','depose'];
+  const autreEnCours = D.courses.find(x=>
+    x._id !== id &&
+    x.chauffeur === SESSION.name &&
+    activeStatuts.includes(x.statut)
+  );
+
+  // Si on essaie de mettre en route/sur place/onboard alors qu'une autre est déjà active
+  if(autreEnCours && activeStatuts.includes(nextStatut)) {
+    const dep = autreEnCours.depart||autreEnCours.lieu||'';
+    const time = autreEnCours.datetime?.slice(11,16)||'';
+    showToast(`⛔ Terminez d'abord : ${autreEnCours.client} ${time}`, true);
+    return;
+  }
+
   await driverUpd(id, nextStatut, null);
 };
 
