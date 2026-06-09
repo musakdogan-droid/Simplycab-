@@ -34,30 +34,30 @@ h1,h2,h3,h4{font-family:'Syne',sans-serif}
 
 /* LOGIN */
 #login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
-  background:radial-gradient(ellipse at 25% 45%,rgba(201,168,76,0.07),transparent 55%),var(--black)}
+  background:radial-gradient(ellipse at 25% 45%,rgba(201,168,76,0.07),transparent 55%),#f5f5f5}
 .lbox{width:400px;max-width:100%}
 .llogo{text-align:center;margin-bottom:32px}
 .llogo .brand{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--gold);letter-spacing:3px}
-.llogo .sub{font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;text-transform:uppercase}
-.lcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.llogo .sub{font-size:11px;color:#666;margin-top:4px;letter-spacing:2px;text-transform:uppercase}
+.lcard{background:#ffffff;border:1px solid #e0e0e0;border-radius:var(--r);overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
 .lcard::before{content:'';display:block;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold))}
-.lbody{padding:28px}
-.ltabs{display:flex;gap:3px;background:var(--dark);border-radius:var(--r-xs);padding:4px;margin-bottom:20px}
-.ltab{flex:1;padding:9px;border:none;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;border-radius:var(--r-xs);transition:var(--tr)}
-.ltab.on{background:var(--card2);color:var(--gold)}
+.lbody{padding:28px;background:#ffffff}
+.ltabs{display:flex;gap:3px;background:#f0f0f0;border-radius:var(--r-xs);padding:4px;margin-bottom:20px}
+.ltab{flex:1;padding:9px;border:none;background:transparent;color:#888;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;border-radius:var(--r-xs);transition:var(--tr)}
+.ltab.on{background:#fff;color:var(--gold);box-shadow:0 1px 4px rgba(0,0,0,0.1)}
 .fld{margin-bottom:14px}
 .fld label{display:block;font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;font-weight:600}
 .fld input,.fld select,.fld textarea{width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:11px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:var(--tr)}
 .fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--gold)}
 .fld select option{background:var(--dark)}
-.fld input::placeholder{color:var(--muted)}
+.fld input::placeholder{color:#999}.lcard .fld input,.lcard .fld select{background:#f8f8f8;border-color:#ddd;color:#111}.lcard label{color:#444}.lcard .fld input:focus,.lcard .fld select:focus{border-color:var(--gold);background:#fff}
 .btn-login{width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);border:none;border-radius:var(--r-sm);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:var(--tr)}
 .btn-login:hover{opacity:0.9}
-.lerr{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:16px}
-.pin-disp{background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:13px;text-align:center;font-family:'Syne',sans-serif;font-size:22px;letter-spacing:14px;margin-bottom:12px;color:var(--gold);min-height:52px;font-weight:700}
+.lerr{color:#d32f2f;font-size:12px;text-align:center;margin-top:10px;min-height:16px}
+.pin-disp{background:#f8f8f8;border:1px solid #ddd;border-radius:var(--r-sm);padding:13px;text-align:center;font-family:'Syne',sans-serif;font-size:22px;letter-spacing:14px;margin-bottom:12px;color:var(--gold);min-height:52px;font-weight:700}
 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.pkey{background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);padding:14px;font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--white);cursor:pointer;transition:var(--tr);text-align:center}
-.pkey:hover{border-color:var(--gold);color:var(--gold)}
+.pkey{background:#f0f0f0;border:1px solid #ddd;border-radius:var(--r-xs);padding:14px;font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#333;cursor:pointer;transition:var(--tr);text-align:center}
+.pkey:hover{border-color:var(--gold);color:var(--gold);background:#fff}
 .pkey:active{transform:scale(0.93)}
 
 /* APP */
@@ -317,8 +317,8 @@ tr:last-child td{border-bottom:none}
           <button class="ltab" id="lt-client" onclick="switchTab('client')">Espace Client</button>
         </div>
         <div id="pane-admin">
-          <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px">Connexion Admin</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Accès complet — Mustafa Akdogan</div>
+          <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px;color:#111">Connexion Admin</div>
+          <div style="font-size:12px;color:#666;margin-bottom:20px">Accès complet — Mustafa Akdogan</div>
           <div class="fld"><label>Mot de passe admin</label><input type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
           <button class="btn-login" onclick="doAdminLogin()">Se connecter →</button>
           <div class="lerr" id="l-err"></div>
@@ -1052,26 +1052,7 @@ tr:last-child td{border-bottom:none}
           <div class="fld"><label>Départ *</label><input type="text" id="fc-dep" placeholder="Ex: 15 rue de Rivoli, Paris"></div>
           <div class="fld"><label>Arrivée *</label><input type="text" id="fc-arr" placeholder="Ex: CDG Terminal 2E, Roissy"></div>
         </div>
-        <!-- TERMINAUX -->
-        <div class="fld">
-          <label>Terminaux (CDG / Orly)</label>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;padding:9px;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm)">
-            <span style="font-size:9px;color:var(--muted);width:100%;margin-bottom:3px">CDG :</span>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2A"> 2A</label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2B"> 2B</label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2D"> 2D</label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2E"> 2E</label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2F"> 2F</label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG2G"> 2G</label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG1"> T1</label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="CDG3"> T3</label>
-            <span style="font-size:9px;color:var(--muted);width:100%;margin-top:5px;margin-bottom:3px">Orly :</span>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY1"> ORY1</label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY2"> ORY2</label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY3"> ORY3</label>
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" class="term-chk" value="ORY4"> ORY4</label>
-          </div>
-        </div>
+
       </div>
 
       <div id="f-mad" style="display:none">
@@ -1098,7 +1079,7 @@ tr:last-child td{border-bottom:none}
           </select>
         </div>
         <div class="fld"><label>N° Véhicule jour</label><input type="text" id="fc-numveh" placeholder="B1, V2..." oninput="genRef()"></div>
-        <div class="fld"><label>Référence (auto)</label><input type="text" id="fc-ref" readonly style="opacity:0.8;background:var(--dark);font-weight:700;color:var(--gold);font-size:11px" placeholder="Auto"></div>
+        <div class="fld"><label>Référence <span style="font-size:9px;color:var(--muted)">(auto — modifiable)</span></label><input type="text" id="fc-ref" style="background:var(--dark);border:1px solid var(--gold);font-weight:700;color:var(--gold);font-size:12px;width:100%;border-radius:var(--r-xs);padding:9px 12px;outline:none" placeholder="Auto-générée"></div>
         <div class="fld">
           <label>Prix client TTC (€)</label>
           <input type="number" id="fc-prix" placeholder="0" oninput="calcMarge()">
@@ -2318,6 +2299,8 @@ window.openCourseModal = function() {
   const btnCS = document.getElementById('btn-client-search');
   if(btnCS){btnCS.innerHTML='<i class="fas fa-user-circle"></i> Choisir un client';btnCS.style.borderColor='';}
   document.getElementById('client-search-drop').style.display='none';
+  // Auto-generate reference
+  setTimeout(()=>{ const ref = genRefVal(); const el = document.getElementById('fc-ref'); if(el&&!el.value) el.value = ref; }, 200);
   // Reset chauffeur autocomplete
   const fcInp = document.getElementById('fc-ch-input');
   const fcHid = document.getElementById('fc-ch');
@@ -4032,20 +4015,17 @@ function getSMSTemplate(clientName, chauffeurName, chauffeurTel, destination) {
   return (prenom) => `Hello${prenom?' '+prenom:''},\nI am ${chauffeurName}, your driver for your transfer to ${dest}.\nI am waiting for you at the transfer meeting point.\nIn case you need to reach me: ${chauffeurTel}`;
 }
 
+const TWILIO_PROXY = 'https://simplycab-sms.mus-akdogan.workers.dev';
+
 async function sendTwilioSMS(to, body) {
-  // Twilio requires a proxy due to CORS - use a simple approach
   try {
-    const credentials = btoa(`${TWILIO_SID}:${TWILIO_TOKEN}`);
-    const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
+    const r = await fetch(TWILIO_PROXY, {
       method: 'POST',
-      headers: {
-        'Authorization': `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({From: TWILIO_FROM, To: to, Body: body})
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({to, body})
     });
     const data = await r.json();
-    return data.sid ? true : data.message||'Erreur';
+    return data.sid ? true : (data.message||data.error||'Erreur');
   } catch(e) {
     return e.message;
   }
