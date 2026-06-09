@@ -2008,6 +2008,7 @@ function renderDispatch() {
       <td>
         <div style="display:flex;gap:3px;flex-wrap:wrap">
           <button class="btn btn-p btn-xs" onclick="editCourse('${c._id}')"><i class="fas fa-folder-open"></i> Ouvrir</button>
+          ${!c.chauffeur?`<button class="btn btn-xs" onclick="autoDispatch('${c._id}')" style="background:#7c3aed;border:none;color:#fff;border-radius:var(--r-xs);padding:3px 7px;cursor:pointer;font-size:10px;font-weight:700"><i class="fas fa-bolt"></i> Auto</button>`:''}
           <select onchange="updStatut('${c._id}',this.value);this.value=''" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);padding:3px 5px;color:var(--white);font-size:9px;outline:none;cursor:pointer">
             <option value="">Statut...</option>
             <option value="en_attente">⏳ En attente</option><option value="attribuee">👤 Attribuée</option>
@@ -2258,6 +2259,10 @@ function renderAgenda() {
                 style="margin-top:4px;background:${color};border:none;border-radius:var(--r-xs);padding:4px 10px;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">
                 ✏️ Ouvrir
               </button>
+              ${!c.chauffeur?`<button onclick="event.stopPropagation();autoDispatch('${c._id}')"
+                style="margin-top:4px;background:#7c3aed;border:none;border-radius:var(--r-xs);padding:4px 10px;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">
+                ⚡ Auto
+              </button>`:''}
             </div>
           </div>
           </div>
@@ -2310,18 +2315,174 @@ window.doAssign = async function() {
   const id = document.getElementById('assign-id').value;
   const drv = document.getElementById('assign-drv').value;
   if(!drv){showToast('Sélectionner un chauffeur',true);return;}
-  await fbUpdate('courses', id, {chauffeur:drv, statut:'attribuee', updatedAt:new Date().toISOString()});
+
   const c = D.courses.find(x=>x._id===id);
+  // Détection conflit
+  const conflict = detectConflict(drv, c?.datetime, id);
+  if(conflict) {
+    const ov = showConflictWarning(conflict, drv);
+    document.getElementById('conflict-force-btn').onclick = async () => {
+      ov.remove();
+      closeMo('assign');
+      await _doAssignForce(id, drv, c);
+    };
+    return;
+  }
+  closeMo('assign');
+  await _doAssignForce(id, drv, c);
+};
+
+async function _doAssignForce(id, drv, c) {
+  await fbUpdate('courses', id, {chauffeur:drv, statut:'attribuee', updatedAt:new Date().toISOString()});
   await addLog(`Course "${c?.client||id}" assignée à ${drv}`);
-  // Notification push
   await sendPushNotification(
     `🚗 Nouvelle course — ${drv}`,
     `${c?.ref||''} | ${c?.client||''} | ${fdt(c?.datetime)} | ${c?.depart||c?.lieu||''} → ${c?.arrivee||c?.duree||''}`,
     'https://musakdogan-droid.github.io/Simplycab-'
   );
-  closeMo('assign');
   await loadAll();
   showToast(`Assigné à ${drv} ✓`);
+}
+
+// ══════════════════════════════════════════
+// DÉTECTION DE CONFLITS
+// ══════════════════════════════════════════
+function detectConflict(chauffeurName, datetime, excludeId) {
+  if(!chauffeurName || !datetime) return null;
+  const dt = new Date(datetime);
+  const buffer = 90; // minutes de tampon entre deux courses
+  return D.courses.find(c => {
+    if(c._id === excludeId) return false;
+    if(c.chauffeur !== chauffeurName) return false;
+    if(['terminee','annulee','noshow','payee'].includes(c.statut)) return false;
+    const cdt = new Date(c.datetime);
+    const diffMin = Math.abs((dt - cdt) / 60000);
+    return diffMin < buffer;
+  });
+}
+
+function showConflictWarning(conflict, chauffeurName) {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:460px;max-width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="background:#dc2626;padding:16px 20px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:24px">⚠️</span>
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#fff">Conflit de planning détecté</div>
+      </div>
+      <div style="padding:20px">
+        <div style="font-size:14px;color:#333;margin-bottom:12px">
+          <strong>${chauffeurName}</strong> a déjà une course dans les <strong>90 minutes</strong> :
+        </div>
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;color:#dc2626">${conflict.client||'—'}</div>
+          <div style="font-size:12px;color:#666;margin-top:4px">📅 ${fdt(conflict.datetime)}</div>
+          <div style="font-size:12px;color:#666">📍 ${conflict.depart||conflict.lieu||'—'} → ${conflict.arrivee||conflict.duree||'—'}</div>
+          <div style="font-size:11px;color:#999;margin-top:4px">${sBdg(conflict.statut)}</div>
+        </div>
+        <div style="font-size:12px;color:#777;margin-bottom:16px">Voulez-vous quand même assigner cette course ?</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="this.closest('div[style*=fixed]').remove()" 
+            style="flex:1;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:10px;padding:12px;font-weight:700;cursor:pointer;color:#333">
+            ✕ Annuler
+          </button>
+          <button id="conflict-force-btn"
+            style="flex:1;background:#dc2626;border:none;border-radius:10px;padding:12px;font-weight:700;cursor:pointer;color:#fff">
+            ⚠️ Assigner quand même
+          </button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  return ov;
+}
+
+// ══════════════════════════════════════════
+// DISPATCH AUTOMATIQUE
+// ══════════════════════════════════════════
+window.autoDispatch = function(courseId) {
+  const course = D.courses.find(c=>c._id===courseId);
+  if(!course){showToast('Course introuvable',true);return;}
+
+  const veh = course.vehicule||'berline';
+  const dt = new Date(course.datetime);
+  const buffer = 90; // minutes
+
+  // Trouver chauffeurs disponibles sans conflit
+  const disponibles = D.chauffeurs.filter(ch => {
+    if(ch.statut === 'indisponible') return false;
+    // Vérifier véhicule compatible
+    const chVeh = ch.vehicule||'berline';
+    if(veh === 'van' && chVeh === 'berline') return false;
+    if(veh === 'sprinter' && !['sprinter','bus'].includes(chVeh)) return false;
+    if(veh === 'bus' && chVeh !== 'bus') return false;
+    // Vérifier pas de conflit
+    const name = ch.prenom+(ch.nom?' '+ch.nom:'');
+    const conflict = detectConflict(name, course.datetime, courseId);
+    return !conflict;
+  });
+
+  if(!disponibles.length){
+    showToast('Aucun chauffeur disponible sans conflit',true);
+    return;
+  }
+
+  // Afficher popup avec chauffeurs disponibles
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:500px;max-width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column">
+      <div style="padding:16px 20px;border-bottom:1px solid #f0f2f5;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800">⚡ Dispatch automatique</div>
+          <div style="font-size:12px;color:#777;margin-top:2px">${disponibles.length} chauffeur(s) disponible(s) sans conflit</div>
+        </div>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="background:#f0f2f5;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px">✕</button>
+      </div>
+      <div style="overflow-y:auto;padding:16px;flex:1">
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:#166534">
+          <strong>Course :</strong> ${course.client||'—'} • ${fdt(course.datetime)} • ${course.depart||course.lieu||'—'}
+        </div>
+        ${disponibles.map(ch=>{
+          const name = ch.prenom+(ch.nom?' '+ch.nom:'');
+          const todayCourses = D.courses.filter(c=>c.chauffeur===name&&new Date(c.datetime).toDateString()===dt.toDateString()).length;
+          const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[ch.vehicule]||'🚗';
+          const av = name.split(' ').map(n=>n[0]||'').join('').slice(0,2).toUpperCase();
+          return `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:#f8f9fa;border-radius:12px;margin-bottom:8px;cursor:pointer;border:2px solid transparent;transition:all 0.15s"
+            onmouseover="this.style.borderColor='#b8860b'" onmouseout="this.style.borderColor='transparent'"
+            onclick="doAutoDispatch('${courseId}','${name}',this.closest('div[style*=fixed]'))">
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#b8860b,#d4a017);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#fff;flex-shrink:0">${av}</div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700;color:#111">${name}</div>
+              <div style="font-size:11px;color:#777">${vehIco} ${ch.vehicule||'berline'} • ${todayCourses} course(s) aujourd'hui</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="background:#dcfce7;color:#166534;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">✓ Libre</span>
+              <i class="fas fa-chevron-right" style="color:#aaa;font-size:12px"></i>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+};
+
+window.doAutoDispatch = async function(courseId, chauffeurName, overlay) {
+  if(overlay) overlay.remove();
+  await fbUpdate('courses', courseId, {
+    chauffeur: chauffeurName,
+    statut: 'attribuee',
+    updatedAt: new Date().toISOString()
+  });
+  const c = D.courses.find(x=>x._id===courseId);
+  await addLog(`Auto-dispatch : "${c?.client||courseId}" → ${chauffeurName}`);
+  await sendPushNotification(
+    '🚗 Course assignée — '+chauffeurName,
+    `${c?.client||''} | ${fdt(c?.datetime)} | ${c?.depart||c?.lieu||''}`,
+    'https://musakdogan-droid.github.io/Simplycab-'
+  );
+  await loadAll();
+  showToast(`✓ Assigné à ${chauffeurName}`);
 };
 
 // ── SAVE COURSE ──
@@ -2618,19 +2779,35 @@ window.saveCourse = async function() {
   };
   closeMo('course');
   showToast('Enregistrement...');
-  await fbPush('courses', data);
-  await addLog(`Nouvelle ${type==='mad'?'MAD':'course'} : ${clientName} (${passagers.length} pax)${ch?' → '+ch:''}`);
-  // Notification push si chauffeur assigné
+
+  // Détection conflit si chauffeur assigné
   if(ch) {
+    const conflict = detectConflict(ch, data.datetime, null);
+    if(conflict) {
+      const ov = showConflictWarning(conflict, ch);
+      document.getElementById('conflict-force-btn').onclick = async () => {
+        ov.remove();
+        await _saveCourseForce(data, clientName, passagers.length);
+      };
+      return;
+    }
+  }
+  await _saveCourseForce(data, clientName, passagers.length);
+};
+
+async function _saveCourseForce(data, clientName, paxCount) {
+  await fbPush('courses', data);
+  await addLog(`Nouvelle ${data.type==='mad'?'MAD':'course'} : ${clientName} (${paxCount} pax)${data.chauffeur?' → '+data.chauffeur:''}`);
+  if(data.chauffeur) {
     await sendPushNotification(
-      `🚗 Course assignée — ${ch}`,
-      `${ref} | ${clientName} | ${data.datetime?.slice(11,16)||''} | ${dep||lieu} → ${arr||data.duree||''}`,
+      `🚗 Course assignée — ${data.chauffeur}`,
+      `${data.ref||''} | ${clientName} | ${data.datetime?.slice(11,16)||''} | ${data.depart||data.lieu} → ${data.arrivee||data.duree||''}`,
       'https://musakdogan-droid.github.io/Simplycab-'
     );
   }
   await loadAll();
-  showToast(`Course créée — ${passagers.length} passager(s) ✓`);
-};
+  showToast(`Course créée — ${paxCount} passager(s) ✓`);
+}
 
 // ── CHAUFFEURS ──
 function renderChauffeurs() {
