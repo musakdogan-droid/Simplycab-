@@ -4951,10 +4951,6 @@ window.importExcel = async function(input) {
   await loadAll();
   showToast(`✓ ${count} transfert(s) importé(s)${errors>0?' • '+errors+' erreurs':''}`);
 };
-  await addLog(`Import Excel : ${count} course(s) depuis ${file.name}`);
-  await loadAll();
-  showToast(`✓ ${count} course(s) importée(s)${errors>0?' ('+errors+' ignorées)':''}`);
-};
 
 
 </script>
