@@ -481,7 +481,7 @@ tr:last-child td{border-bottom:none}
               <button class="btn btn-ghost btn-sm" onclick="agendaToday()">Aujourd'hui</button>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <button class="btn btn-p btn-sm" onclick="openCourseModal()"><i class="fas fa-plus"></i> Nouvelle course</button>
+              <button class="btn btn-p" onclick="openCourseModal()" style="font-size:13px;padding:10px 18px"><i class="fas fa-plus"></i> Nouveau transfert</button>
               <button class="btn btn-s btn-sm" onclick="switchDispatchView('table')"><i class="fas fa-table"></i> Tableau</button>
               <span class="bdg bdg-muted" id="agenda-cnt">0 courses</span>
             </div>
@@ -2231,6 +2231,10 @@ function renderAgenda() {
             <div class="agenda-right">
               <span style="font-size:12px;font-weight:700">${vehIco} ${c.chauffeur||'<span style="opacity:0.5">À assigner</span>'}</span>
               ${sBdg(c.statut)}
+              <button onclick="event.stopPropagation();editCourse('${c._id}')"
+                style="margin-top:4px;background:${color};border:none;border-radius:var(--r-xs);padding:4px 10px;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">
+                ✏️ Ouvrir
+              </button>
             </div>
           </div>
           </div>
