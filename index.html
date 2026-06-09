@@ -2003,20 +2003,40 @@ function renderAgenda() {
 
   // Legend
   const clientsToday = [...new Set(courses.map(c=>c.client))];
-  const legendHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-    ${clientsToday.map(c=>{
-      const info = getClientInfo(c);
-      return `<div style="display:flex;align-items:center;gap:5px">
-        <div style="display:flex;gap:2px">
-          <div style="width:10px;height:18px;border-radius:3px;background:${info.arr}"></div>
-          <div style="width:10px;height:18px;border-radius:3px;background:${info.dep};opacity:0.7"></div>
-        </div>
-        <span style="font-size:11px;font-weight:600;color:var(--white2)">${info.label}</span>
-      </div>`;
-    }).join('')}
-    <div style="display:flex;align-items:center;gap:5px;margin-left:8px;padding-left:8px;border-left:1px solid var(--border)">
+  const legendHtml = `
+  <!-- Barre sélection groupe -->
+  <div id="agenda-groupe-bar" style="display:none;margin-bottom:12px;padding:10px 14px;background:var(--purple-dim);border:1px solid rgba(155,127,240,0.3);border-radius:var(--r-sm);align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="font-size:12px;color:var(--purple);font-weight:600"><i class="fas fa-check-square"></i> <span id="agenda-sel-count">0</span> course(s) sélectionnée(s)</span>
+    <div class="drv-wrap" style="min-width:220px">
+      <input type="text" id="agenda-drv-input" class="drv-input" placeholder="Rechercher un chauffeur..." autocomplete="off"
+        oninput="filterDrv('agenda-drv',this.value)" onfocus="openDrv('agenda-drv')" onblur="setTimeout(()=>closeDrv('agenda-drv'),200)">
+      <input type="hidden" id="agenda-drv" value="">
+      <div class="drv-drop" id="drv-drop-agenda-drv"></div>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="assignAgendaGroupe()"><i class="fas fa-user-check"></i> Assigner le groupe</button>
+    <button class="btn btn-ghost btn-sm" onclick="clearAgendaSelection()"><i class="fas fa-times"></i> Annuler</button>
+  </div>
+  <!-- Légende + sélection tout -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;color:var(--muted2)">
+        <input type="checkbox" id="agenda-chk-all" onchange="agendaToggleAll(this)" style="width:14px;height:14px;cursor:pointer">
+        Tout sélectionner
+      </label>
+      ${clientsToday.map(c=>{
+        const info = getClientInfo(c);
+        return `<div style="display:flex;align-items:center;gap:5px">
+          <div style="display:flex;gap:2px">
+            <div style="width:10px;height:18px;border-radius:3px;background:${info.arr}"></div>
+            <div style="width:10px;height:18px;border-radius:3px;background:${info.dep};opacity:0.7"></div>
+          </div>
+          <span style="font-size:11px;font-weight:600;color:var(--white2)">${info.label}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
       <span style="font-size:11px">🛬</span><span style="font-size:10px;color:var(--muted)">Arrivée</span>
-      <span style="font-size:11px;margin-left:6px">🛫</span><span style="font-size:10px;color:var(--muted)">Départ</span>
+      <span style="font-size:11px">🛫</span><span style="font-size:10px;color:var(--muted)">Départ</span>
     </div>
   </div>`;
 
@@ -2039,7 +2059,11 @@ function renderAgenda() {
         const pax = c.passagers?.length || c.pax || 1;
         const terminals = c.terminaux ? ` • ${c.terminaux}` : '';
         const info = getClientInfo(c.client);
-        return `<div class="agenda-item" onclick="editCourse('${c._id}')">
+        return `<div class="agenda-item" style="position:relative">
+          <div style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:2">
+            <input type="checkbox" class="agenda-chk" data-id="${c._id}" onchange="onAgendaChkChange()" style="width:15px;height:15px;cursor:pointer" onclick="event.stopPropagation()">
+          </div>
+          <div style="padding-left:28px;flex:1;display:flex;cursor:pointer" onclick="editCourse('${c._id}')">
           <div class="agenda-stripe" style="background:${color}"></div>
           <div class="agenda-body" style="background:${color}22;border:1px solid ${color}55;border-left:none">
             <div style="font-size:18px;flex-shrink:0">${dirIcon}</div>
@@ -2055,6 +2079,7 @@ function renderAgenda() {
               <span style="font-size:12px;font-weight:700">${vehIco} ${c.chauffeur||'<span style="opacity:0.5">À assigner</span>'}</span>
               ${sBdg(c.statut)}
             </div>
+          </div>
           </div>
         </div>`;
       }).join('')}
@@ -3314,6 +3339,45 @@ async function checkRappels() {
 // Start rappel check every 5 minutes
 setInterval(checkRappels, 5*60*1000);
 
+// ── SÉLECTION AGENDA ──
+window.onAgendaChkChange = function() {
+  const ids = [...document.querySelectorAll('.agenda-chk:checked')].map(c=>c.dataset.id);
+  const bar = document.getElementById('agenda-groupe-bar');
+  const cnt = document.getElementById('agenda-sel-count');
+  const all = document.getElementById('agenda-chk-all');
+  const total = document.querySelectorAll('.agenda-chk').length;
+  if(bar) bar.style.display = ids.length > 0 ? 'flex' : 'none';
+  if(cnt) cnt.textContent = ids.length;
+  if(all) { all.indeterminate = ids.length > 0 && ids.length < total; all.checked = ids.length === total && total > 0; }
+};
+
+window.agendaToggleAll = function(chk) {
+  document.querySelectorAll('.agenda-chk').forEach(c=>c.checked=chk.checked);
+  onAgendaChkChange();
+};
+
+window.clearAgendaSelection = function() {
+  document.querySelectorAll('.agenda-chk').forEach(c=>c.checked=false);
+  const all = document.getElementById('agenda-chk-all');
+  if(all) all.checked = false;
+  const bar = document.getElementById('agenda-groupe-bar');
+  if(bar) bar.style.display = 'none';
+};
+
+window.assignAgendaGroupe = async function() {
+  const ids = [...document.querySelectorAll('.agenda-chk:checked')].map(c=>c.dataset.id);
+  const drv = document.getElementById('agenda-drv')?.value;
+  if(!drv){showToast('Sélectionner un chauffeur',true);return;}
+  if(!ids.length){showToast('Sélectionner au moins une course',true);return;}
+  showToast(`Assignation de ${ids.length} course(s)...`);
+  for(const id of ids) {
+    await fbUpdate('courses', id, {chauffeur:drv, statut:'attribuee', updatedAt:new Date().toISOString()});
+  }
+  await addLog(`${ids.length} course(s) assignées en groupe à ${drv} (agenda)`);
+  clearAgendaSelection();
+  await loadAll();
+  showToast(`${ids.length} course(s) assignées à ${drv} ✓`);
+};
 
 let gpsInterval = null;
 let gpsActive = false;
