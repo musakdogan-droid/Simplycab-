@@ -1982,7 +1982,7 @@ function renderDispatch() {
       <td class="col-arr" style="font-size:11px;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.arrivee||c.duree||'—'}</td>
       <td class="col-veh" style="font-size:11px">${vI(c.vehicule)}</td>
       <td class="col-chauff" style="font-size:11px">${c.chauffeur||'<span style="color:var(--muted)">—</span>'}</td>
-      <td class="col-term" style="font-size:10px;color:var(--blue)">${c.terminaux||'—'}</td>
+      <td class="col-term" style="font-size:10px;color:var(--blue)">${(c.terminaux||'—').replace(/CDG/g,'').replace(/ORY/g,'ORY')}</td>
       <td class="col-client"><strong style="font-size:12px">${c.client||'—'}</strong>
         ${c.passagers&&c.passagers.length?`<br><span style="font-size:10px;color:var(--blue)">${c.passagers.filter(p=>p.present!==false).length}/${c.passagers.length} pax <button onclick="viewPax('${c._id}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:10px;padding:0">👥 voir</button></span>`:''}</td>
       <td class="col-pax" style="font-size:11px">${c.pax||1}</td>
@@ -2220,7 +2220,7 @@ function renderAgenda() {
         const time = c.datetime?.slice(11,16)||'—';
         const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
         const pax = c.passagers?.length || c.pax || 1;
-        const terminals = c.terminaux ? ` • ${c.terminaux}` : '';
+        const terminals = c.terminaux ? ` • ${c.terminaux.replace(/CDG/g,'').replace(/-/g,' ')}` : '';
         const info = getClientInfo(c.client);
         return `<div class="agenda-item" style="position:relative">
           <div style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:2">
@@ -4924,8 +4924,8 @@ window.importExcel = async function(input) {
           const nom = (r[idxSurname]||'').toString().trim();
           if(!prenom && !nom) continue;
           const term = (r[idxTerm]||'').toString().trim();
-          const cleanTerm = term && !['none','ok','nan',''].includes(term.toLowerCase()) ?
-            (term.startsWith('CDG')||term.startsWith('ORY') ? term : 'CDG'+term) : '';
+          const cleanTerm = term && !['none','ok','nan','','OK'].includes(term.toLowerCase()) ?
+            (term.startsWith('CDG') ? term.replace('CDG','') : term.startsWith('ORY') ? term : term) : '';
           if(cleanTerm) terminals.add(cleanTerm);
           const depTime = r[idxFlightDep] ? r[idxFlightDep].toString().slice(0,5).replace(/^(\d+:\d+).*$/,'$1') : '';
           passagers.push({
