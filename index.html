@@ -1415,7 +1415,7 @@ tr:last-child td{border-bottom:none}
     <i class="fas fa-exclamation-triangle"></i>
     <h3 id="conf-t">Confirmer</h3>
     <p id="conf-m">Cette action est irréversible.</p>
-    <div class="conf-btns"><button class="btn btn-ghost" onclick="closeConf()">Annuler</button><button class="btn btn-d" id="conf-ok">Confirmer</button></div>
+    <div class="conf-btns"><button class="btn btn-ghost" onclick="closeConf()">Annuler</button><button class="btn btn-d" id="conf-ok" onclick="doConfirm()">Confirmer</button></div>
   </div>
 </div>
 
@@ -4346,10 +4346,15 @@ function showToast(msg,type){
 window.showToast=showToast;
 
 let confCb=null;
-function showConfirm(title,msg,cb){document.getElementById('conf-t').textContent=title;document.getElementById('conf-m').textContent=msg||'Cette action est irréversible.';confCb=cb;document.getElementById('conf-ov').classList.add('on');}
+function showConfirm(title,msg,cb){
+  document.getElementById('conf-t').textContent=title;
+  document.getElementById('conf-m').textContent=msg||'Cette action est irréversible.';
+  confCb=cb;
+  document.getElementById('conf-ov').classList.add('on');
+}
 function closeConf(){document.getElementById('conf-ov').classList.remove('on');confCb=null;}
-document.getElementById('conf-ok').onclick=()=>{closeConf();if(confCb)confCb();};
-window.showConfirm=showConfirm;window.closeConf=closeConf;
+function doConfirm(){closeConf();if(confCb){try{confCb();}catch(e){console.error('Confirm cb error:',e);showToast('Erreur: '+e.message,true);}}}
+window.showConfirm=showConfirm;window.closeConf=closeConf;window.doConfirm=doConfirm;
 
 function toggleMob(){document.getElementById('sidebar').classList.toggle('on');document.getElementById('mob-ov').classList.toggle('on');}
 function closeMob(){document.getElementById('sidebar').classList.remove('on');document.getElementById('mob-ov').classList.remove('on');}
