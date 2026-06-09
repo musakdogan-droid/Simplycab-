@@ -4547,10 +4547,29 @@ window.doSendSMS = async function(passagers, client, destination, chauffeurName,
     const chk = document.getElementById('sms-chk-'+i);
     const st = document.getElementById('sms-status-'+i);
     if(!chk?.checked) continue;
-    if(st) { st.textContent = '⏳ Envoi...'; st.style.color = 'var(--orange)'; }
+
     const p = passagers[i];
-    const msg = tpl(p.prenom||'');
-    const result = await sendTwilioSMS(p.tel, msg);
+
+    // Nettoyer le numéro — supprimer espaces, tirets, parenthèses
+    let tel = (p.tel||'').replace(/[\s\-\(\)\.]/g,'');
+    // Ajouter + si commence par 00
+    if(tel.startsWith('00')) tel = '+' + tel.slice(2);
+    // Ajouter +33 si commence par 0 (numéro français)
+    if(tel.startsWith('0') && tel.length === 10) tel = '+33' + tel.slice(1);
+    // Vérifier format valide
+    if(!tel || !tel.match(/^\+?[0-9]{8,15}$/)) {
+      if(st) { st.textContent = '❌ Numéro invalide'; st.style.color = 'var(--red)'; }
+      failed++;
+      continue;
+    }
+    if(!tel.startsWith('+')) tel = '+' + tel;
+
+    // Prénom — si vide utiliser "Sir/Madam"
+    const prenom = p.prenom && !p.prenom.match(/^\d/) ? p.prenom : '';
+
+    if(st) { st.textContent = '⏳ Envoi...'; st.style.color = 'var(--orange)'; }
+    const msg = tpl(prenom);
+    const result = await sendTwilioSMS(tel, msg);
     if(result === true) {
       sent++;
       if(st) { st.textContent = '✅ Envoyé'; st.style.color = 'var(--green)'; }
