@@ -920,53 +920,62 @@ tr:last-child td{border-bottom:none}
 
       <!-- MES COURSES (chauffeur) -->
       <div class="page" id="page-mescourses">
-        <div class="sg" style="grid-template-columns:repeat(4,1fr)">
-          <div class="sc cg"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-route"></i></div><div class="sc-val" id="mc-today">0</div><div class="sc-lbl">Aujourd'hui</div></div>
-          <div class="sc cgr"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-check"></i></div><div class="sc-val" id="mc-month">0</div><div class="sc-lbl">Ce mois</div></div>
-          <div class="sc cb"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-history"></i></div><div class="sc-val" id="mc-total">0</div><div class="sc-lbl">Total courses</div></div>
-          <div class="sc co"><div class="sc-ico" style="margin-bottom:8px"><i class="fas fa-euro-sign"></i></div><div class="sc-val" id="mc-ca">0€</div><div class="sc-lbl">CA ce mois</div></div>
+
+        <!-- HEADER CHAUFFEUR -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800" id="mc-greeting">Bonjour 👋</div>
+            <div style="font-size:12px;color:var(--muted)" id="mc-date-now"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="gps-status" style="font-size:11px;color:var(--muted)"></div>
+            <button id="gps-btn" onclick="toggleGPS()" style="border:2px solid #e0e3e8;background:#fff;border-radius:20px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;color:#555">
+              <i class="fas fa-map-marker-alt"></i> Partager position
+            </button>
+          </div>
+        </div>
+
+        <!-- STATS RAPIDES -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+          <div style="background:#fff;border:1px solid #e0e3e8;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+            <div style="font-size:22px;font-weight:800;font-family:'Syne',sans-serif;color:#111" id="mc-today">0</div>
+            <div style="font-size:11px;color:#777;margin-top:2px">Aujourd'hui</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e0e3e8;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+            <div style="font-size:22px;font-weight:800;font-family:'Syne',sans-serif;color:#111" id="mc-month">0</div>
+            <div style="font-size:11px;color:#777;margin-top:2px">Ce mois</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e0e3e8;border-radius:12px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+            <div style="font-size:22px;font-weight:800;font-family:'Syne',sans-serif;color:var(--gold)" id="mc-ca">0€</div>
+            <div style="font-size:11px;color:#777;margin-top:2px">Revenus mois</div>
+          </div>
         </div>
 
         <!-- TABS -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-          <div style="display:flex;gap:3px;background:var(--dark);border-radius:var(--r-xs);padding:4px">
-            <button id="mc-tab-active" onclick="mcTab('active')" style="padding:8px 16px;border:none;border-radius:var(--r-xs);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:var(--card2);color:var(--gold)">🚗 En cours</button>
-            <button id="mc-tab-history" onclick="mcTab('history')" style="padding:8px 16px;border:none;border-radius:var(--r-xs);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted2)">📋 Tout l'historique</button>
-          </div>
-          <!-- BOUTON GPS PARTAGE -->
-          <div style="display:flex;align-items:center;gap:8px">
-            <div id="gps-status" style="font-size:11px;color:var(--muted)">Position non partagée</div>
-            <button id="gps-btn" onclick="toggleGPS()" class="btn btn-s btn-sm"><i class="fas fa-map-marker-alt"></i> Partager ma position</button>
-          </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button id="mc-tab-active" onclick="mcTab('active')" style="flex:1;padding:10px;border:2px solid var(--gold);background:var(--gold);border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;color:#fff">🚗 En cours</button>
+          <button id="mc-tab-history" onclick="mcTab('history')" style="flex:1;padding:10px;border:2px solid #e0e3e8;background:#fff;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;color:#777">📋 Historique</button>
         </div>
 
-        <!-- EN COURS -->
+        <!-- COURSES EN COURS -->
         <div id="mc-pane-active">
-          <div class="sec">
-            <div class="sec-h"><div class="sec-t"><i class="fas fa-route"></i> Courses actives</div></div>
-            <div class="tw"><table><thead><tr><th>Date/H</th><th>Client / Passagers</th><th>Type</th><th>Départ</th><th>Arrivée</th><th>Terminaux</th><th>Notes</th><th>Statut</th><th>Action</th></tr></thead><tbody id="tb-mc"></tbody></table></div>
-          </div>
+          <div id="mc-cards-list"></div>
         </div>
 
-        <!-- HISTORIQUE COMPLET -->
+        <!-- HISTORIQUE -->
         <div id="mc-pane-history" style="display:none">
-          <div class="sec">
-            <div class="sec-h">
-              <div class="sec-t"><i class="fas fa-history"></i> Tout l'historique</div>
-              <div class="sec-a">
-                <div class="sbw"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="mc-hist-q" oninput="renderHistMC()"></div>
-                <select class="fsel" id="mc-hist-s" onchange="renderHistMC()">
-                  <option value="">Tous statuts</option>
-                  <option value="terminee">✔ Terminée</option>
-                  <option value="noshow">👻 No-show</option>
-                  <option value="annulee">✗ Annulée</option>
-                </select>
-                <select class="fsel" id="mc-hist-m" onchange="renderHistMC()">
-                  <option value="">Tous les mois</option>
-                </select>
-              </div>
+          <div style="background:#fff;border:1px solid #e0e3e8;border-radius:12px;overflow:hidden">
+            <div style="padding:12px 16px;border-bottom:1px solid #f0f2f5;display:flex;gap:8px;flex-wrap:wrap">
+              <div class="sbw" style="flex:1"><i class="fas fa-search"></i><input type="text" placeholder="Rechercher..." id="mc-hist-q" oninput="renderHistMC()"></div>
+              <select class="fsel" id="mc-hist-s" onchange="renderHistMC()">
+                <option value="">Tous statuts</option>
+                <option value="terminee">✔ Terminée</option>
+                <option value="noshow">👻 No-show</option>
+                <option value="annulee">✗ Annulée</option>
+              </select>
+              <select class="fsel" id="mc-hist-m" onchange="renderHistMC()"><option value="">Tous les mois</option></select>
             </div>
-            <div class="tw"><table><thead><tr><th>Réf.</th><th>Date/H</th><th>Client</th><th>Type</th><th>Départ</th><th>Arrivée</th><th>Pax</th><th>Statut</th><th>Notes</th></tr></thead><tbody id="tb-mc-hist"></tbody></table></div>
+            <div class="tw"><table><thead><tr><th>Date/H</th><th>Client</th><th>Départ</th><th>Arrivée</th><th>Statut</th></tr></thead><tbody id="tb-mc-hist"></tbody></table></div>
           </div>
         </div>
       </div>
@@ -3125,75 +3134,203 @@ function renderPlanning() {
 function chMonth(d){curMonth.setMonth(curMonth.getMonth()+d);renderPlanning();}
 window.chMonth=chMonth;
 
-// ── MES COURSES ──
+// Statut flow — sens unique uniquement
+const STATUT_FLOW = {
+  'nouvelle':   {next:'acceptee',   label:'✅ Accepter la course',  color:'#22c55e', bg:'#f0fdf4'},
+  'en_attente': {next:'acceptee',   label:'✅ Accepter la course',  color:'#22c55e', bg:'#f0fdf4'},
+  'attribuee':  {next:'acceptee',   label:'✅ Accepter la course',  color:'#22c55e', bg:'#f0fdf4'},
+  'acceptee':   {next:'en_route',   label:'🚗 Je suis en route',    color:'#2563eb', bg:'#eff6ff'},
+  'en_route':   {next:'sur_place',  label:'📍 Je suis sur place',   color:'#7c3aed', bg:'#f5f3ff'},
+  'sur_place':  {next:'onboard',    label:'👤 Client à bord',       color:'#f59e0b', bg:'#fffbeb'},
+  'onboard':    {next:'depose',     label:'🏁 Client déposé',       color:'#f97316', bg:'#fff7ed'},
+  'depose':     {next:'terminee',   label:'✔ Terminer la course',   color:'#111',    bg:'#f9fafb'},
+};
+
+const STATUT_LABELS = {
+  nouvelle:'Nouvelle', en_attente:'En attente', attribuee:'Assignée',
+  acceptee:'Acceptée ✅', en_route:'En route 🚗', sur_place:'Sur place 📍',
+  onboard:'Client à bord 👤', depose:'Déposé 🏁', terminee:'Terminée ✔',
+  annulee:'Annulée', noshow:'No-show', facturee:'Facturée', payee:'Payée'
+};
+
 function renderMesCourses() {
-  if(SESSION.role!=='chauffeur')return;
-  const name=SESSION.name;
-  const mine=D.courses.filter(c=>c.chauffeur===name);
-  const today=new Date().toDateString();
-  const mois=new Date().getMonth();
-  const e1=document.getElementById('mc-today');const e2=document.getElementById('mc-month');const e3=document.getElementById('mc-ca');const e4=document.getElementById('mc-total');
-  if(e1)e1.textContent=mine.filter(c=>new Date(c.datetime).toDateString()===today).length;
-  if(e2)e2.textContent=mine.filter(c=>c.statut==='terminee'&&new Date(c.datetime).getMonth()===mois).length;
-  if(e4)e4.textContent=mine.length;
-  const ca=mine.filter(c=>c.statut==='terminee'&&new Date(c.datetime).getMonth()===mois).reduce((s,c)=>s+(parseFloat(c.prix)||0),0);
-  if(e3)e3.textContent=ca.toFixed(0)+'€';
-  const active=mine.filter(c=>!['terminee','annulee','noshow','payee','facturee'].includes(c.statut));
-  const tb=document.getElementById('tb-mc');if(!tb)return;
-  if(!active.length){tb.innerHTML=`<tr><td colspan="9" class="t-empty"><i class="fas fa-check-circle" style="color:var(--green)"></i><p>Aucune course assignée</p></td></tr>`;return;}
-  tb.innerHTML=active.map(c=>{
+  if(SESSION.role!=='chauffeur') return;
+  const name = SESSION.name;
+  const mine = D.courses.filter(c=>c.chauffeur===name);
+  const today = new Date().toDateString();
+  const mois = new Date().getMonth();
+  const yr = new Date().getFullYear();
+
+  // Update greeting
+  const h = new Date().getHours();
+  const greet = h<12?'Bonjour':'Bonsoir';
+  const greetEl = document.getElementById('mc-greeting');
+  const dateEl = document.getElementById('mc-date-now');
+  if(greetEl) greetEl.textContent = `${greet}, ${SESSION.name.split(' ')[0]} 👋`;
+  if(dateEl) dateEl.textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+
+  // Stats
+  const e1=document.getElementById('mc-today');
+  const e2=document.getElementById('mc-month');
+  const e3=document.getElementById('mc-ca');
+  if(e1) e1.textContent=mine.filter(c=>new Date(c.datetime).toDateString()===today).length;
+  if(e2) e2.textContent=mine.filter(c=>c.statut==='terminee'&&new Date(c.datetime).getMonth()===mois&&new Date(c.datetime).getFullYear()===yr).length;
+  const ca=mine.filter(c=>c.statut==='terminee'&&new Date(c.datetime).getMonth()===mois).reduce((s,c)=>s+(parseFloat(c.prixChauffeur||0)),0);
+  if(e3) e3.textContent=ca.toFixed(0)+'€';
+
+  const active = mine.filter(c=>!['terminee','annulee','noshow','payee','facturee'].includes(c.statut))
+    .sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+
+  const container = document.getElementById('mc-cards-list');
+  if(!container) return;
+
+  if(!active.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:#999">
+        <div style="font-size:56px;margin-bottom:16px">✅</div>
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#333;margin-bottom:8px">Aucune course en cours</div>
+        <div style="font-size:13px">Vos prochaines courses apparaîtront ici</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = active.map(c=>{
+    const flow = STATUT_FLOW[c.statut];
     const dep = encodeURIComponent(c.depart||c.lieu||'');
     const arr = encodeURIComponent(c.arrivee||'');
-    const wazeDepUrl = `https://waze.com/ul?q=${dep}&navigate=yes`;
-    const wazeArrUrl = `https://waze.com/ul?q=${arr}&navigate=yes`;
-    const gmapsDepUrl = `https://www.google.com/maps/dir/?api=1&destination=${dep}&travelmode=driving`;
-    const gmapsArrUrl = `https://www.google.com/maps/dir/?api=1&destination=${arr}&travelmode=driving`;
-    return `<tr>
-    <td style="font-size:11px;white-space:nowrap">${fdt(c.datetime)}</td>
-    <td>
-      <strong>${c.client||'—'}</strong>
-      ${c.passagers&&c.passagers.length?`<br><button onclick="viewPax('${c._id}')" style="background:var(--blue-dim);border:1px solid rgba(91,156,246,0.3);color:var(--blue);border-radius:var(--r-xs);padding:3px 8px;cursor:pointer;font-size:10px;margin-top:3px">👥 ${c.passagers.length} passager(s)</button>`:''}
-    </td>
-    <td>${tBdg(c.type)}</td>
-    <td>
-      <div style="font-size:11px;margin-bottom:5px">${c.depart||c.lieu||'—'}</div>
-      ${dep?`<div style="display:flex;gap:4px">
-        <a href="${wazeDepUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:#00d4ff1a;border:1px solid rgba(0,212,255,0.3);border-radius:var(--r-xs);padding:3px 8px;color:#00d4ff;font-size:10px;font-weight:600;text-decoration:none">🗺️ Waze</a>
-        <a href="${gmapsDepUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:var(--green-dim);border:1px solid rgba(46,204,138,0.3);border-radius:var(--r-xs);padding:3px 8px;color:var(--green);font-size:10px;font-weight:600;text-decoration:none">📍 Maps</a>
-      </div>`:''}
-    </td>
-    <td>
-      <div style="font-size:11px;margin-bottom:5px">${c.arrivee||c.duree||'—'}</div>
-      ${arr?`<div style="display:flex;gap:4px">
-        <a href="${wazeArrUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:#00d4ff1a;border:1px solid rgba(0,212,255,0.3);border-radius:var(--r-xs);padding:3px 8px;color:#00d4ff;font-size:10px;font-weight:600;text-decoration:none">🗺️ Waze</a>
-        <a href="${gmapsArrUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:var(--green-dim);border:1px solid rgba(46,204,138,0.3);border-radius:var(--r-xs);padding:3px 8px;color:var(--green);font-size:10px;font-weight:600;text-decoration:none">📍 Maps</a>
-      </div>`:''}
-    </td>
-    <td style="font-size:11px">${c.terminaux||'—'}</td>
-    <td style="font-size:10px;color:var(--muted2)">${(c.notes||'—').replace(/\n/g,'<br>')}</td>
-    <td>${sBdg(c.statut)}</td>
-    <td>
-      <div style="display:flex;flex-direction:column;gap:4px">
-        <select onchange="driverUpd('${c._id}',this.value,null);this.value=''" style="background:var(--card2);border:1px solid var(--border);border-radius:var(--r-xs);padding:4px 6px;color:var(--white);font-size:10px;outline:none;cursor:pointer">
-          <option value="">Statut...</option>
-          <option value="acceptee">✅ Accepté</option>
-          <option value="en_route">🚗 En route</option>
-          <option value="sur_place">📍 Sur place</option>
-          <option value="onboard">👤 Client à bord</option>
-          <option value="depose">🏁 Déposé</option>
-          <option value="terminee">✔ Terminée</option>
-          <option value="noshow">👻 No-show</option>
-        </select>
-        <div style="display:flex;gap:3px">
-          <input type="text" placeholder="Note dispatch..." id="note-${c._id}"
-            style="flex:1;background:var(--dark);border:1px solid var(--border);border-radius:var(--r-xs);padding:3px 7px;color:var(--white);font-size:10px;outline:none"
-            onkeydown="if(event.key==='Enter')driverUpd('${c._id}',null,this.value)">
-          <button onclick="driverUpd('${c._id}',null,document.getElementById('note-${c._id}').value)" style="background:var(--gold-dim);border:1px solid rgba(201,168,76,0.3);border-radius:var(--r-xs);padding:3px 7px;cursor:pointer;color:var(--gold);font-size:10px">✓</button>
+    const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+    const paxCount = c.passagers?.filter(p=>p.present!==false).length || c.pax || 1;
+    const time = c.datetime?.slice(11,16)||'';
+    const date = c.datetime ? new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}) : '';
+    const terms = (c.terminaux||'').replace(/CDG/g,'');
+
+    return `
+    <div style="background:#fff;border:1px solid #e0e3e8;border-radius:16px;margin-bottom:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+
+      <!-- En-tête couleur client -->
+      <div style="background:${getClientColor(c.client,c)};padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff;letter-spacing:0.5px">${c.client||'—'}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="background:rgba(255,255,255,0.25);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">${STATUT_LABELS[c.statut]||c.statut}</span>
         </div>
       </div>
-    </td>
-  </tr>`;}).join('');
+
+      <!-- Corps de la carte -->
+      <div style="padding:16px">
+
+        <!-- Date + heure -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <div style="background:#f5f6f8;border-radius:10px;padding:8px 14px;text-align:center;min-width:70px">
+            <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#111">${time}</div>
+            <div style="font-size:10px;color:#777">${date}</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:12px;color:#777">Véhicule</div>
+            <div style="font-size:14px;font-weight:700">${vehIco} ${{berline:'Berline',van:'Van',sprinter:'Sprinter',bus:'Bus'}[c.vehicule]||'—'} • ${paxCount} pax${terms?' • '+terms:''}</div>
+          </div>
+        </div>
+
+        <!-- Trajet -->
+        <div style="background:#f8f9fa;border-radius:12px;padding:14px;margin-bottom:14px">
+          <!-- Départ -->
+          <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px">
+            <div style="width:10px;height:10px;border-radius:50%;background:#22c55e;flex-shrink:0;margin-top:4px;box-shadow:0 0 0 3px rgba(34,197,94,0.2)"></div>
+            <div style="flex:1">
+              <div style="font-size:10px;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Prise en charge</div>
+              <div style="font-size:14px;font-weight:700;color:#111;margin-top:2px">${c.depart||c.lieu||'—'}</div>
+            </div>
+          </div>
+          <!-- Ligne -->
+          <div style="width:2px;height:12px;background:#e0e3e8;margin-left:4px;margin-bottom:12px"></div>
+          <!-- Arrivée -->
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="width:10px;height:10px;border-radius:3px;background:#e05c5c;flex-shrink:0;margin-top:4px;box-shadow:0 0 0 3px rgba(224,92,92,0.2)"></div>
+            <div style="flex:1">
+              <div style="font-size:10px;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Destination</div>
+              <div style="font-size:14px;font-weight:700;color:#111;margin-top:2px">${c.arrivee||c.duree||'—'}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Passagers -->
+        ${c.passagers&&c.passagers.length?`
+        <button onclick="viewPax('${c._id}')" style="width:100%;background:#f0f2f5;border:1px solid #e0e3e8;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:14px;text-align:left">
+          <span style="font-size:18px">👥</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#111">${paxCount} passager${paxCount>1?'s':''}</div>
+            <div style="font-size:11px;color:#777">${c.passagers.slice(0,2).map(p=>p.prenom+' '+p.nom).join(', ')}${c.passagers.length>2?'...':''}</div>
+          </div>
+          <i class="fas fa-chevron-right" style="margin-left:auto;color:#aaa;font-size:12px"></i>
+        </button>`:''}
+
+        <!-- GPS Boutons -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:${flow?'14px':'0'}">
+          ${dep?`
+          <a href="https://waze.com/ul?q=${dep}&navigate=yes" target="_blank"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;background:#e8f4fd;border:1px solid #bee3f8;border-radius:10px;padding:11px;font-size:12px;font-weight:700;color:#2563eb;text-decoration:none">
+            🗺️ Waze départ
+          </a>
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${dep}&travelmode=driving" target="_blank"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:11px;font-size:12px;font-weight:700;color:#16a34a;text-decoration:none">
+            📍 Maps départ
+          </a>`:''}
+          ${arr?`
+          <a href="https://waze.com/ul?q=${arr}&navigate=yes" target="_blank"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:11px;font-size:12px;font-weight:700;color:#7c3aed;text-decoration:none">
+            🗺️ Waze arrivée
+          </a>
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${arr}&travelmode=driving" target="_blank"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:11px;font-size:12px;font-weight:700;color:#ea580c;text-decoration:none">
+            📍 Maps arrivée
+          </a>`:''}
+        </div>
+
+        <!-- Notes dispatch -->
+        ${c.notes?`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400e"><i class="fas fa-info-circle"></i> ${c.notes.replace(/\n/g,'<br>')}</div>`:''}
+
+        <!-- Bouton action principal - sens unique -->
+        ${flow?`
+        <div style="display:flex;gap:8px">
+          <button onclick="driverNextStep('${c._id}','${flow.next}')"
+            style="flex:1;background:${flow.color};border:none;border-radius:12px;padding:16px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#fff;cursor:pointer;letter-spacing:0.3px;box-shadow:0 4px 12px ${flow.color}44">
+            ${flow.label}
+          </button>
+          <button onclick="driverNoShow('${c._id}')"
+            style="background:#f5f6f8;border:1px solid #e0e3e8;border-radius:12px;padding:16px;font-size:12px;font-weight:700;color:#777;cursor:pointer">
+            👻
+          </button>
+        </div>
+        <!-- Note rapide -->
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <input type="text" placeholder="Note pour le dispatch..." id="note-${c._id}"
+            style="flex:1;background:#f8f9fa;border:1px solid #e0e3e8;border-radius:10px;padding:10px 14px;font-size:12px;color:#111;outline:none"
+            onkeydown="if(event.key==='Enter'){driverUpd('${c._id}',null,this.value);this.value=''}">
+          <button onclick="driverUpd('${c._id}',null,document.getElementById('note-${c._id}').value);document.getElementById('note-${c._id}').value=''"
+            style="background:var(--gold);border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;color:#fff;font-weight:700">✓</button>
+        </div>`:''}
+      </div>
+    </div>`;
+  }).join('');
 }
+
+// Bouton sens unique — avance seulement
+window.driverNextStep = async function(id, nextStatut) {
+  const c = D.courses.find(x=>x._id===id);
+  if(!c) return;
+  // Vérifier qu'on avance bien dans le bon sens
+  const order = ['nouvelle','en_attente','attribuee','acceptee','en_route','sur_place','onboard','depose','terminee'];
+  const cur = order.indexOf(c.statut);
+  const nxt = order.indexOf(nextStatut);
+  if(nxt <= cur) { showToast('Impossible de revenir en arrière',true); return; }
+  await driverUpd(id, nextStatut, null);
+};
+
+window.driverNoShow = async function(id) {
+  if(!confirm('Marquer comme No-show ?')) return;
+  await driverUpd(id, 'noshow', null);
+};
+
+
 
 // ══════════════════════════════════════════
 // MESSAGERIE INTERNE
