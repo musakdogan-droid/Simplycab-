@@ -4116,7 +4116,46 @@ window.submitClientBooking=async function(){
   const dep=document.getElementById('cb-dep').value.trim();const arr=document.getElementById('cb-arr').value.trim();const dt=document.getElementById('cb-dt').value;
   if(!dep||!arr||!dt){showToast('Départ, arrivée et date obligatoires',true);return;}
   const paxText=document.getElementById('cb-pax-notes').value;
-  const passagers=paxText?paxText.split('\n').filter(l=>l.trim()).map(line=>{const p=line.split('/').map(s=>s.trim());return{harrivee:p[0]||'',vol:p[1]||'',terminal:p[2]||'',refClient:p[3]||'',prenom:(p[4]||'').split(' ')[0],nom:(p[4]||'').split(' ').slice(1).join(' '),tel:p[5]||'',present:true};}):[]; 
+  const passagers=paxText?paxText.split('\n').filter(l=>l.trim()).map(line=>{
+    const p=line.split('/').map(s=>s.trim());
+    // Format: heure / vol / terminal / ref / Prenom Nom [Pays] / tel
+    // Le téléphone est toujours le dernier champ qui commence par + ou des chiffres
+    let tel='', nomComplet='', harrivee='', vol='', terminal='', refClient='';
+    harrivee=p[0]||'';
+    vol=p[1]||'';
+    terminal=p[2]||'';
+    refClient=p[3]||'';
+    // Chercher le téléphone — dernier champ avec + ou chiffres
+    for(let i=p.length-1;i>=4;i--){
+      const v=p[i].replace(/[\s\-\(\)\.]/g,'');
+      if(v.match(/^[\+\d]{7,15}$/)){tel=p[i];break;}
+    }
+    // Le nom est en p[4], enlever le pays si présent à la fin (mot sans chiffres ni +)
+    if(p[4]){
+      const parts=p[4].trim().split(/\s+/);
+      // Enlever dernier mot si c'est un pays (majuscule, pas de chiffres, >= 3 lettres)
+      if(parts.length>1){
+        const last=parts[parts.length-1];
+        if(last.match(/^[A-Za-zÀ-ÿ]{3,}$/)&&last===last.charAt(0).toUpperCase()+last.slice(1)&&parts.length>2){
+          // Possible pays — vérifier si ça ressemble à un nom de pays
+          const pays=['Italy','France','Germany','Spain','UK','USA','Belgium','Netherlands','Switzerland','Portugal','Sweden','Norway','Denmark','Finland','Austria','Poland','Brazil'];
+          if(pays.some(pay=>pay.toLowerCase()===last.toLowerCase())){
+            nomComplet=parts.slice(0,-1).join(' ');
+          } else {
+            nomComplet=p[4].trim();
+          }
+        } else {
+          nomComplet=p[4].trim();
+        }
+      } else {
+        nomComplet=p[4].trim();
+      }
+    }
+    const nomParts=nomComplet.split(/\s+/);
+    const prenom=nomParts[0]||'';
+    const nom=nomParts.slice(1).join(' ');
+    return{harrivee,vol,terminal,refClient,prenom,nom,tel,present:true};
+  }):[];
   closeMo('client-booking');showToast('Envoi en cours...');
   await fbPush('courses',{type:'transfert',client:SESSION.societe||SESSION.name,datetime:dt,depart:dep,arrivee:arr,vehicule:document.getElementById('cb-veh').value,pax:parseInt(document.getElementById('cb-pax').value)||1,vol:document.getElementById('cb-vol').value,notes:document.getElementById('cb-notes').value,passagers,statut:'nouvelle',source:'client',createdByClient:SESSION.name,clientUser:SESSION.clientUser,createdAt:new Date().toISOString()});
   await sendPushNotification('🆕 Demande client',`${SESSION.societe} — ${SESSION.name} — ${dep} → ${arr}`);
@@ -4494,7 +4533,11 @@ window.showSMSPopup = function(c) {
   const chauffeur = D.chauffeurs.find(ch=>(ch.prenom+(ch.nom?' '+ch.nom:''))===SESSION.name);
   const chauffeurTel = chauffeur?.tel || SESSION.name;
   const tpl = getSMSTemplate(c.client, SESSION.name, chauffeurTel, c.arrivee||c.depart||'');
-  const passagers = c.passagers.filter(p=>p.present!==false && p.tel);
+  const passagers = c.passagers.filter(p=>{
+    if(p.present===false) return false;
+    const tel = (p.tel||'').replace(/[\s\-\(\)\.]/g,'');
+    return tel.length >= 8 && !tel.match(/^[A-Za-z]/);
+  });
 
   if(!passagers.length) {
     showToast('Aucun passager avec numéro de téléphone', true);
@@ -4513,61 +4556,60 @@ window.showSMSPopup = function(c) {
         <!-- Aperçu message - se met à jour par passager -->
         <div style="margin-bottom:10px;font-size:11px;color:var(--muted2)">Aperçu du message (personnalisé par passager) :</div>
         <div style="background:#f8f9fa;border:1px solid #e0e3e8;border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:#333;white-space:pre-line;line-height:1.6" id="sms-preview">${tpl(passagers[0]?.prenom||'[Prénom]')}</div>
-        <!-- Liste passagers -->
+        <!-- Liste passagers avec prénom éditable -->
         <div id="sms-pax-list">
-          ${passagers.map((p,i)=>`
-            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:#f8f9fa;border:1px solid #e0e3e8;border-radius:10px;margin-bottom:7px;cursor:pointer"
-              onmouseover="document.getElementById('sms-preview').textContent='${tpl(p.prenom||'').replace(/'/g,"\\'").replace(/\n/g,'\\n')}'"
-              onmouseout="document.getElementById('sms-preview').textContent='${tpl(passagers[0]?.prenom||'[Prénom]').replace(/'/g,"\\'").replace(/\n/g,'\\n')}'">
-              <input type="checkbox" id="sms-chk-${i}" checked style="width:16px;height:16px;cursor:pointer;flex-shrink:0">
-              <div style="flex:1">
-                <div style="font-size:13px;font-weight:700;color:#111">${p.prenom||''} ${p.nom||''}</div>
-                <div style="font-size:11px;color:#777">${p.tel}</div>
-                <div style="font-size:10px;color:#aaa;margin-top:2px;font-style:italic">→ "Hello ${p.prenom||'[Prénom]'}..."</div>
-              </div>
-              <span id="sms-status-${i}" style="font-size:11px;color:#aaa">En attente</span>
-            </div>`).join('')}
+          ${passagers.map((p,i)=>{
+            const prenomOk = p.prenom && !p.prenom.match(/^\d/);
+            const prenomVal = prenomOk ? p.prenom : '';
+            return '<div style="padding:12px;background:#f8f9fa;border:1px solid '+(prenomVal?'#e0e3e8':'#fde68a')+';border-radius:10px;margin-bottom:8px">'
+              +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+              +'<input type="checkbox" id="sms-chk-'+i+'" checked style="width:16px;height:16px;cursor:pointer;flex-shrink:0">'
+              +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#111">'+(p.nom||p.prenom||'—')+'</div>'
+              +'<div style="font-size:11px;color:#777">'+(p.tel||'—')+'</div></div>'
+              +'<span id="sms-status-'+i+'" style="font-size:11px;color:#aaa">En attente</span>'
+              +'</div>'
+              +'<div style="display:flex;gap:8px;align-items:center">'
+              +'<div style="font-size:11px;color:#555;white-space:nowrap">Prénom :</div>'
+              +'<input type="text" id="sms-prenom-'+i+'" value="'+prenomVal+'" placeholder="Entrer le prénom" '
+              +'style="flex:1;background:#fff;border:1px solid '+(prenomVal?'#e0e3e8':'#f59e0b')+';border-radius:8px;padding:7px 10px;font-size:13px;color:#111;outline:none;font-weight:600">'
+              +'</div>'
+              +(!prenomVal?'<div style="font-size:10px;color:#f59e0b;margin-top:5px">⚠️ Prénom manquant — remplir avant envoi</div>':'')
+              +'</div>';
+          }).join('')}
         </div>
       </div>
       <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
-        <div style="font-size:11px;color:var(--muted)">via Twilio SMS • ${passagers.length} passager(s) avec numéro</div>
+        <div style="font-size:11px;color:var(--muted)">via Twilio SMS • ${passagers.length} passager(s)</div>
         <div style="display:flex;gap:8px">
           <button onclick="this.closest('div[style*=fixed]').remove()" class="btn btn-ghost btn-sm">Annuler</button>
-          <button onclick="doSendSMS(${JSON.stringify(passagers).replace(/"/g,'&quot;')}, '${c.client}', '${c.arrivee||c.depart||''}', '${SESSION.name}', '${chauffeurTel}')" class="btn btn-p btn-sm"><i class="fas fa-paper-plane"></i> Envoyer</button>
+          <button onclick="doSendSMSFromPopup(${passagers.length},'${c.client}','${c.arrivee||c.depart||''}','${SESSION.name}','${chauffeurTel}',this.closest('div[style*=fixed]'))" class="btn btn-p btn-sm"><i class="fas fa-paper-plane"></i> Envoyer à tous</button>
         </div>
       </div>
     </div>`;
   document.body.appendChild(ov);
 };
 
-window.doSendSMS = async function(passagers, client, destination, chauffeurName, chauffeurTel) {
+window.doSendSMSFromPopup = async function(count, client, destination, chauffeurName, chauffeurTel, overlay) {
   const tpl = getSMSTemplate(client, chauffeurName, chauffeurTel, destination);
   let sent = 0, failed = 0;
-  for(let i=0; i<passagers.length; i++) {
+  for(let i=0; i<count; i++) {
     const chk = document.getElementById('sms-chk-'+i);
     const st = document.getElementById('sms-status-'+i);
+    const prenomEl = document.getElementById('sms-prenom-'+i);
     if(!chk?.checked) continue;
-
-    const p = passagers[i];
-
-    // Nettoyer le numéro — supprimer espaces, tirets, parenthèses
-    let tel = (p.tel||'').replace(/[\s\-\(\)\.]/g,'');
-    // Ajouter + si commence par 00
-    if(tel.startsWith('00')) tel = '+' + tel.slice(2);
-    // Ajouter +33 si commence par 0 (numéro français)
-    if(tel.startsWith('0') && tel.length === 10) tel = '+33' + tel.slice(1);
-    // Vérifier format valide
-    if(!tel || !tel.match(/^\+?[0-9]{8,15}$/)) {
-      if(st) { st.textContent = '❌ Numéro invalide'; st.style.color = 'var(--red)'; }
-      failed++;
-      continue;
-    }
-    if(!tel.startsWith('+')) tel = '+' + tel;
-
-    // Prénom — si vide utiliser "Sir/Madam"
-    const prenom = p.prenom && !p.prenom.match(/^\d/) ? p.prenom : '';
-
+    const prenom = (prenomEl?.value||'').trim();
     if(st) { st.textContent = '⏳ Envoi...'; st.style.color = 'var(--orange)'; }
+
+    // Récupérer le numéro depuis le DOM
+    const row = chk.closest('div[style*="border-radius:10px"]');
+    const telEl = row?.querySelector('div[style*="color:#777"]');
+    let tel = (telEl?.textContent||'').trim().replace(/[\s\-\(\)\.]/g,'');
+    if(tel === '—') { if(st){st.textContent='❌ Pas de numéro';st.style.color='var(--red)';}failed++;continue; }
+    if(tel.startsWith('00')) tel = '+' + tel.slice(2);
+    if(tel.match(/^0\d{9}$/)) tel = '+33' + tel.slice(1);
+    if(!tel.startsWith('+')) tel = '+' + tel;
+    if(!tel.match(/^\+\d{8,15}$/)) { if(st){st.textContent='❌ Numéro invalide';st.style.color='var(--red)';}failed++;continue; }
+
     const msg = tpl(prenom);
     const result = await sendTwilioSMS(tel, msg);
     if(result === true) {
