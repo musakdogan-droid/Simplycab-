@@ -2869,16 +2869,27 @@ window.viewChauffeurCourses = function(id) {
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px';
 
   const rows = (list, emptyMsg) => list.length ? list.map(c=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:12px;background:#f8f9fa;border-radius:10px;margin-bottom:6px;cursor:pointer" onclick="this.closest('div[style*=fixed]').remove();editCourse('${c._id}')">
+    <div style="display:flex;align-items:center;gap:10px;padding:12px;background:#f8f9fa;border-radius:10px;margin-bottom:6px">
       <div style="background:${getClientColor(c.client,c)};width:4px;height:40px;border-radius:4px;flex-shrink:0"></div>
-      <div style="flex:1;min-width:0">
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="this.closest('div[style*=fixed]').remove();editCourse('${c._id}')">
         <div style="font-size:13px;font-weight:700;color:#111">${c.client||'—'} <span style="font-size:11px;color:#777">• ${c.datetime?.slice(11,16)||''}</span></div>
         <div style="font-size:11px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.depart||c.lieu||'—'} → ${c.arrivee||c.duree||'—'}</div>
+        <div style="font-size:10px;color:#aaa;margin-top:2px">${c.datetime?.slice(0,10)||''}</div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        ${sBdg(c.statut)}
-        <span style="font-size:10px;color:#aaa">${c.datetime?.slice(0,10)||''}</span>
-      </div>
+      <select onchange="updStatut('${c._id}',this.value)"
+        style="background:#fff;border:1px solid #e0e3e8;border-radius:8px;padding:5px 6px;font-size:10px;color:#333;cursor:pointer;outline:none;max-width:120px;flex-shrink:0">
+        <option value="nouvelle" ${c.statut==='nouvelle'?'selected':''}>🆕 Nouvelle</option>
+        <option value="en_attente" ${c.statut==='en_attente'?'selected':''}>⏳ En attente</option>
+        <option value="attribuee" ${c.statut==='attribuee'?'selected':''}>👤 Attribuée</option>
+        <option value="acceptee" ${c.statut==='acceptee'?'selected':''}>✅ Acceptée</option>
+        <option value="en_route" ${c.statut==='en_route'?'selected':''}>🚗 En route</option>
+        <option value="sur_place" ${c.statut==='sur_place'?'selected':''}>📍 Sur place</option>
+        <option value="onboard" ${c.statut==='onboard'?'selected':''}>👤 À bord</option>
+        <option value="depose" ${c.statut==='depose'?'selected':''}>🏁 Déposé</option>
+        <option value="terminee" ${c.statut==='terminee'?'selected':''}>✔ Terminée</option>
+        <option value="annulee" ${c.statut==='annulee'?'selected':''}>✗ Annulée</option>
+        <option value="noshow" ${c.statut==='noshow'?'selected':''}>👻 No-show</option>
+      </select>
     </div>`).join('') : `<div style="text-align:center;padding:20px;color:#aaa;font-size:12px">${emptyMsg}</div>`;
 
   ov.innerHTML = `
