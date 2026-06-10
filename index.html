@@ -2245,7 +2245,8 @@ function renderAgenda() {
     const info = getClientInfo(c.client);
     const dirIcon = getDirectionIcon(c);
     const ligne1 = (info.label||c.client||'—') + ' / ' + (c.arrivee||c.duree||'—') + (terms?' / '+terms:'');
-    const ligne2 = time + ' à ' + pax + ' / ' + vehL + (c.ref?' / '+c.ref.split('/').pop():'') + ' / ' + (c.chauffeur||'À assigner');
+    const refParts = (c.ref||'').split('/').filter(x=>x&&x!=='NC').slice(0,3).join(' / ');
+    const ligne2 = time + ' – ' + time + ' à ' + (refParts?refParts+' / ':'') + (c.chauffeur||'À assigner');
     return `<div style="position:relative;margin-bottom:6px">
       <input type="checkbox" class="agenda-chk" data-id="${c._id}" onchange="onAgendaChkChange()" onclick="event.stopPropagation()"
         style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;cursor:pointer;z-index:2;accent-color:#fff">
