@@ -2249,7 +2249,7 @@ function renderAgenda() {
     return `<div style="position:relative;margin-bottom:6px">
       <input type="checkbox" class="agenda-chk" data-id="${c._id}" onchange="onAgendaChkChange()" onclick="event.stopPropagation()"
         style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;cursor:pointer;z-index:2;accent-color:#fff">
-      <div onclick="editCourse('${c._id}')" style="background:${color};border-radius:10px;padding:12px 14px 12px 36px;cursor:pointer;color:#fff;position:relative;overflow:hidden">
+      <div onclick="viewCourseDetail('${c._id}')" style="background:${color};border-radius:10px;padding:12px 14px 12px 36px;cursor:pointer;color:#fff;position:relative;overflow:hidden">
         <div style="font-size:14px;font-weight:700;line-height:1.3">${dirIcon} ${ligne1}</div>
         <div style="font-size:12px;opacity:0.92;margin-top:3px">${ligne2}</div>
         ${!c.chauffeur?`<button onclick="event.stopPropagation();autoDispatch('${c._id}')"
@@ -2261,6 +2261,123 @@ function renderAgenda() {
 }
 
 
+
+// ── FICHE DÉTAIL STYLE GOOGLE AGENDA ──
+window.viewCourseDetail = function(id) {
+  const c = D.courses.find(x=>x._id===id);
+  if(!c) return;
+  const color = getClientColor(c.client, c);
+  const time = c.datetime?.slice(11,16)||'—';
+  const dateStr = c.datetime ? new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}) : '';
+  const vehL = {berline:'B',van:'V',sprinter:'SP',bus:'BU'}[c.vehicule]||'B';
+  const pax = c.passagers?.length || c.pax || 1;
+  const terms = c.terminaux ? c.terminaux.replace(/CDG/g,'') : '';
+  const info = getClientInfo(c.client);
+
+  // Titre style Google : "Destination / Client"
+  const titre = (c.arrivee||c.duree||'—') + (terms?' '+terms:'') + ' / ' + (info.label||c.client||'—');
+  // Ligne lieu : ref / véhicule / pax / chauffeur
+  const lieuLine = (c.ref||'') + ' / ' + vehL + ' / ' + pax + ' / ' + (c.chauffeur||'À assigner');
+
+  // Description passagers — comme Google : heure / vol / terminal / ref / nom + tel cliquable
+  const paxLines = (c.passagers||[]).map(p => {
+    const tel = (p.tel||'').replace(/\s/g,'');
+    return '<div style="margin-bottom:10px;font-size:15px;color:#333;line-height:1.5">'
+      + (p.harrivee?p.harrivee+' / ':'') + (p.vol?p.vol+' / ':'') + (p.terminal?p.terminal+' / ':'') + (p.refClient?p.refClient+' / ':'')
+      + '<strong>'+(p.prenom||'')+' '+(p.nom||'')+'</strong>'
+      + (tel?'<br><a href="tel:'+tel+'" style="color:#1a73e8;text-decoration:none">'+p.tel+'</a>':'')
+      + '</div>';
+  }).join('');
+
+  const ov = document.createElement('div');
+  ov.id = 'course-detail-ov';
+  ov.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:600;display:flex;flex-direction:column;overflow:hidden';
+  ov.innerHTML = `
+    <!-- Barre haut style Google -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+      <button onclick="document.getElementById('course-detail-ov').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#333;padding:4px">✕</button>
+      <div style="display:flex;align-items:center;gap:20px">
+        <button onclick="document.getElementById('course-detail-ov').remove();editCourse('${c._id}')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#333;padding:4px">✏️</button>
+        <div style="position:relative">
+          <button onclick="document.getElementById('cd-menu').style.display=document.getElementById('cd-menu').style.display==='block'?'none':'block'" style="background:none;border:none;font-size:20px;cursor:pointer;color:#333;padding:4px">⋯</button>
+          <div id="cd-menu" style="display:none;position:absolute;right:0;top:36px;background:#f8f9fa;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.2);overflow:hidden;min-width:220px;z-index:10">
+            <button onclick="duplicateCourse('${c._id}')" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:none;border-bottom:1px solid #e8e8e8;padding:16px 20px;font-size:15px;color:#222;cursor:pointer;text-align:left">Dupliquer <span>📋</span></button>
+            <button onclick="document.getElementById('course-detail-ov').remove();delCourse('${c._id}')" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:none;padding:16px 20px;font-size:15px;color:#d93025;cursor:pointer;text-align:left">Supprimer <span>🗑️</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenu scrollable -->
+    <div style="flex:1;overflow-y:auto;padding:6px 24px 40px">
+      <!-- Titre -->
+      <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:6px">
+        <div style="width:22px;height:22px;border-radius:6px;background:${color};flex-shrink:0;margin-top:6px"></div>
+        <div>
+          <div style="font-size:26px;font-weight:500;color:#1a1a1a;line-height:1.25">${titre}</div>
+          <div style="font-size:15px;color:#555;margin-top:6px">${dateStr} · ${time}</div>
+        </div>
+      </div>
+
+      <!-- Lieu / Ref -->
+      <div style="display:flex;align-items:flex-start;gap:16px;margin-top:26px">
+        <div style="font-size:19px;color:#5f6368;flex-shrink:0">📍</div>
+        <div style="font-size:16px;color:#222">${lieuLine}</div>
+      </div>
+
+      <!-- Statut -->
+      <div style="display:flex;align-items:flex-start;gap:16px;margin-top:22px">
+        <div style="font-size:19px;color:#5f6368;flex-shrink:0">🔄</div>
+        <div>${sBdg(c.statut)}</div>
+      </div>
+
+      <!-- Description passagers -->
+      ${paxLines?`
+      <div style="display:flex;align-items:flex-start;gap:16px;margin-top:22px">
+        <div style="font-size:19px;color:#5f6368;flex-shrink:0">≡</div>
+        <div style="flex:1">${paxLines}</div>
+      </div>`:''}
+
+      <!-- Notes -->
+      ${c.notes?`
+      <div style="display:flex;align-items:flex-start;gap:16px;margin-top:10px">
+        <div style="font-size:19px;color:#5f6368;flex-shrink:0">📝</div>
+        <div style="font-size:14px;color:#444;line-height:1.5">${c.notes.replace(/\n/g,'<br>')}</div>
+      </div>`:''}
+
+      <!-- Prix (admin/dispatch seulement) -->
+      ${SESSION.role!=='chauffeur'&&c.prix?`
+      <div style="display:flex;align-items:flex-start;gap:16px;margin-top:22px">
+        <div style="font-size:19px;color:#5f6368;flex-shrink:0">💶</div>
+        <div style="font-size:16px;color:#222">${parseFloat(c.prix).toFixed(2)}€ TTC${c.prixChauffeur?' · Chauffeur : '+parseFloat(c.prixChauffeur).toFixed(2)+'€':''}</div>
+      </div>`:''}
+
+      <!-- Client / Calendrier -->
+      <div style="display:flex;align-items:flex-start;gap:16px;margin-top:22px">
+        <div style="font-size:19px;color:#5f6368;flex-shrink:0">📅</div>
+        <div>
+          <div style="font-size:16px;color:#222">${info.label||c.client||'—'}</div>
+          <div style="font-size:13px;color:#888;margin-top:2px">Black Limousine by SimplyCab</div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+};
+
+window.duplicateCourse = async function(id) {
+  const c = D.courses.find(x=>x._id===id);
+  if(!c) return;
+  const copy = {...c};
+  delete copy._id;
+  copy.statut = 'nouvelle';
+  copy.chauffeur = '';
+  copy.createdAt = new Date().toISOString();
+  await fbPush('courses', copy);
+  const ov = document.getElementById('course-detail-ov');
+  if(ov) ov.remove();
+  await loadAll();
+  showToast('✓ Course dupliquée');
+};
 
 async function updStatut(id, statut) {
   if(!statut)return;
