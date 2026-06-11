@@ -1719,8 +1719,10 @@ function startApp() {
     setTimeout(()=>switchDispatchView('agenda'), 300);
   } else {
     // Admin — réafficher tous les menus
+    document.querySelectorAll('.ni').forEach(n => n.style.display = '');
     document.querySelectorAll('.admin-only').forEach(n => n.style.display = '');
     document.getElementById('btn-new').style.display = 'flex';
+    gp('dashboard', document.querySelector('[data-p=dashboard]'));
   }
   loadAll();
   startClock();
