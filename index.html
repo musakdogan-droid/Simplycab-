@@ -2276,7 +2276,7 @@ window.viewCourseDetail = function(id) {
   // Description passagers — comme Google : heure / vol / terminal / ref / nom + tel cliquable
   const paxLines = (c.passagers||[]).map(p => {
     const tel = (p.tel||'').replace(/\s/g,'');
-    return '<div style="margin-bottom:10px;font-size:15px;color:#333;line-height:1.5">'
+    return '<div style="margin-bottom:14px;font-size:17px;color:#222;line-height:1.5">'
       + (p.harrivee?p.harrivee+' / ':'') + (p.vol?p.vol+' / ':'') + (p.terminal?p.terminal+' / ':'') + (p.refClient?p.refClient+' / ':'')
       + '<strong>'+(p.prenom||'')+' '+(p.nom||'')+'</strong>'
       + (tel?'<br><a href="tel:'+tel+'" style="color:#1a73e8;text-decoration:none">'+p.tel+'</a>':'')
@@ -2336,7 +2336,7 @@ window.viewCourseDetail = function(id) {
       ${c.notes?`
       <div style="display:flex;align-items:flex-start;gap:16px;margin-top:10px">
         <div style="font-size:19px;color:#5f6368;flex-shrink:0">📝</div>
-        <div style="font-size:14px;color:#444;line-height:1.5">${c.notes.replace(/\n/g,'<br>')}</div>
+        <div style="font-size:16px;color:#333;line-height:1.5">${c.notes.replace(/\n/g,'<br>')}</div>
       </div>`:''}
 
       <!-- Prix (admin/dispatch seulement) -->
@@ -2346,12 +2346,13 @@ window.viewCourseDetail = function(id) {
         <div style="font-size:16px;color:#222">${parseFloat(c.prix).toFixed(2)}€ TTC${c.prixChauffeur?' · Chauffeur : '+parseFloat(c.prixChauffeur).toFixed(2)+'€':''}</div>
       </div>`:''}
 
-      <!-- Client / Calendrier -->
-      <div style="display:flex;align-items:flex-start;gap:16px;margin-top:22px">
+      <!-- Client / Calendrier — cliquable pour voir tous ses transferts -->
+      <div onclick="document.getElementById('course-detail-ov').remove();viewClientCourses('${(c.client||'').replace(/'/g,"\\'")}')"
+        style="display:flex;align-items:flex-start;gap:16px;margin-top:22px;cursor:pointer;padding:10px;margin-left:-10px;border-radius:12px" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='none'">
         <div style="font-size:19px;color:#5f6368;flex-shrink:0">📅</div>
-        <div>
-          <div style="font-size:16px;color:#222">${info.label||c.client||'—'}</div>
-          <div style="font-size:13px;color:#888;margin-top:2px">Black Limousine by SimplyCab</div>
+        <div style="flex:1">
+          <div style="font-size:17px;color:#222;font-weight:500">${info.label||c.client||'—'}</div>
+          <div style="font-size:14px;color:#888;margin-top:2px">Voir tous les transferts de ce client →</div>
         </div>
       </div>
     </div>`;
@@ -2479,6 +2480,53 @@ window.saveCourseGoogle = async function(id) {
   document.getElementById('course-edit-ov').remove();
   await loadAll();
   showToast('✓ Course mise à jour');
+};
+
+// ── TOUS LES TRANSFERTS D'UN CLIENT ──
+window.viewClientCourses = function(clientName) {
+  const courses = D.courses.filter(c=>c.client===clientName)
+    .sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+  const color = getClientColor(clientName, courses[0]||{});
+  const info = getClientInfo(clientName);
+
+  // Grouper par jour
+  const byDay = {};
+  courses.forEach(c=>{
+    const d = c.datetime?.slice(0,10)||'—';
+    if(!byDay[d]) byDay[d] = [];
+    byDay[d].push(c);
+  });
+
+  const ov = document.createElement('div');
+  ov.id = 'client-courses-ov';
+  ov.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:620;display:flex;flex-direction:column;overflow:hidden';
+  ov.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid #f0f0f0">
+      <button onclick="document.getElementById('client-courses-ov').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#333;padding:4px">✕</button>
+      <div style="width:18px;height:18px;border-radius:5px;background:${color};flex-shrink:0"></div>
+      <div>
+        <div style="font-size:19px;font-weight:600;color:#1a1a1a">${info.label||clientName}</div>
+        <div style="font-size:13px;color:#888">${courses.length} transfert(s)</div>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:16px 20px 40px">
+      ${Object.entries(byDay).map(([day, items])=>{
+        const dayLabel = day!=='—' ? new Date(day).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}) : 'Sans date';
+        return `<div style="font-size:13px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px">${dayLabel}</div>`
+          + items.map(c=>{
+            const time = c.datetime?.slice(11,16)||'—';
+            const terms = c.terminaux ? c.terminaux.replace(/CDG/g,'') : '';
+            const codeFact = (c.codeFact||c.ref||'').split('/').filter(x=>x&&x!=='NC').slice(0,3).join(' / ');
+            return `<div onclick="document.getElementById('client-courses-ov').remove();viewCourseDetail('${c._id}')"
+              style="background:${color};border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer;color:#fff">
+              <div style="font-size:15px;font-weight:700;line-height:1.3">${c.depart||c.lieu||'—'} / ${c.arrivee||c.duree||'—'}${terms?' / '+terms:''}</div>
+              <div style="font-size:13px;opacity:0.92;margin-top:3px">${time} à ${codeFact?codeFact+' / ':''}${c.chauffeur||'À assigner'}</div>
+            </div>`;
+          }).join('');
+      }).join('')}
+      ${!courses.length?'<div style="text-align:center;padding:60px;color:#aaa">Aucun transfert pour ce client</div>':''}
+    </div>`;
+  document.body.appendChild(ov);
 };
 
 window.duplicateCourse = async function(id) {
