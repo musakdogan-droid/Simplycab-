@@ -1673,16 +1673,19 @@ function startApp() {
   const roleEl = document.getElementById('sb-role');
   roleEl.textContent = SESSION.role === 'admin' ? 'Administrateur' : SESSION.role === 'dispatch' ? 'Dispatch' : 'Chauffeur';
   roleEl.className = 'sb-role role-' + SESSION.role;
+  // RESET nav : réafficher tous les menus + supprimer les boutons dynamiques (chauffeur/client)
+  document.querySelectorAll('.ni').forEach(n => n.style.display = '');
+  document.querySelectorAll('.dyn-nav').forEach(n => n.remove());
   if (SESSION.role === 'client') {
     // Client portal — simplified nav
     document.querySelectorAll('.ni').forEach(n => n.style.display = 'none');
     const nav = document.getElementById('main-nav');
     const btn = document.createElement('button');
-    btn.className = 'ni on'; btn.dataset.p = 'clientportal';
+    btn.className = 'ni on dyn-nav'; btn.dataset.p = 'clientportal';
     btn.innerHTML = '<i style="width:16px;text-align:center" class="fas fa-route"></i> Mes transferts';
     btn.onclick = () => gp('clientportal', btn);
     const btnM = document.createElement('button');
-    btnM.className = 'ni'; btnM.dataset.p = 'messagerie';
+    btnM.className = 'ni dyn-nav'; btnM.dataset.p = 'messagerie';
     btnM.innerHTML = '<i style="width:16px;text-align:center" class="fas fa-comments"></i> Messagerie';
     btnM.onclick = () => gp('messagerie', btnM);
     nav.prepend(btnM); nav.prepend(btn);
@@ -1694,15 +1697,15 @@ function startApp() {
     document.querySelectorAll('.ni').forEach(n => n.style.display = 'none');
     const nav = document.getElementById('main-nav');
     const btn = document.createElement('button');
-    btn.className = 'ni on'; btn.dataset.p = 'mescourses';
+    btn.className = 'ni on dyn-nav'; btn.dataset.p = 'mescourses';
     btn.innerHTML = '<i style="width:16px;text-align:center" class="fas fa-route"></i> Mes courses';
     btn.onclick = () => gp('mescourses', btn);
     const btnR = document.createElement('button');
-    btnR.className = 'ni'; btnR.dataset.p = 'revenus';
+    btnR.className = 'ni dyn-nav'; btnR.dataset.p = 'revenus';
     btnR.innerHTML = '<i style="width:16px;text-align:center" class="fas fa-chart-line"></i> Mes revenus';
     btnR.onclick = () => gp('revenus', btnR);
     const btnM = document.createElement('button');
-    btnM.className = 'ni'; btnM.dataset.p = 'messagerie';
+    btnM.className = 'ni dyn-nav'; btnM.dataset.p = 'messagerie';
     btnM.innerHTML = '<i style="width:16px;text-align:center" class="fas fa-comments"></i> Messagerie';
     btnM.onclick = () => gp('messagerie', btnM);
     nav.prepend(btnM); nav.prepend(btnR); nav.prepend(btn);
