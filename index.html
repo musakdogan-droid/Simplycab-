@@ -2276,7 +2276,7 @@ window.viewCourseDetail = function(id) {
   // Description passagers — comme Google : heure / vol / terminal / ref / nom + tel cliquable
   const paxLines = (c.passagers||[]).map(p => {
     const tel = (p.tel||'').replace(/\s/g,'');
-    return '<div style="margin-bottom:14px;font-size:125px;color:#222;line-height:1.3;line-height:1.55">'
+    return '<div style="margin-bottom:14px;font-size:83px;color:#222;line-height:1.3;line-height:1.55">'
       + (p.harrivee?p.harrivee+' / ':'') + (p.vol?p.vol+' / ':'') + (p.terminal?p.terminal+' / ':'') + (p.refClient?p.refClient+' / ':'')
       + '<strong>'+(p.prenom||'')+' '+(p.nom||'')+'</strong>'
       + (tel?'<br><a href="tel:'+tel+'" style="color:#1a73e8;text-decoration:none">'+p.tel+'</a>':'')
@@ -2289,14 +2289,14 @@ window.viewCourseDetail = function(id) {
   ov.innerHTML = `
     <!-- Barre haut style Google -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
-      <button onclick="document.getElementById('course-detail-ov').remove()" style="background:none;border:none;font-size:100px;cursor:pointer;color:#333;padding:8px">✕</button>
+      <button onclick="document.getElementById('course-detail-ov').remove()" style="background:none;border:none;font-size:67px;cursor:pointer;color:#333;padding:8px">✕</button>
       <div style="display:flex;align-items:center;gap:20px">
-        <button onclick="editCourseGoogle('${c._id}')" style="background:none;border:none;font-size:90px;cursor:pointer;color:#333;padding:8px">✏️</button>
+        <button onclick="editCourseGoogle('${c._id}')" style="background:none;border:none;font-size:60px;cursor:pointer;color:#333;padding:8px">✏️</button>
         <div style="position:relative">
-          <button onclick="document.getElementById('cd-menu').style.display=document.getElementById('cd-menu').style.display==='block'?'none':'block'" style="background:none;border:none;font-size:100px;cursor:pointer;color:#333;padding:8px">⋯</button>
+          <button onclick="document.getElementById('cd-menu').style.display=document.getElementById('cd-menu').style.display==='block'?'none':'block'" style="background:none;border:none;font-size:67px;cursor:pointer;color:#333;padding:8px">⋯</button>
           <div id="cd-menu" style="display:none;position:absolute;right:0;top:36px;background:#f8f9fa;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.2);overflow:hidden;min-width:220px;z-index:10">
-            <button onclick="duplicateCourse('${c._id}')" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:none;border-bottom:1px solid #e8e8e8;padding:16px 20px;font-size:37px;color:#222;cursor:pointer;text-align:left">Dupliquer <span>📋</span></button>
-            <button onclick="document.getElementById('course-detail-ov').remove();delCourse('${c._id}')" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:none;padding:16px 20px;font-size:37px;color:#d93025;cursor:pointer;text-align:left">Supprimer <span>🗑️</span></button>
+            <button onclick="duplicateCourse('${c._id}')" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:none;border-bottom:1px solid #e8e8e8;padding:16px 20px;font-size:25px;color:#222;cursor:pointer;text-align:left">Dupliquer <span>📋</span></button>
+            <button onclick="document.getElementById('course-detail-ov').remove();delCourse('${c._id}')" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:none;padding:16px 20px;font-size:25px;color:#d93025;cursor:pointer;text-align:left">Supprimer <span>🗑️</span></button>
           </div>
         </div>
       </div>
@@ -2308,51 +2308,51 @@ window.viewCourseDetail = function(id) {
       <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:6px">
         <div style="width:48px;height:48px;border-radius:12px;background:${color};flex-shrink:0;margin-top:6px"></div>
         <div>
-          <div style="font-size:175px;font-weight:600;line-height:1.15;color:#1a1a1a;line-height:1.25">${titre}</div>
-          <div style="font-size:125px;color:#555;margin-top:12px;line-height:1.2">${dateStr} · ${time}</div>
+          <div style="font-size:117px;font-weight:600;line-height:1.15;color:#1a1a1a;line-height:1.25">${titre}</div>
+          <div style="font-size:83px;color:#555;margin-top:12px;line-height:1.2">${dateStr} · ${time}</div>
         </div>
       </div>
 
       <!-- Lieu / Ref -->
       <div style="display:flex;align-items:flex-start;gap:16px;margin-top:26px">
-        <div style="font-size:125px;color:#5f6368;flex-shrink:0">📍</div>
-        <div style="font-size:125px;color:#222;line-height:1.3">${lieuLine}</div>
+        <div style="font-size:83px;color:#5f6368;flex-shrink:0">📍</div>
+        <div style="font-size:83px;color:#222;line-height:1.3">${lieuLine}</div>
       </div>
 
       <!-- Statut -->
       <div style="display:flex;align-items:flex-start;gap:16px;margin-top:22px">
-        <div style="font-size:125px;color:#5f6368;flex-shrink:0">🔄</div>
+        <div style="font-size:83px;color:#5f6368;flex-shrink:0">🔄</div>
         <div>${sBdg(c.statut)}</div>
       </div>
 
       <!-- Description passagers -->
       ${paxLines?`
       <div style="display:flex;align-items:flex-start;gap:16px;margin-top:22px">
-        <div style="font-size:125px;color:#5f6368;flex-shrink:0">≡</div>
+        <div style="font-size:83px;color:#5f6368;flex-shrink:0">≡</div>
         <div style="flex:1">${paxLines}</div>
       </div>`:''}
 
       <!-- Notes -->
       ${c.notes?`
       <div style="display:flex;align-items:flex-start;gap:16px;margin-top:10px">
-        <div style="font-size:125px;color:#5f6368;flex-shrink:0">📝</div>
-        <div style="font-size:125px;color:#333;line-height:1.3">${c.notes.replace(/\n/g,'<br>')}</div>
+        <div style="font-size:83px;color:#5f6368;flex-shrink:0">📝</div>
+        <div style="font-size:83px;color:#333;line-height:1.3">${c.notes.replace(/\n/g,'<br>')}</div>
       </div>`:''}
 
       <!-- Prix (admin/dispatch seulement) -->
       ${SESSION.role!=='chauffeur'&&c.prix?`
       <div style="display:flex;align-items:flex-start;gap:16px;margin-top:22px">
-        <div style="font-size:125px;color:#5f6368;flex-shrink:0">💶</div>
-        <div style="font-size:125px;color:#222;line-height:1.3">${parseFloat(c.prix).toFixed(2)}€ TTC${c.prixChauffeur?' · Chauffeur : '+parseFloat(c.prixChauffeur).toFixed(2)+'€':''}</div>
+        <div style="font-size:83px;color:#5f6368;flex-shrink:0">💶</div>
+        <div style="font-size:83px;color:#222;line-height:1.3">${parseFloat(c.prix).toFixed(2)}€ TTC${c.prixChauffeur?' · Chauffeur : '+parseFloat(c.prixChauffeur).toFixed(2)+'€':''}</div>
       </div>`:''}
 
       <!-- Client / Calendrier — cliquable pour voir tous ses transferts -->
       <div onclick="document.getElementById('course-detail-ov').remove();viewClientCourses('${(c.client||'').replace(/'/g,"\\'")}')"
         style="display:flex;align-items:flex-start;gap:16px;margin-top:22px;cursor:pointer;padding:10px;margin-left:-10px;border-radius:12px" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='none'">
-        <div style="font-size:125px;color:#5f6368;flex-shrink:0">📅</div>
+        <div style="font-size:83px;color:#5f6368;flex-shrink:0">📅</div>
         <div style="flex:1">
-          <div style="font-size:125px;color:#222;line-height:1.3;font-weight:600">${info.label||c.client||'—'}</div>
-          <div style="font-size:80px;color:#888;margin-top:6px">Voir tous les transferts de ce client →</div>
+          <div style="font-size:83px;color:#222;line-height:1.3;font-weight:600">${info.label||c.client||'—'}</div>
+          <div style="font-size:53px;color:#888;margin-top:6px">Voir tous les transferts de ce client →</div>
         </div>
       </div>
     </div>`;
@@ -2380,53 +2380,53 @@ window.editCourseGoogle = function(id) {
   ov.innerHTML = `
     <!-- Barre haut : Annuler / OK -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f0f0f0">
-      <button onclick="document.getElementById('course-edit-ov').remove()" style="background:none;border:none;font-size:40px;color:#1a73e8;cursor:pointer;font-weight:500">Annuler</button>
-      <button onclick="saveCourseGoogle('${c._id}')" style="background:none;border:none;font-size:40px;color:#1a73e8;cursor:pointer;font-weight:700">OK</button>
+      <button onclick="document.getElementById('course-edit-ov').remove()" style="background:none;border:none;font-size:27px;color:#1a73e8;cursor:pointer;font-weight:500">Annuler</button>
+      <button onclick="saveCourseGoogle('${c._id}')" style="background:none;border:none;font-size:27px;color:#1a73e8;cursor:pointer;font-weight:700">OK</button>
     </div>
 
     <div style="flex:1;overflow-y:auto;padding:10px 24px 40px">
       <!-- Titre : Départ / Arrivée -->
       <input type="text" id="ge-titre" value="${titre.replace(/"/g,'&quot;')}"
         placeholder="Départ / Arrivée"
-        style="width:100%;border:none;outline:none;font-size:60px;font-weight:500;color:#1a1a1a;padding:14px 0;border-bottom:1px solid #f0f0f0">
+        style="width:100%;border:none;outline:none;font-size:40px;font-weight:500;color:#1a1a1a;padding:14px 0;border-bottom:1px solid #f0f0f0">
 
       <!-- Date et heure -->
       <div style="display:flex;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid #f0f0f0">
-        <span style="font-size:45px;color:#5f6368">🕐</span>
+        <span style="font-size:30px;color:#5f6368">🕐</span>
         <input type="datetime-local" id="ge-datetime" value="${dt}"
-          style="flex:1;border:none;outline:none;font-size:125px;color:#222;line-height:1.3;background:none">
+          style="flex:1;border:none;outline:none;font-size:83px;color:#222;line-height:1.3;background:none">
       </div>
 
       <!-- Code facturation : BR / B / 9 -->
       <div style="display:flex;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid #f0f0f0">
-        <span style="font-size:45px;color:#5f6368">📍</span>
+        <span style="font-size:30px;color:#5f6368">📍</span>
         <input type="text" id="ge-code" value="${codeFact.replace(/"/g,'&quot;')}"
           placeholder="BR / B / 9"
-          style="flex:1;border:none;outline:none;font-size:125px;color:#222;line-height:1.3">
+          style="flex:1;border:none;outline:none;font-size:83px;color:#222;line-height:1.3">
       </div>
 
       <!-- Chauffeur avec recherche -->
       <div style="display:flex;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid #f0f0f0">
-        <span style="font-size:45px;color:#5f6368">👤</span>
+        <span style="font-size:30px;color:#5f6368">👤</span>
         <input type="text" id="ge-chauffeur" value="${(c.chauffeur||'').replace(/"/g,'&quot;')}" list="ge-ch-list"
           placeholder="Rechercher un chauffeur..."
-          style="flex:1;border:none;outline:none;font-size:125px;color:#222;line-height:1.3">
+          style="flex:1;border:none;outline:none;font-size:83px;color:#222;line-height:1.3">
         <datalist id="ge-ch-list">${chauffeursOptions}</datalist>
       </div>
 
       <!-- Passagers / description -->
       <div style="display:flex;align-items:flex-start;gap:16px;padding:18px 0;border-bottom:1px solid #f0f0f0">
-        <span style="font-size:45px;color:#5f6368;margin-top:4px">≡</span>
+        <span style="font-size:30px;color:#5f6368;margin-top:4px">≡</span>
         <textarea id="ge-pax" rows="6"
           placeholder="07:20 / TO3910 / 3 / R4N7XF3F5KF / Angela Bruciafreddo Italy +393491972346"
-          style="flex:1;border:none;outline:none;font-size:35px;color:#222;resize:vertical;line-height:1.6;font-family:inherit">${(c.passagers||[]).map(p=>[p.harrivee,p.vol,p.terminal,p.refClient,(p.prenom+' '+p.nom).trim()+(p.tel?' '+p.tel:'')].filter(x=>x).join(' / ')).join('\n')}</textarea>
+          style="flex:1;border:none;outline:none;font-size:23px;color:#222;resize:vertical;line-height:1.6;font-family:inherit">${(c.passagers||[]).map(p=>[p.harrivee,p.vol,p.terminal,p.refClient,(p.prenom+' '+p.nom).trim()+(p.tel?' '+p.tel:'')].filter(x=>x).join(' / ')).join('\n')}</textarea>
       </div>
 
       <!-- Notes -->
       <div style="display:flex;align-items:flex-start;gap:16px;padding:18px 0">
-        <span style="font-size:45px;color:#5f6368;margin-top:4px">📝</span>
+        <span style="font-size:30px;color:#5f6368;margin-top:4px">📝</span>
         <textarea id="ge-notes" rows="3" placeholder="Notes..."
-          style="flex:1;border:none;outline:none;font-size:35px;color:#222;resize:vertical;font-family:inherit">${c.notes||''}</textarea>
+          style="flex:1;border:none;outline:none;font-size:23px;color:#222;resize:vertical;font-family:inherit">${c.notes||''}</textarea>
       </div>
     </div>`;
   document.body.appendChild(ov);
@@ -2502,25 +2502,25 @@ window.viewClientCourses = function(clientName) {
   ov.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:620;display:flex;flex-direction:column;overflow:hidden';
   ov.innerHTML = `
     <div style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid #f0f0f0">
-      <button onclick="document.getElementById('client-courses-ov').remove()" style="background:none;border:none;font-size:100px;cursor:pointer;color:#333;padding:8px">✕</button>
+      <button onclick="document.getElementById('client-courses-ov').remove()" style="background:none;border:none;font-size:67px;cursor:pointer;color:#333;padding:8px">✕</button>
       <div style="width:18px;height:18px;border-radius:5px;background:${color};flex-shrink:0"></div>
       <div>
-        <div style="font-size:47px;font-weight:600;color:#1a1a1a">${info.label||clientName}</div>
-        <div style="font-size:32px;color:#888">${courses.length} transfert(s)</div>
+        <div style="font-size:31px;font-weight:600;color:#1a1a1a">${info.label||clientName}</div>
+        <div style="font-size:21px;color:#888">${courses.length} transfert(s)</div>
       </div>
     </div>
     <div style="flex:1;overflow-y:auto;padding:16px 20px 40px">
       ${Object.entries(byDay).map(([day, items])=>{
         const dayLabel = day!=='—' ? new Date(day).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}) : 'Sans date';
-        return `<div style="font-size:32px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px">${dayLabel}</div>`
+        return `<div style="font-size:21px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin:18px 0 10px">${dayLabel}</div>`
           + items.map(c=>{
             const time = c.datetime?.slice(11,16)||'—';
             const terms = c.terminaux ? c.terminaux.replace(/CDG/g,'') : '';
             const codeFact = (c.codeFact||c.ref||'').split('/').filter(x=>x&&x!=='NC').slice(0,3).join(' / ');
             return `<div onclick="document.getElementById('client-courses-ov').remove();viewCourseDetail('${c._id}')"
               style="background:${color};border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer;color:#fff">
-              <div style="font-size:37px;font-weight:700;line-height:1.3">${c.depart||c.lieu||'—'} / ${c.arrivee||c.duree||'—'}${terms?' / '+terms:''}</div>
-              <div style="font-size:32px;opacity:0.92;margin-top:3px">${time} à ${codeFact?codeFact+' / ':''}${c.chauffeur||'À assigner'}</div>
+              <div style="font-size:25px;font-weight:700;line-height:1.3">${c.depart||c.lieu||'—'} / ${c.arrivee||c.duree||'—'}${terms?' / '+terms:''}</div>
+              <div style="font-size:21px;opacity:0.92;margin-top:3px">${time} à ${codeFact?codeFact+' / ':''}${c.chauffeur||'À assigner'}</div>
             </div>`;
           }).join('');
       }).join('')}
