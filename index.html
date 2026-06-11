@@ -269,7 +269,7 @@ tr:last-child td{border-bottom:none}
 .agenda-sub{font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .agenda-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
 .agenda-chauff{font-size:11px;font-weight:600;white-space:nowrap}
-.week-day{text-align:center;padding:6px 4px;border-radius:var(--r-xs);cursor:pointer;transition:background 0.15s}
+.week-day{font-size:15px;text-align:center;padding:6px 4px;border-radius:var(--r-xs);cursor:pointer;transition:background 0.15s}
 .week-day:hover{background:var(--card2)}
 .week-day.today{background:var(--gold-dim)}
 .week-day.selected{background:var(--gold);color:var(--black)}
@@ -2217,13 +2217,13 @@ function renderAgenda() {
             <div style="width:10px;height:18px;border-radius:3px;background:${info.arr}"></div>
             <div style="width:10px;height:18px;border-radius:3px;background:${info.dep};opacity:0.7"></div>
           </div>
-          <span style="font-size:11px;font-weight:600;color:var(--white2)">${info.label}</span>
+          <span style="font-size:15px;font-weight:600;color:var(--white2)">${info.label}</span>
         </div>`;
       }).join('')}
     </div>
     <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:11px">🛬</span><span style="font-size:10px;color:var(--muted)">Arrivée</span>
-      <span style="font-size:11px">🛫</span><span style="font-size:10px;color:var(--muted)">Départ</span>
+      <span style="font-size:15px">🛬</span><span style="font-size:14px;color:var(--muted)">Arrivée</span>
+      <span style="font-size:15px">🛫</span><span style="font-size:14px;color:var(--muted)">Départ</span>
     </div>
   </div>`;
 
@@ -2244,10 +2244,10 @@ function renderAgenda() {
       <input type="checkbox" class="agenda-chk" data-id="${c._id}" onchange="onAgendaChkChange()" onclick="event.stopPropagation()"
         style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;cursor:pointer;z-index:2;accent-color:#fff">
       <div onclick="viewCourseDetail('${c._id}')" style="background:${color};border-radius:10px;padding:12px 14px 12px 36px;cursor:pointer;color:#fff;position:relative;overflow:hidden">
-        <div style="font-size:14px;font-weight:700;line-height:1.3">${dirIcon} ${ligne1}</div>
-        <div style="font-size:12px;opacity:0.92;margin-top:3px">${ligne2}</div>
+        <div style="font-size:18px;font-weight:700;line-height:1.3">${dirIcon} ${ligne1}</div>
+        <div style="font-size:14px;opacity:0.92;margin-top:3px">${ligne2}</div>
         ${!c.chauffeur?`<button onclick="event.stopPropagation();autoDispatch('${c._id}')"
-          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.25);border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">⚡ Auto</button>`:''}
+          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.25);border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer">⚡ Auto</button>`:''}
       </div>
     </div>`;
   }).join('')
@@ -2406,12 +2406,16 @@ window.editCourseGoogle = function(id) {
       </div>
 
       <!-- Chauffeur avec recherche -->
-      <div style="display:flex;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid #f0f0f0">
-        <span style="font-size:22px;color:#5f6368">👤</span>
-        <input type="text" id="ge-chauffeur" value="${(c.chauffeur||'').replace(/"/g,'&quot;')}" list="ge-ch-list"
-          placeholder="Rechercher un chauffeur..."
-          style="flex:1;border:none;outline:none;font-size:30px;color:#222;line-height:1.3">
-        <datalist id="ge-ch-list">${chauffeursOptions}</datalist>
+      <div style="padding:18px 0;border-bottom:1px solid #f0f0f0">
+        <div style="display:flex;align-items:center;gap:16px">
+          <span style="font-size:22px;color:#5f6368">👤</span>
+          <input type="text" id="ge-chauffeur" value="${(c.chauffeur||'').replace(/"/g,'&quot;')}"
+            placeholder="Rechercher un chauffeur..."
+            oninput="geSearchChauffeur(this.value)"
+            onfocus="geSearchChauffeur(this.value)"
+            style="flex:1;border:none;outline:none;font-size:30px;color:#222;line-height:1.3;background:none">
+        </div>
+        <div id="ge-ch-results" style="display:none;margin-top:10px;background:#f8f9fa;border-radius:14px;overflow:hidden;max-height:320px;overflow-y:auto"></div>
       </div>
 
       <!-- Passagers / description -->
@@ -2430,6 +2434,41 @@ window.editCourseGoogle = function(id) {
       </div>
     </div>`;
   document.body.appendChild(ov);
+};
+
+window.geSearchChauffeur = function(query) {
+  const box = document.getElementById('ge-ch-results');
+  if(!box) return;
+  const q = (query||'').toLowerCase().trim();
+  const matches = D.chauffeurs.filter(ch => {
+    const n = (ch.prenom+' '+(ch.nom||'')).toLowerCase();
+    return !q || n.includes(q);
+  }).slice(0, 8);
+
+  if(!matches.length) { box.style.display='none'; return; }
+
+  box.style.display = 'block';
+  box.innerHTML = matches.map(ch => {
+    const name = ch.prenom+(ch.nom?' '+ch.nom:'');
+    const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[ch.vehicule]||'🚗';
+    const dispo = ch.statut !== 'indisponible';
+    const av = name.split(' ').map(n=>n[0]||'').join('').slice(0,2).toUpperCase();
+    return '<div onclick="geSelectChauffeur(\''+name.replace(/'/g,"\\'")+'\')" '
+      + 'style="display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer;border-bottom:1px solid #eee" '
+      + 'onmouseover="this.style.background=\'#eef\'" onmouseout="this.style.background=\'none\'">'
+      + '<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#b8860b,#d4a017);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#fff;flex-shrink:0">'+av+'</div>'
+      + '<div style="flex:1"><div style="font-size:22px;font-weight:600;color:#111">'+name+'</div>'
+      + '<div style="font-size:16px;color:#777">'+vehIco+' '+(ch.vehicule||'berline')+'</div></div>'
+      + (dispo?'<span style="background:#dcfce7;color:#166534;font-size:14px;font-weight:700;padding:4px 12px;border-radius:20px">✓ Dispo</span>':'<span style="background:#fee;color:#c00;font-size:14px;font-weight:700;padding:4px 12px;border-radius:20px">✗ Indispo</span>')
+      + '</div>';
+  }).join('');
+};
+
+window.geSelectChauffeur = function(name) {
+  const inp = document.getElementById('ge-chauffeur');
+  if(inp) inp.value = name;
+  const box = document.getElementById('ge-ch-results');
+  if(box) box.style.display = 'none';
 };
 
 window.saveCourseGoogle = async function(id) {
