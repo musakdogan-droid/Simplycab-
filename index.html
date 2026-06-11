@@ -80,12 +80,8 @@ h1,h2,h3,h4{font-family:'Syne',sans-serif}
 
 /* APP */
 #app{display:none;min-height:100vh}
-.sidebar{position:fixed;left:0;top:0;bottom:0;width:248px;background:#ffffff;border-right:1px solid #e0e3e8;display:flex;flex-direction:column;z-index:100;transition:all 0.3s}
-.sidebar.collapsed{width:60px}
-.sidebar.collapsed .sb-brand,.sidebar.collapsed .sb-sub,.sidebar.collapsed .sb-role,.sidebar.collapsed .nsec,.sidebar.collapsed .ni span:not(.nb),.sidebar.collapsed .ni:not(.on) i+*{display:none}
-.sidebar.collapsed .ni{padding:12px;justify-content:center;border-radius:10px;margin:2px 4px}
-.sidebar.collapsed .ni i{width:auto;margin:0}
-.sidebar.collapsed+.main{margin-left:60px}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:280px;background:#ffffff;border-right:1px solid #e0e3e8;display:flex;flex-direction:column;z-index:200;transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);transform:translateX(-100%);box-shadow:none}
+.sidebar.on{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,0.25)}
 .sb-top{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
 .sb-brand{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--gold);letter-spacing:1px}
 .sb-sub{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:1px}
@@ -108,7 +104,7 @@ h1,h2,h3,h4{font-family:'Syne',sans-serif}
 .sb-logout{width:28px;height:28px;border-radius:var(--r-xs);background:var(--card2);border:1px solid var(--border);color:var(--muted2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--tr);flex-shrink:0;font-size:11px}
 .sb-logout:hover{color:var(--red);border-color:var(--red)}
 
-.main{margin-left:248px;min-height:100vh;display:flex;flex-direction:column}
+.main{margin-left:0;min-height:100vh;display:flex;flex-direction:column}
 .topbar{padding:13px 22px;border-bottom:1px solid #e0e3e8;display:flex;align-items:center;justify-content:space-between;background:#ffffff;position:sticky;top:0;z-index:50;gap:12px}
 .tbl{display:flex;align-items:center;gap:12px}
 .mob-btn{display:none;width:34px;height:34px;border-radius:var(--r-xs);background:var(--card);border:1px solid var(--border);color:var(--white);align-items:center;justify-content:center;cursor:pointer;font-size:14px}
@@ -249,7 +245,7 @@ tr:last-child td{border-bottom:none}
 .mob-ov.on{display:block}
 @media(max-width:1024px){.sg{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
-  .sidebar{transform:translateX(-248px)}.sidebar.on{transform:translateX(0)}
+  
   .main{margin-left:0}.mob-btn{display:flex}.sg{grid-template-columns:1fr 1fr}
   .content{padding:13px}.topbar{padding:11px 14px}.cg{grid-template-columns:1fr}
   .sec-h{flex-direction:column;align-items:flex-start}
@@ -392,17 +388,13 @@ tr:last-child td{border-bottom:none}
   <div class="mob-ov" id="mob-ov" onclick="closeMob()"></div>
   <aside class="sidebar" id="sidebar">
     <div class="sb-top" style="position:relative">
-      <button onclick="toggleSidebar()" id="sb-collapse-btn" title="Réduire le menu"
-        style="position:absolute;top:8px;right:8px;background:#f0f2f5;border:1px solid #e0e3e8;border-radius:8px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:#555;transition:all 0.2s">
-        <i class="fas fa-chevron-left" id="sb-chevron"></i>
-      </button>
       <div class="sb-brand">BLACK LIMOUSINE</div>
       <div class="sb-sub">by SimplyCab</div>
       <div class="sb-role role-admin" id="sb-role">Administrateur</div>
     </div>
     <nav class="nav" id="main-nav">
       <div class="nsec">Principal</div>
-      <button class="ni on" data-p="dashboard" onclick="gp('dashboard',this)"><i style="width:16px;text-align:center" class="fas fa-chart-line"></i> Dashboard</button>
+      <button class="ni on admin-only" data-p="dashboard" onclick="gp('dashboard',this)"><i style="width:16px;text-align:center" class="fas fa-chart-line"></i> Dashboard</button>
       <button class="ni" data-p="dispatch" onclick="gp('dispatch',this)"><i style="width:16px;text-align:center" class="fas fa-route"></i> Dispatch <span class="nb" id="nb-d">0</span></button>
       <button class="ni" data-p="planning" onclick="gp('planning',this)"><i style="width:16px;text-align:center" class="fas fa-calendar-alt"></i> Planning</button>
       <div class="nsec">Équipe</div>
@@ -410,19 +402,19 @@ tr:last-child td{border-bottom:none}
       <button class="ni" data-p="vehicules" onclick="gp('vehicules',this)"><i style="width:16px;text-align:center" class="fas fa-car"></i> Véhicules</button>
       <div class="nsec">Gestion</div>
       <button class="ni" data-p="clients" onclick="gp('clients',this)"><i style="width:16px;text-align:center" class="fas fa-users"></i> Clients</button>
-      <button class="ni" data-p="tarifs" onclick="gp('tarifs',this)"><i style="width:16px;text-align:center" class="fas fa-tags"></i> Tarifs</button>
+      <button class="ni admin-only" data-p="tarifs" onclick="gp('tarifs',this)"><i style="width:16px;text-align:center" class="fas fa-tags"></i> Tarifs</button>
       <div class="nsec">Communication</div>
       <button class="ni" data-p="messagerie" onclick="gp('messagerie',this)"><i style="width:16px;text-align:center" class="fas fa-comments"></i> Messagerie <span class="nb b" id="nb-msg">0</span></button>
       <div class="nsec">Finance</div>
-      <button class="ni" data-p="facturation" onclick="gp('facturation',this)"><i style="width:16px;text-align:center" class="fas fa-file-invoice-dollar"></i> Facturation</button>
-      <button class="ni" data-p="rapports" onclick="gp('rapports',this)"><i style="width:16px;text-align:center" class="fas fa-chart-pie"></i> Rapports</button>
+      <button class="ni admin-only" data-p="facturation" onclick="gp('facturation',this)"><i style="width:16px;text-align:center" class="fas fa-file-invoice-dollar"></i> Facturation</button>
+      <button class="ni admin-only" data-p="rapports" onclick="gp('rapports',this)"><i style="width:16px;text-align:center" class="fas fa-chart-pie"></i> Rapports</button>
       <button class="ni admin-only" data-p="dirigeant" onclick="gp('dirigeant',this)"><i style="width:16px;text-align:center" class="fas fa-chart-bar"></i> Dashboard dirigeant</button>
       <div class="nsec">Système</div>
       <button class="ni admin-only" data-p="reservation" onclick="gp('reservation',this)"><i style="width:16px;text-align:center" class="fas fa-globe"></i> App cliente</button>
       <button class="ni admin-only" data-p="comptes-clients" onclick="gp('comptes-clients',this)"><i style="width:16px;text-align:center" class="fas fa-building"></i> Comptes Clients</button>
       <button class="ni admin-only" data-p="comptes" onclick="gp('comptes',this)"><i style="width:16px;text-align:center" class="fas fa-users-cog"></i> Comptes Dispatch</button>
       <button class="ni" data-p="historique" onclick="gp('historique',this)"><i style="width:16px;text-align:center" class="fas fa-history"></i> Historique</button>
-      <button class="ni" data-p="parametres" onclick="gp('parametres',this)"><i style="width:16px;text-align:center" class="fas fa-cog"></i> Paramètres</button>
+      <button class="ni admin-only" data-p="parametres" onclick="gp('parametres',this)"><i style="width:16px;text-align:center" class="fas fa-cog"></i> Paramètres</button>
     </nav>
     <div class="sb-bot">
       <div class="sb-user">
@@ -2244,9 +2236,10 @@ function renderAgenda() {
     const terms = c.terminaux ? c.terminaux.replace(/CDG/g,'') : '';
     const info = getClientInfo(c.client);
     const dirIcon = getDirectionIcon(c);
-    const ligne1 = (info.label||c.client||'—') + ' / ' + (c.arrivee||c.duree||'—') + (terms?' / '+terms:'');
-    const refParts = (c.ref||'').split('/').filter(x=>x&&x!=='NC').slice(0,3).join(' / ');
-    const ligne2 = time + ' – ' + time + ' à ' + (refParts?refParts+' / ':'') + (c.chauffeur||'À assigner');
+    const ligne1 = (c.depart||c.lieu||'—') + ' / ' + (c.arrivee||c.duree||'—') + (terms?' / '+terms:'');
+    // Code facturation : REF / VEHICULE / NUM / CHAUFFEUR — ex: BR / B / 9 / Mustafa
+    const codeFact = (c.codeFact||c.ref||'').split('/').filter(x=>x&&x!=='NC').slice(0,3).join(' / ');
+    const ligne2 = time + ' à ' + (codeFact?codeFact+' / ':'') + (c.chauffeur||'À assigner');
     return `<div style="position:relative;margin-bottom:6px">
       <input type="checkbox" class="agenda-chk" data-id="${c._id}" onchange="onAgendaChkChange()" onclick="event.stopPropagation()"
         style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;cursor:pointer;z-index:2;accent-color:#fff">
@@ -2298,7 +2291,7 @@ window.viewCourseDetail = function(id) {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
       <button onclick="document.getElementById('course-detail-ov').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#333;padding:4px">✕</button>
       <div style="display:flex;align-items:center;gap:20px">
-        <button onclick="document.getElementById('course-detail-ov').remove();editCourse('${c._id}')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#333;padding:4px">✏️</button>
+        <button onclick="editCourseGoogle('${c._id}')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#333;padding:4px">✏️</button>
         <div style="position:relative">
           <button onclick="document.getElementById('cd-menu').style.display=document.getElementById('cd-menu').style.display==='block'?'none':'block'" style="background:none;border:none;font-size:20px;cursor:pointer;color:#333;padding:4px">⋯</button>
           <div id="cd-menu" style="display:none;position:absolute;right:0;top:36px;background:#f8f9fa;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.2);overflow:hidden;min-width:220px;z-index:10">
@@ -2363,6 +2356,129 @@ window.viewCourseDetail = function(id) {
       </div>
     </div>`;
   document.body.appendChild(ov);
+};
+
+// ── ÉDITION RAPIDE STYLE GOOGLE AGENDA ──
+window.editCourseGoogle = function(id) {
+  const c = D.courses.find(x=>x._id===id);
+  if(!c) return;
+  const old = document.getElementById('course-detail-ov');
+  if(old) old.remove();
+  const color = getClientColor(c.client, c);
+  const titre = (c.depart||c.lieu||'') + ' / ' + (c.arrivee||c.duree||'');
+  const codeFact = c.codeFact || (c.ref||'').split('/').filter(x=>x&&x!=='NC').slice(0,3).join(' / ');
+  const dt = c.datetime || '';
+  const chauffeursOptions = D.chauffeurs.map(ch=>{
+    const n = ch.prenom+(ch.nom?' '+ch.nom:'');
+    return '<option value="'+n+'">';
+  }).join('');
+
+  const ov = document.createElement('div');
+  ov.id = 'course-edit-ov';
+  ov.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:650;display:flex;flex-direction:column;overflow:hidden';
+  ov.innerHTML = `
+    <!-- Barre haut : Annuler / OK -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f0f0f0">
+      <button onclick="document.getElementById('course-edit-ov').remove()" style="background:none;border:none;font-size:16px;color:#1a73e8;cursor:pointer;font-weight:500">Annuler</button>
+      <button onclick="saveCourseGoogle('${c._id}')" style="background:none;border:none;font-size:16px;color:#1a73e8;cursor:pointer;font-weight:700">OK</button>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:10px 24px 40px">
+      <!-- Titre : Départ / Arrivée -->
+      <input type="text" id="ge-titre" value="${titre.replace(/"/g,'&quot;')}"
+        placeholder="Départ / Arrivée"
+        style="width:100%;border:none;outline:none;font-size:24px;font-weight:500;color:#1a1a1a;padding:14px 0;border-bottom:1px solid #f0f0f0">
+
+      <!-- Date et heure -->
+      <div style="display:flex;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid #f0f0f0">
+        <span style="font-size:18px;color:#5f6368">🕐</span>
+        <input type="datetime-local" id="ge-datetime" value="${dt}"
+          style="flex:1;border:none;outline:none;font-size:16px;color:#222;background:none">
+      </div>
+
+      <!-- Code facturation : BR / B / 9 -->
+      <div style="display:flex;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid #f0f0f0">
+        <span style="font-size:18px;color:#5f6368">📍</span>
+        <input type="text" id="ge-code" value="${codeFact.replace(/"/g,'&quot;')}"
+          placeholder="BR / B / 9"
+          style="flex:1;border:none;outline:none;font-size:16px;color:#222">
+      </div>
+
+      <!-- Chauffeur avec recherche -->
+      <div style="display:flex;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid #f0f0f0">
+        <span style="font-size:18px;color:#5f6368">👤</span>
+        <input type="text" id="ge-chauffeur" value="${(c.chauffeur||'').replace(/"/g,'&quot;')}" list="ge-ch-list"
+          placeholder="Rechercher un chauffeur..."
+          style="flex:1;border:none;outline:none;font-size:16px;color:#222">
+        <datalist id="ge-ch-list">${chauffeursOptions}</datalist>
+      </div>
+
+      <!-- Passagers / description -->
+      <div style="display:flex;align-items:flex-start;gap:16px;padding:18px 0;border-bottom:1px solid #f0f0f0">
+        <span style="font-size:18px;color:#5f6368;margin-top:4px">≡</span>
+        <textarea id="ge-pax" rows="6"
+          placeholder="07:20 / TO3910 / 3 / R4N7XF3F5KF / Angela Bruciafreddo Italy +393491972346"
+          style="flex:1;border:none;outline:none;font-size:14px;color:#222;resize:vertical;line-height:1.6;font-family:inherit">${(c.passagers||[]).map(p=>[p.harrivee,p.vol,p.terminal,p.refClient,(p.prenom+' '+p.nom).trim()+(p.tel?' '+p.tel:'')].filter(x=>x).join(' / ')).join('\n')}</textarea>
+      </div>
+
+      <!-- Notes -->
+      <div style="display:flex;align-items:flex-start;gap:16px;padding:18px 0">
+        <span style="font-size:18px;color:#5f6368;margin-top:4px">📝</span>
+        <textarea id="ge-notes" rows="3" placeholder="Notes..."
+          style="flex:1;border:none;outline:none;font-size:14px;color:#222;resize:vertical;font-family:inherit">${c.notes||''}</textarea>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+};
+
+window.saveCourseGoogle = async function(id) {
+  const titre = document.getElementById('ge-titre').value.trim();
+  const datetime = document.getElementById('ge-datetime').value;
+  const code = document.getElementById('ge-code').value.trim();
+  const chauffeur = document.getElementById('ge-chauffeur').value.trim();
+  const paxText = document.getElementById('ge-pax').value.trim();
+  const notes = document.getElementById('ge-notes').value.trim();
+
+  // Découper le titre : Départ / Arrivée
+  const tParts = titre.split('/').map(s=>s.trim());
+  const depart = tParts[0]||'';
+  const arrivee = tParts.slice(1).join(' / ')||'';
+
+  // Parser les passagers (même logique que le formulaire)
+  const passagers = paxText ? paxText.split('\n').filter(l=>l.trim()).map(line=>{
+    const p=line.split('/').map(s=>s.trim());
+    const harrivee=p[0]||'', vol=p[1]||'', terminal=p[2]||'', refClient=p[3]||'';
+    const raw5=(p[4]||'').trim();
+    const raw6=(p[5]||'').trim();
+    let tel='', nomComplet='';
+    if(raw6 && raw6.replace(/[\s\-\(\)\.]/g,'').match(/^[\+\d]{7,15}$/)){tel=raw6;nomComplet=raw5;}
+    else{
+      const m=raw5.match(/(\+[\d\s\-\.]{7,18}|\b[\d]{8,15})$/);
+      if(m){tel=m[1].trim();nomComplet=raw5.slice(0,raw5.lastIndexOf(m[1])).trim();}
+      else nomComplet=raw5;
+    }
+    const pays=['Italy','France','Germany','Spain','UK','USA','Belgium','Netherlands','Switzerland','Portugal','Sweden','Norway','Denmark','Finland','Austria','Poland','Brazil','Ireland','Australia','Canada'];
+    const words=nomComplet.split(/\s+/);
+    if(words.length>1&&pays.some(x=>x.toLowerCase()===words[words.length-1].toLowerCase())){
+      nomComplet=words.slice(0,-1).join(' ');
+    }
+    const parts=nomComplet.split(/\s+/);
+    return{harrivee,vol,terminal,refClient,prenom:parts[0]||'',nom:parts.slice(1).join(' '),tel,present:true};
+  }) : [];
+
+  await fbUpdate('courses', id, {
+    depart, arrivee, datetime,
+    codeFact: code,
+    chauffeur,
+    passagers,
+    pax: passagers.length||1,
+    notes,
+    statut: chauffeur ? 'attribuee' : 'nouvelle',
+    updatedAt: new Date().toISOString()
+  });
+  document.getElementById('course-edit-ov').remove();
+  await loadAll();
+  showToast('✓ Course mise à jour');
 };
 
 window.duplicateCourse = async function(id) {
@@ -4949,27 +5065,18 @@ function doConfirm(){
 window.showConfirm=showConfirm;window.closeConf=closeConf;window.doConfirm=doConfirm;
 
 function toggleMob(){document.getElementById('sidebar').classList.toggle('on');document.getElementById('mob-ov').classList.toggle('on');}
-function toggleSidebar(){
-  const sb=document.getElementById('sidebar');
-  const main=document.querySelector('.main');
-  const chev=document.getElementById('sb-chevron');
-  sb.classList.toggle('collapsed');
-  const isCollapsed=sb.classList.contains('collapsed');
-  if(main)main.style.marginLeft=isCollapsed?'60px':'248px';
-  if(chev){chev.className=isCollapsed?'fas fa-chevron-right':'fas fa-chevron-left';}
-  localStorage.setItem('sb_collapsed',isCollapsed?'1':'0');
-}
-// Restore sidebar state
-window.addEventListener('load',()=>{
-  if(localStorage.getItem('sb_collapsed')==='1'){
-    const sb=document.getElementById('sidebar');
-    const main=document.querySelector('.main');
-    const chev=document.getElementById('sb-chevron');
-    if(sb)sb.classList.add('collapsed');
-    if(main)main.style.marginLeft='60px';
-    if(chev)chev.className='fas fa-chevron-right';
-  }
-});
+// Swipe gestures comme Google Agenda
+let touchStartX = 0;
+document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const sb = document.getElementById('sidebar');
+  if(!sb) return;
+  // Swipe droite depuis le bord gauche → ouvrir
+  if(dx > 70 && touchStartX < 40 && !sb.classList.contains('on')) toggleMob();
+  // Swipe gauche → fermer
+  if(dx < -70 && sb.classList.contains('on')) closeMob();
+}, {passive:true});
 function closeMob(){document.getElementById('sidebar').classList.remove('on');document.getElementById('mob-ov').classList.remove('on');}
 window.toggleMob=toggleMob;window.closeMob=closeMob;
 
