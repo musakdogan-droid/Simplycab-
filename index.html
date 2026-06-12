@@ -401,6 +401,7 @@ tr:last-child td{border-bottom:none}
       <div class="nsec">Équipe</div>
       <button class="ni" data-p="chauffeurs" onclick="gp('chauffeurs',this)"><i style="width:16px;text-align:center" class="fas fa-id-card"></i> Chauffeurs <span class="nb g" id="nb-c">0</span></button>
       <button class="ni" data-p="vehicules" onclick="gp('vehicules',this)"><i style="width:16px;text-align:center" class="fas fa-car"></i> Véhicules</button>
+      <button class="ni" data-p="cartechauffeurs" onclick="gp('cartechauffeurs',this)"><i style="width:16px;text-align:center" class="fas fa-map-marked-alt"></i> Carte chauffeurs</button>
       <div class="nsec">Gestion</div>
       <button class="ni" data-p="clients" onclick="gp('clients',this)"><i style="width:16px;text-align:center" class="fas fa-users"></i> Clients</button>
       <button class="ni admin-only" data-p="tarifs" onclick="gp('tarifs',this)"><i style="width:16px;text-align:center" class="fas fa-tags"></i> Tarifs</button>
@@ -628,6 +629,25 @@ tr:last-child td{border-bottom:none}
           <button class="btn btn-p btn-sm" onclick="openVehiculeModal()"><i class="fas fa-plus"></i> Ajouter véhicule</button>
         </div>
         <div class="cg" id="cg-vh"></div>
+      </div>
+
+      <!-- CARTE CHAUFFEURS -->
+      <div class="page" id="page-cartechauffeurs">
+        <div class="sec">
+          <div class="sec-h">
+            <div class="sec-t"><i class="fas fa-map-marked-alt" style="color:var(--green)"></i> Carte des chauffeurs <span id="cc-count" class="bdg bdg-green" style="margin-left:6px">0 actif(s)</span></div>
+            <div class="sec-a">
+              <span style="font-size:11px;color:var(--muted)" id="cc-updated"></span>
+              <button class="btn btn-s btn-sm" onclick="refreshCarteChauffeurs()"><i class="fas fa-sync"></i> Actualiser</button>
+            </div>
+          </div>
+          <div id="cc-map-container" style="height:540px;border-radius:0 0 var(--r) var(--r);overflow:hidden;position:relative">
+            <div id="cc-map" style="width:100%;height:100%"></div>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:12px 16px;background:var(--blue-dim);border:1px solid rgba(91,156,246,0.2);border-radius:var(--r-sm);font-size:12px;color:var(--blue)">
+          <i class="fas fa-info-circle"></i> Seuls les chauffeurs ayant activé le partage de position apparaissent. La carte se rafraîchit automatiquement toutes les 15 secondes.
+        </div>
       </div>
 
       <!-- CLIENTS -->
@@ -942,6 +962,17 @@ tr:last-child td{border-bottom:none}
           <div class="sc cg"><div class="sc-val" id="cp-total">0</div><div class="sc-lbl">Mes transferts</div></div>
           <div class="sc cb"><div class="sc-val" id="cp-active">0</div><div class="sc-lbl">En cours</div></div>
           <div class="sc cgr"><div class="sc-val" id="cp-done">0</div><div class="sc-lbl">Terminés</div></div>
+        </div>
+
+        <!-- Carte suivi chauffeur (visible si course en cours avec GPS) -->
+        <div class="sec" id="cp-map-section" style="margin-bottom:16px;display:none">
+          <div class="sec-h">
+            <div class="sec-t"><i class="fas fa-map-marked-alt" style="color:#00b4ff"></i> Suivi de votre chauffeur</div>
+            <button class="btn btn-ghost btn-sm" onclick="refreshClientMap()"><i class="fas fa-sync-alt"></i></button>
+          </div>
+          <div id="cp-map-container" style="height:380px;border-radius:0 0 var(--r) var(--r);overflow:hidden;position:relative">
+            <div id="cp-map" style="width:100%;height:100%"></div>
+          </div>
         </div>
 
         <!-- Transferts en cours -->
@@ -5148,6 +5179,9 @@ function renderClientPortal() {
     <td>${sBdg(c.statut)}</td>
     <td style="font-size:10px;color:var(--muted)">${c.createdByClient||'—'}</td>
   </tr>`).join(''):'<tr><td colspan="7" class="t-empty"><i class="fas fa-history"></i><p>Aucun historique</p></td></tr>';}
+
+  // Mettre à jour la carte de suivi chauffeur
+  if(typeof refreshClientMap==='function') refreshClientMap();
 }
 
 window.openClientBooking=function(){const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());document.getElementById('cb-dt').value=now.toISOString().slice(0,16);['cb-dep','cb-arr','cb-vol','cb-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('cb-pax').value=1;document.getElementById('cb-pax-notes').value='';openMo('client-booking');};
@@ -5292,6 +5326,187 @@ window.dispatchToNearest = async function(courseId, departLat, departLng) {
   );
   return name;
 };
+
+// ── CARTE CHAUFFEURS (page dédiée) ──
+let ccMap = null;
+let ccMarkers = {};
+let ccInterval = null;
+
+function initCarteChauffeurs() {
+  if(ccMap) { setTimeout(()=>ccMap.invalidateSize(), 200); refreshCarteChauffeurs(); return; }
+  if(!window.L) {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = () => createCC();
+    document.head.appendChild(script);
+  } else {
+    createCC();
+  }
+}
+
+function createCC() {
+  ccMap = window.L.map('cc-map', {zoomControl:true, attributionControl:false}).setView([48.9606, 2.5889], 10);
+  window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19, subdomains: 'abcd'
+  }).addTo(ccMap);
+  window.L.control.attribution({prefix:'© CartoDB © OSM'}).addTo(ccMap);
+  refreshCarteChauffeurs();
+  // Rafraîchir auto toutes les 15s
+  if(ccInterval) clearInterval(ccInterval);
+  ccInterval = setInterval(()=>{
+    if(document.getElementById('page-cartechauffeurs')?.classList.contains('on')) refreshCarteChauffeurs();
+  }, 15000);
+}
+
+window.refreshCarteChauffeurs = async function() {
+  const chauffeurs = await fbGet('chauffeurs');
+  const courses = await fbGet('courses');
+  D.chauffeurs = chauffeurs;
+  D.courses = courses.sort((a,b)=>new Date(b.datetime||0)-new Date(a.datetime||0));
+  const active = chauffeurs.filter(c=>c.gpsActive&&c.gps&&c.gps.lat);
+
+  const cnt = document.getElementById('cc-count');
+  const upd = document.getElementById('cc-updated');
+  if(cnt) cnt.textContent = active.length+' actif(s)';
+  if(upd) upd.textContent = 'Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Europe/Paris'});
+
+  if(!ccMap && window.L) { createCC(); return; }
+  if(!ccMap) { setTimeout(refreshCarteChauffeurs, 800); return; }
+
+  const activeIds = active.map(c=>c._id);
+  Object.keys(ccMarkers).forEach(id=>{
+    if(!activeIds.includes(id)){ccMap.removeLayer(ccMarkers[id]);delete ccMarkers[id];}
+  });
+
+  const bounds = [];
+  active.forEach(c=>{
+    const name = c.prenom+(c.nom?' '+c.nom:'');
+    const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+    const course = D.courses.find(x=>x.chauffeur===name&&['en_route','sur_place','onboard','acceptee'].includes(x.statut));
+    const statusColor = course ? '#f0934a' : (c.statut==='indisponible'?'#e74c3c':'#2ecc8a');
+    const gpsAge = c.gps.at ? Math.round((Date.now()-new Date(c.gps.at).getTime())/60000) : null;
+
+    const iconHtml = `
+      <div style="text-align:center;position:relative;filter:drop-shadow(0 0 8px ${statusColor}88)">
+        <div style="font-size:34px;line-height:1">${vehIcon}</div>
+        <div style="background:${statusColor};color:#000;font-size:11px;font-weight:800;font-family:'Syne',sans-serif;padding:2px 9px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.6);margin-top:2px">${c.prenom.toUpperCase()}</div>
+        ${course?`<div style="background:#c9a84c;color:#000;font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;margin-top:2px;max-width:100px;overflow:hidden;text-overflow:ellipsis">${course.client}</div>`:''}
+      </div>`;
+
+    const icon = window.L.divIcon({ html: iconHtml, className: '', iconSize: [90, 66], iconAnchor: [45, 33], popupAnchor: [0, -33] });
+
+    const popup = `<div style="font-family:'DM Sans',sans-serif;min-width:180px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px">${vehIcon} ${name}</div>
+      <div style="font-size:11px;color:#666;margin-bottom:3px">${sBdg(c.statut)}</div>
+      ${course?`<div style="font-size:11px;color:#c9a84c;font-weight:600;margin:4px 0">▶ ${course.client} • ${course.depart||''} → ${course.arrivee||''}</div>`:'<div style="font-size:11px;color:#2ecc8a;margin:4px 0">● Disponible</div>'}
+      ${gpsAge!==null?`<div style="font-size:10px;color:#999">📍 Position il y a ${gpsAge} min</div>`:''}
+      <a href="https://www.google.com/maps?q=${c.gps.lat},${c.gps.lng}" target="_blank" style="display:block;margin-top:6px;font-size:11px;color:#00b4ff;text-decoration:none">Ouvrir dans Google Maps →</a>
+    </div>`;
+
+    if(ccMarkers[c._id]) {
+      ccMarkers[c._id].setLatLng([c.gps.lat, c.gps.lng]).setIcon(icon).setPopupContent(popup);
+    } else {
+      ccMarkers[c._id] = window.L.marker([c.gps.lat, c.gps.lng], {icon}).addTo(ccMap).bindPopup(popup);
+    }
+    bounds.push([c.gps.lat, c.gps.lng]);
+  });
+
+  // Ajuster la vue pour voir tous les chauffeurs
+  if(bounds.length && !ccMap._userMoved) {
+    if(bounds.length===1) ccMap.setView(bounds[0], 13);
+    else ccMap.fitBounds(bounds, {padding:[50,50], maxZoom:14});
+  }
+};
+
+// ── CARTE SUIVI CHAUFFEUR (espace client) ──
+let cpMap = null;
+let cpMarkers = {};
+
+window.refreshClientMap = function() {
+  if(SESSION.role !== 'client') return;
+  const societe = SESSION.societe;
+  // Trouver les courses actives du client avec chauffeur ayant un GPS
+  const trackingStatuses = ['acceptee','en_route','sur_place','onboard'];
+  const myActiveCourses = D.courses.filter(c=>{
+    const cn=(c.client||'').trim().toUpperCase();
+    const sn=(societe||'').trim().toUpperCase();
+    const matchClient = cn===sn || cn.startsWith(sn+' ') || cn.endsWith(' '+sn) || cn.includes(' '+sn+' ');
+    return matchClient && trackingStatuses.includes(c.statut);
+  });
+
+  // Chauffeurs concernés avec GPS
+  const tracked = [];
+  myActiveCourses.forEach(c=>{
+    const chName = (c.chauffeur||'').trim().toLowerCase();
+    const ch = D.chauffeurs.find(x=>{
+      const full = (x.prenom+(x.nom?' '+x.nom:'')).trim().toLowerCase();
+      return full===chName || (x.prenom||'').trim().toLowerCase()===chName;
+    });
+    if(ch && ch.gps && ch.gps.lat) tracked.push({ch, course:c});
+  });
+
+  const section = document.getElementById('cp-map-section');
+  if(!tracked.length) {
+    if(section) section.style.display = 'none';
+    return;
+  }
+  if(section) section.style.display = 'block';
+
+  // Init map si besoin
+  if(!cpMap) {
+    if(!window.L) {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => { createCpMap(); setTimeout(refreshClientMap, 300); };
+      document.head.appendChild(script);
+      return;
+    }
+    createCpMap();
+  }
+  if(!cpMap) return;
+
+  // Nettoyer anciens marqueurs
+  const activeIds = tracked.map(t=>t.ch._id);
+  Object.keys(cpMarkers).forEach(id=>{
+    if(!activeIds.includes(id)){cpMap.removeLayer(cpMarkers[id]);delete cpMarkers[id];}
+  });
+
+  const bounds = [];
+  tracked.forEach(({ch, course})=>{
+    const name = ch.prenom+(ch.nom?' '+ch.nom:'');
+    const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[ch.vehicule]||'🚗';
+    const gpsAge = ch.gps.at ? Math.round((Date.now()-new Date(ch.gps.at).getTime())/60000) : null;
+    const statusLabels = {acceptee:'En route vers vous',en_route:'En route vers vous',sur_place:'Arrivé au point de rendez-vous',onboard:'Trajet en cours'};
+
+    const iconHtml = `<div style="text-align:center;filter:drop-shadow(0 0 8px #00b4ff88)">
+      <div style="font-size:36px;line-height:1">${vehIcon}</div>
+      <div style="background:#00b4ff;color:#fff;font-size:11px;font-weight:800;font-family:'Syne',sans-serif;padding:3px 10px;border-radius:10px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.4);margin-top:2px">${ch.prenom}</div>
+    </div>`;
+    const icon = window.L.divIcon({html:iconHtml, className:'', iconSize:[90,66], iconAnchor:[45,33], popupAnchor:[0,-33]});
+    const popup = `<div style="font-family:'DM Sans',sans-serif;min-width:170px">
+      <div style="font-size:14px;font-weight:700">${vehIcon} ${name}</div>
+      <div style="font-size:12px;color:#00b4ff;font-weight:600;margin:4px 0">${statusLabels[course.statut]||course.statut}</div>
+      <div style="font-size:11px;color:#666">${course.depart||''} → ${course.arrivee||''}</div>
+      ${gpsAge!==null?`<div style="font-size:10px;color:#999;margin-top:3px">📍 il y a ${gpsAge} min</div>`:''}
+    </div>`;
+
+    if(cpMarkers[ch._id]) {
+      cpMarkers[ch._id].setLatLng([ch.gps.lat, ch.gps.lng]).setIcon(icon).setPopupContent(popup);
+    } else {
+      cpMarkers[ch._id] = window.L.marker([ch.gps.lat, ch.gps.lng], {icon}).addTo(cpMap).bindPopup(popup);
+    }
+    bounds.push([ch.gps.lat, ch.gps.lng]);
+  });
+
+  if(bounds.length===1) cpMap.setView(bounds[0], 13);
+  else if(bounds.length>1) cpMap.fitBounds(bounds, {padding:[50,50], maxZoom:14});
+};
+
+function createCpMap() {
+  cpMap = window.L.map('cp-map', {zoomControl:true, attributionControl:false}).setView([48.9606, 2.5889], 11);
+  window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom:19, subdomains:'abcd'}).addTo(cpMap);
+  setTimeout(()=>cpMap.invalidateSize(), 200);
+}
 
 function renderComptesClients(){
   const tb=document.getElementById('tb-comptes-clients');if(!tb)return;
@@ -5996,9 +6211,10 @@ function gp(name, btn) {
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('on');
   if(btn)btn.classList.add('on');
-  const titles={dashboard:'Dashboard',dispatch:'Dispatch',planning:'Planning',chauffeurs:'Chauffeurs',vehicules:'Véhicules',clients:'Clients',tarifs:'Tarifs',facturation:'Facturation',rapports:'Rapports',comptes:'Comptes Dispatch',historique:'Historique',parametres:'Paramètres',mescourses:'Mes courses',messagerie:'Messagerie',dirigeant:'Dashboard Dirigeant',reservation:'App Cliente',revenus:'Mes revenus','comptes-clients':'Comptes Clients',clientportal:'Mon espace'};
+  const titles={dashboard:'Dashboard',dispatch:'Dispatch',planning:'Planning',chauffeurs:'Chauffeurs',vehicules:'Véhicules',cartechauffeurs:'Carte chauffeurs',clients:'Clients',tarifs:'Tarifs',facturation:'Facturation',rapports:'Rapports',comptes:'Comptes Dispatch',historique:'Historique',parametres:'Paramètres',mescourses:'Mes courses',messagerie:'Messagerie',dirigeant:'Dashboard Dirigeant',reservation:'App Cliente',revenus:'Mes revenus','comptes-clients':'Comptes Clients',clientportal:'Mon espace'};
   document.getElementById('page-title').textContent=titles[name]||name;
   closeMob();
+  if(name==='cartechauffeurs') { setTimeout(initCarteChauffeurs, 300); }
   loadAll(); // reload on every page change
 }
 window.gp=gp;window.loadAll=loadAll;window.renderDispatch=renderDispatch;window.renderClients=renderClients;window.renderFact=renderFact;window.updStatut=updStatut;window.delCourse=delCourse;window.updChauffStatut=updChauffStatut;window.delChauffeur=delChauffeur;window.delVehicule=delVehicule;window.delClient=delClient;window.delTarif=delTarif;window.delDispatch=delDispatch;
