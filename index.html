@@ -1956,7 +1956,7 @@ function fp(v) { return v ? parseFloat(v).toFixed(0)+'€' : '—'; }
 function fdt(dt) {
   if (!dt) return '—';
   const d = new Date(dt);
-  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',timeZone:'Europe/Paris'}) + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Paris'});
 }
 function vI(v) { return {berline:'🚗 Berline',van:'🚐 Van',sprinter:'🚌 Sprinter',bus:'🚍 Bus'}[v]||'🚗 Berline'; }
 function sBdg(s) {
@@ -2496,7 +2496,7 @@ window.viewCourseDetail = function(id) {
   if(!c) return;
   const color = getClientColor(c.client, c);
   const time = c.datetime?.slice(11,16)||'—';
-  const dateStr = c.datetime ? new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}) : '';
+  const dateStr = c.datetime ? new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',timeZone:'Europe/Paris'}) : '';
   const vehL = {berline:'B',van:'V',sprinter:'SP',bus:'BU'}[c.vehicule]||'B';
   const pax = c.passagers?.length || c.pax || 1;
   const terms = c.terminaux ? c.terminaux.replace(/CDG/g,'') : '';
@@ -4287,7 +4287,7 @@ function renderMesCourses() {
     const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
     const paxCount = c.passagers ? c.passagers.filter(p=>p.present!==false).length : (c.pax||1);
     const time = c.datetime ? c.datetime.slice(11,16) : '';
-    const date = c.datetime ? new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}) : '';
+    const date = c.datetime ? new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',timeZone:'Europe/Paris'}) : '';
     const terms = (c.terminaux||'').replace(/CDG/g,'');
     const clientColor = getClientColor(c.client,c);
     const statusLabel = STATUT_LABELS[c.statut]||c.statut;
@@ -5101,7 +5101,7 @@ function renderClientPortal() {
         const color=getClientColor(c.client,c);const dirIcon=getDirectionIcon(c);
         const vehIco={berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
         const time=c.datetime?.slice(11,16)||'—';
-        const date=c.datetime?new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}):'—';
+        const date=c.datetime?new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',timeZone:'Europe/Paris'}):'—';
         const steps=[{k:'nouvelle',l:'Demande'},{k:'attribuee',l:'Assignée'},{k:'acceptee',l:'Acceptée'},{k:'en_route',l:'En route'},{k:'sur_place',l:'Sur place'},{k:'onboard',l:'À bord'},{k:'depose',l:'Déposé'},{k:'terminee',l:'Terminée'}];
         const statusOrder=steps.map(s=>s.k);const currentIdx=Math.max(statusOrder.indexOf(c.statut),0);
         const timeline=`<div style="display:flex;align-items:center;margin-top:10px;overflow-x:auto;padding-bottom:2px">
@@ -5109,14 +5109,20 @@ function renderClientPortal() {
         </div>`;
         // Suivi GPS chauffeur — visible seulement entre "acceptée" et "déposé"
         const trackingStatuses = ['acceptee','en_route','sur_place','onboard'];
-        const ch = D.chauffeurs.find(x=>(x.prenom+(x.nom?' '+x.nom:''))===c.chauffeur);
-        const canTrack = trackingStatuses.includes(c.statut) && ch && ch.gps && ch.gps.lat;
+        const chName = (c.chauffeur||'').trim().toLowerCase();
+        const ch = D.chauffeurs.find(x=>{
+          const full = (x.prenom+(x.nom?' '+x.nom:'')).trim().toLowerCase();
+          return full===chName || (x.prenom||'').trim().toLowerCase()===chName;
+        });
+        const hasGPS = ch && ch.gps && (ch.gps.lat || ch.gps.lat===0);
+        const canTrack = trackingStatuses.includes(c.statut) && hasGPS;
+        const gpsAge = ch && ch.gps && ch.gps.at ? Math.round((Date.now()-new Date(ch.gps.at).getTime())/60000) : null;
         const trackBtn = canTrack ? `<a href="https://www.google.com/maps?q=${ch.gps.lat},${ch.gps.lng}" target="_blank"
           style="display:flex;align-items:center;justify-content:center;gap:8px;background:#00b4ff;border:none;border-radius:10px;padding:12px;text-decoration:none;margin-top:10px;box-shadow:0 4px 12px rgba(0,180,255,0.25)">
           <span style="font-size:18px">📍</span>
           <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff">Suivre mon chauffeur en direct</span>
           <i class="fas fa-external-link-alt" style="color:rgba(255,255,255,0.8);font-size:11px"></i>
-        </a>` : (trackingStatuses.includes(c.statut) ? `<div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted);padding:8px;background:var(--card2);border-radius:8px">📍 En attente de la position du chauffeur...</div>` : '');
+        </a>${gpsAge!==null&&gpsAge>2?`<div style="text-align:center;font-size:10px;color:var(--muted);margin-top:4px">Position il y a ${gpsAge} min</div>`:''}` : (trackingStatuses.includes(c.statut) ? `<div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted);padding:8px;background:var(--card2);border-radius:8px">📍 En attente de la position du chauffeur...</div>` : '');
         return`<div style="background:${color}11;border:1px solid ${color}44;border-radius:var(--r-sm);padding:14px;margin-bottom:10px;border-left:4px solid ${color}">
           <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
             <div><div style="font-size:14px;font-weight:700">${dirIcon} ${date} à ${time}</div>
@@ -5437,7 +5443,7 @@ window.refreshLiveMap = async function() {
   const cnt = document.getElementById('live-map-count');
   const upd = document.getElementById('live-map-updated');
   if(cnt) cnt.textContent = active.length+' actif(s)';
-  if(upd) upd.textContent = 'Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if(upd) upd.textContent = 'Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Europe/Paris'});
 
   // Init map if needed
   if(!leafletMap && window.L) initLeafletMap();
@@ -5652,7 +5658,7 @@ window.driverUpd = async function(id, statut, note) {
   if(note && note.trim()) {
     const c = D.courses.find(x=>x._id===id);
     const existing = c?.notes||'';
-    const ts = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    const ts = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Paris'});
     update.notes = existing ? existing+'\n'+ts+' — '+note.trim() : ts+' — '+note.trim();
   }
   await fbUpdate('courses', id, update);
@@ -5973,7 +5979,7 @@ function drawBarChart() {
 }
 
 // ── CLOCK ──
-function startClock(){const u=()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});};u();setInterval(u,1000);}
+function startClock(){const u=()=>{const el=document.getElementById('clock');if(el)el.textContent=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Paris'});};u();setInterval(u,1000);}
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
