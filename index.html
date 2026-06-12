@@ -48,6 +48,7 @@ h1,h2,h3,h4{font-family:'Syne',sans-serif}
 #loading.out{display:none}
 .ld-ring{width:48px;height:48px;border:3px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes slideDown{from{opacity:0;transform:translate(-50%,-30px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
 /* LOGIN */
@@ -829,6 +830,18 @@ tr:last-child td{border-bottom:none}
             <div style="padding:16px" id="dir-by-cat"></div>
           </div>
         </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <!-- Top clients -->
+          <div class="sec">
+            <div class="sec-h"><div class="sec-t"><i class="fas fa-building"></i> Top clients (CA)</div></div>
+            <div style="padding:16px" id="dir-by-client"></div>
+          </div>
+          <!-- Top destinations -->
+          <div class="sec">
+            <div class="sec-h"><div class="sec-t"><i class="fas fa-map-marker-alt"></i> Top destinations</div></div>
+            <div style="padding:16px" id="dir-top-dest"></div>
+          </div>
+        </div>
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
           <!-- CA par mois -->
           <div class="sec">
@@ -1281,6 +1294,13 @@ tr:last-child td{border-bottom:none}
       </div>
       <div class="fld"><label>Notes</label><textarea id="cb-notes" rows="2" placeholder="Informations complémentaires..."
         style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px;color:var(--white);font-size:12px;outline:none;resize:none"></textarea></div>
+      <label style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--gold-dim);border:1px solid var(--gold);border-radius:var(--r-sm);cursor:pointer;margin-top:4px">
+        <input type="checkbox" id="cb-immediate" style="width:18px;height:18px;cursor:pointer;accent-color:var(--gold)">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--gold)">⚡ Réservation immédiate</div>
+          <div style="font-size:11px;color:var(--muted2)">Le chauffeur disponible le plus proche est attribué automatiquement</div>
+        </div>
+      </label>
     </div>
     <div class="mo-f">
       <button class="btn btn-ghost" onclick="closeMo('client-booking')">Annuler</button>
@@ -1791,14 +1811,64 @@ async function checkPin() {
     c.prenom.toLowerCase() === prenom.toLowerCase()
   );
   if (found) {
-    SESSION = { role:'chauffeur', name:found.prenom+(found.nom?' '+found.nom:''), uid:'driver_'+found._id };
-    sessionStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
-    startApp();
+    // GPS OBLIGATOIRE — demander la permission avant de connecter
+    e.textContent = '';
+    document.getElementById('pin-disp').textContent = '📍 ...';
+    if(!navigator.geolocation) {
+      e.textContent = 'Géolocalisation non disponible sur cet appareil';
+      pinBuf = '';
+      document.getElementById('pin-disp').textContent = '· · · · · ·';
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        // Position OK → connexion autorisée + GPS déjà actif
+        SESSION = { role:'chauffeur', name:found.prenom+(found.nom?' '+found.nom:''), uid:'driver_'+found._id };
+        sessionStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+        // Enregistrer la position de départ
+        await fbUpdate('chauffeurs', found._id, {
+          gps:{lat:pos.coords.latitude, lng:pos.coords.longitude, acc:Math.round(pos.coords.accuracy), at:new Date().toISOString()},
+          gpsActive:true
+        });
+        startApp();
+      },
+      (err) => {
+        // Position refusée → connexion bloquée
+        e.innerHTML = '⛔ Vous devez autoriser le partage de position pour vous connecter.<br><span style="font-size:11px;opacity:0.8">Activez la localisation puis réessayez.</span>';
+        pinBuf = '';
+        document.getElementById('pin-disp').textContent = '· · · · · ·';
+      },
+      { enableHighAccuracy:true, timeout:15000 }
+    );
   } else {
     e.textContent = 'Prénom ou code incorrect';
     pinBuf = '';
     document.getElementById('pin-disp').textContent = '· · · · · ·';
   }
+}
+
+// Suivi GPS continu obligatoire pour le chauffeur connecté
+function startContinuousGPS() {
+  if(SESSION.role !== 'chauffeur') return;
+  if(gpsActive) return;
+  if(!navigator.geolocation) return;
+  gpsActive = true;
+  const sendPos = () => {
+    navigator.geolocation.getCurrentPosition(async(p)=>{
+      const ch = D.chauffeurs.find(c=>(c.prenom+(c.nom?' '+c.nom:''))===SESSION.name);
+      if(ch) await fbUpdate('chauffeurs', ch._id, {
+        gps:{lat:p.coords.latitude, lng:p.coords.longitude, acc:Math.round(p.coords.accuracy), at:new Date().toISOString()},
+        gpsActive:true
+      });
+    }, ()=>{}, {enableHighAccuracy:true, timeout:10000, maximumAge:5000});
+  };
+  sendPos();
+  if(gpsInterval) clearInterval(gpsInterval);
+  gpsInterval = setInterval(sendPos, 12000);
+  const btn = document.getElementById('gps-btn');
+  const st = document.getElementById('gps-status');
+  if(btn){btn.innerHTML='<i class="fas fa-map-marker-alt"></i> Position active';btn.style.borderColor='#22c55e';btn.style.color='#22c55e';}
+  if(st){st.textContent='📍 Position partagée';st.style.color='#22c55e';}
 }
 
 window.doLogout = function() {
@@ -1857,6 +1927,8 @@ function startApp() {
     nav.prepend(btnM); nav.prepend(btnR); nav.prepend(btn);
     document.getElementById('btn-new').style.display = 'none';
     gp('mescourses', btn);
+    // GPS continu obligatoire pour le chauffeur
+    setTimeout(()=>startContinuousGPS(), 1500);
   } else if (SESSION.role === 'dispatch') {
     document.querySelectorAll('.admin-only').forEach(n => n.style.display = 'none');
     document.getElementById('btn-new').style.display = 'flex';
@@ -4111,6 +4183,43 @@ const STATUT_LABELS = {
   annulee:'Annulée', noshow:'No-show', facturee:'Facturée', payee:'Payée'
 };
 
+function showMorningRecap(courses) {
+  const first = courses[0];
+  const firstTime = first.datetime?.slice(11,16)||'';
+  const totalKm = courses.length;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:420px;max-width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="background:linear-gradient(135deg,#b8860b,#d4a017);padding:22px;color:#fff;text-align:center">
+        <div style="font-size:40px;margin-bottom:6px">☀️</div>
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800">Votre journée</div>
+        <div style="font-size:14px;opacity:0.95;margin-top:4px">${courses.length} transfert(s) • 1ère course à ${firstTime}</div>
+      </div>
+      <div style="overflow-y:auto;padding:16px;flex:1">
+        ${courses.map((c,i)=>{
+          const time = c.datetime?.slice(11,16)||'—';
+          const color = getClientColor(c.client,c);
+          const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+          return `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:#f8f9fa;border-radius:12px;margin-bottom:8px;border-left:4px solid ${color}">
+            <div style="font-family:Inter,sans-serif;font-size:18px;font-weight:700;color:#111;min-width:50px;letter-spacing:-0.5px">${time}</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700;color:#111">${c.depart||c.lieu||'—'} → ${c.arrivee||c.duree||'—'}</div>
+              <div style="font-size:11px;color:#777">${vehIco} ${c.client||''} ${c.passagers?.length?'• '+c.passagers.length+' pax':''}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="padding:16px">
+        <button onclick="this.closest('div[style*=fixed]').remove()"
+          style="width:100%;background:#111;border:none;border-radius:12px;padding:15px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;cursor:pointer">
+          C'est parti ! 🚀
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+}
+
 function renderMesCourses() {
   if(SESSION.role!=='chauffeur') return;
   const name = SESSION.name;
@@ -4126,6 +4235,18 @@ function renderMesCourses() {
   const dateEl = document.getElementById('mc-date-now');
   if(greetEl) greetEl.textContent = `${greet}, ${SESSION.name.split(' ')[0]} 👋`;
   if(dateEl) dateEl.textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+
+  // RÉCAP DU MATIN — afficher une seule fois par connexion
+  if(!window._recapShown) {
+    window._recapShown = true;
+    const todayCourses = mine.filter(c=>
+      new Date(c.datetime).toDateString()===today &&
+      !['terminee','annulee','noshow','payee'].includes(c.statut)
+    ).sort((a,b)=>(a.datetime||'').localeCompare(b.datetime||''));
+    if(todayCourses.length > 0) {
+      setTimeout(()=>showMorningRecap(todayCourses), 800);
+    }
+  }
 
   // Stats
   const e1=document.getElementById('mc-today');
@@ -4260,6 +4381,56 @@ window.driverNextStep = async function(id, nextStatut) {
   }
 
   await driverUpd(id, nextStatut, null);
+
+  // Activer automatiquement le GPS dès l'acceptation de la course
+  if(nextStatut === 'acceptee' && !gpsActive) {
+    autoStartGPS();
+  }
+  // Arrêter le GPS une fois la course terminée/déposée (si plus aucune course active)
+  if(['depose','terminee'].includes(nextStatut)) {
+    const stillActive = D.courses.find(x=>
+      x.chauffeur === SESSION.name &&
+      ['acceptee','en_route','sur_place','onboard'].includes(x.statut)
+    );
+    if(!stillActive && gpsActive) {
+      // Garder le GPS actif quelques minutes au cas où, ou l'arrêter
+      // On le laisse actif — il s'arrêtera à la déconnexion
+    }
+  }
+};
+
+// Activer le GPS automatiquement et silencieusement
+async function autoStartGPS() {
+  if(gpsActive) return;
+  if(!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(async(pos)=>{
+    gpsActive = true;
+    const name = SESSION.name;
+    const ch = D.chauffeurs.find(c=>(c.prenom+(c.nom?' '+c.nom:''))===name);
+    if(ch) {
+      await fbUpdate('chauffeurs', ch._id, {
+        gps:{lat:pos.coords.latitude, lng:pos.coords.longitude, acc:Math.round(pos.coords.accuracy), at:new Date().toISOString()},
+        gpsActive:true
+      });
+    }
+    const btn = document.getElementById('gps-btn');
+    const st = document.getElementById('gps-status');
+    if(btn){btn.innerHTML='<i class="fas fa-map-marker-alt"></i> Position active';btn.style.borderColor='#22c55e';btn.style.color='#22c55e';}
+    if(st){st.textContent='📍 Position partagée';st.style.color='#22c55e';}
+    // Suivi continu
+    gpsInterval = setInterval(async()=>{
+      navigator.geolocation.getCurrentPosition(async(p)=>{
+        const ch2 = D.chauffeurs.find(c=>(c.prenom+(c.nom?' '+c.nom:''))===SESSION.name);
+        if(ch2) await fbUpdate('chauffeurs', ch2._id, {
+          gps:{lat:p.coords.latitude, lng:p.coords.longitude, acc:Math.round(p.coords.accuracy), at:new Date().toISOString()},
+          gpsActive:true
+        });
+      }, ()=>{}, {enableHighAccuracy:true, timeout:10000, maximumAge:5000});
+    }, 12000);
+    showToast('📍 Position partagée automatiquement');
+  }, (err)=>{
+    showToast('⚠️ Activez la localisation pour cette course', true);
+  }, {enableHighAccuracy:true, timeout:10000});
 };
 
 window.driverNoShow = async function(id) {
@@ -4372,6 +4543,125 @@ function startMsgRefresh() {
     const nb = document.getElementById('nb-msg');
     if(nb) nb.textContent = unread||'0';
   }, 5000);
+
+  // Rafraîchir position chauffeur pour l'espace client (suivi temps réel)
+  if(SESSION.role === 'client' && !window._clientGpsInterval) {
+    window._clientGpsInterval = setInterval(async()=>{
+      if(SESSION.role !== 'client') return;
+      const [courses, chauffeurs] = await Promise.all([fbGet('courses'), fbGet('chauffeurs')]);
+      D.courses = courses.sort((a,b)=>new Date(b.datetime||0)-new Date(a.datetime||0));
+      D.chauffeurs = chauffeurs;
+      renderClientPortal();
+    }, 15000);
+  }
+
+  // DISPATCH/ADMIN — détecter nouvelles courses créées (par clients ou réservations)
+  if((SESSION.role==='dispatch'||SESSION.role==='admin') && !window._dispatchWatchInterval) {
+    window._lastDispatchCourseIds = new Set(D.courses.map(c=>c._id));
+    window._dispatchWatchInterval = setInterval(async()=>{
+      if(SESSION.role!=='dispatch'&&SESSION.role!=='admin') return;
+      const courses = await fbGet('courses');
+      const currentIds = new Set(courses.map(c=>c._id));
+      // Nouvelles courses créées par un client (createdByClient) ou sans chauffeur
+      const nouvelles = courses.filter(c=>
+        !window._lastDispatchCourseIds.has(c._id) &&
+        !['terminee','annulee','noshow','payee'].includes(c.statut)
+      );
+      if(nouvelles.length > 0) {
+        D.courses = courses.sort((a,b)=>new Date(b.datetime||0)-new Date(a.datetime||0));
+        playNewCourseAlert();
+        const c = nouvelles[0];
+        showNewDispatchToast(c, nouvelles.length);
+        if(typeof renderAgenda==='function') renderAgenda();
+        if(typeof renderDispatch==='function') renderDispatch();
+      }
+      window._lastDispatchCourseIds = currentIds;
+    }, 8000);
+  }
+
+  // CHAUFFEUR — détecter nouveaux transferts assignés + alerte sonore
+  if(SESSION.role === 'chauffeur' && !window._driverWatchInterval) {
+    // Mémoriser les courses actuelles
+    window._lastDriverCourseIds = new Set(
+      D.courses.filter(c=>c.chauffeur===SESSION.name).map(c=>c._id)
+    );
+    window._driverWatchInterval = setInterval(async()=>{
+      if(SESSION.role !== 'chauffeur') return;
+      const courses = await fbGet('courses');
+      const myCourses = courses.filter(c=>c.chauffeur===SESSION.name && !['terminee','annulee','noshow','payee'].includes(c.statut));
+      const currentIds = new Set(myCourses.map(c=>c._id));
+      // Détecter les NOUVELLES courses
+      const nouvelles = myCourses.filter(c=>!window._lastDriverCourseIds.has(c._id));
+      if(nouvelles.length > 0) {
+        D.courses = courses.sort((a,b)=>new Date(b.datetime||0)-new Date(a.datetime||0));
+        playNewCourseAlert();
+        const c = nouvelles[0];
+        showNewCourseToast(c, nouvelles.length);
+        renderMesCourses();
+      }
+      window._lastDriverCourseIds = currentIds;
+    }, 8000);
+  }
+}
+
+// Alerte sonore nouveau transfert
+function playNewCourseAlert() {
+  try {
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    // Deux bips ascendants
+    [0, 0.18].forEach((delay, i)=>{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = i===0 ? 660 : 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime+delay);
+      gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime+delay+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+delay+0.15);
+      osc.start(ctx.currentTime+delay);
+      osc.stop(ctx.currentTime+delay+0.16);
+    });
+    // Vibration si supporté
+    if(navigator.vibrate) navigator.vibrate([200,100,200]);
+  } catch(e) {}
+}
+
+// Notification visuelle nouvelle course pour le dispatch
+function showNewDispatchToast(c, count) {
+  const time = c.datetime?.slice(11,16)||'';
+  const isClient = c.createdByClient;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:700;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;border-radius:16px;padding:16px 20px;box-shadow:0 10px 40px rgba(124,58,237,0.5);max-width:90%;width:380px;animation:slideDown 0.4s ease';
+  ov.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="font-size:34px">${isClient?'🔔':'📋'}</div>
+      <div style="flex:1">
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800">${count>1?count+' nouvelles courses !':'Nouvelle course à dispatcher !'}</div>
+        <div style="font-size:13px;opacity:0.95;margin-top:2px">${c.client||''} • ${time} • ${c.depart||c.lieu||''} → ${c.arrivee||c.duree||''}</div>
+        ${isClient?`<div style="font-size:11px;opacity:0.85;margin-top:3px">👤 Commandé par ${c.createdByClient}</div>`:''}
+      </div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:rgba(255,255,255,0.25);border:none;border-radius:50%;width:30px;height:30px;color:#fff;font-size:15px;cursor:pointer;flex-shrink:0">✕</button>
+    </div>`;
+  document.body.appendChild(ov);
+  setTimeout(()=>{ if(ov.parentNode) ov.remove(); }, 10000);
+}
+
+// Notification visuelle nouveau transfert
+function showNewCourseToast(c, count) {
+  const time = c.datetime?.slice(11,16)||'';
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:700;background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;border-radius:16px;padding:16px 20px;box-shadow:0 10px 40px rgba(184,134,11,0.5);max-width:90%;width:360px;animation:slideDown 0.4s ease';
+  ov.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="font-size:34px">🚗</div>
+      <div style="flex:1">
+        <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800">${count>1?count+' nouveaux transferts !':'Nouveau transfert !'}</div>
+        <div style="font-size:13px;opacity:0.95;margin-top:2px">${c.client||''} • ${time} • ${c.depart||c.lieu||''} → ${c.arrivee||c.duree||''}</div>
+      </div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:rgba(255,255,255,0.25);border:none;border-radius:50%;width:30px;height:30px;color:#fff;font-size:15px;cursor:pointer;flex-shrink:0">✕</button>
+    </div>`;
+  document.body.appendChild(ov);
+  setTimeout(()=>{ if(ov.parentNode) ov.remove(); }, 8000);
 }
 
 // ══════════════════════════════════════════
@@ -4469,13 +4759,28 @@ function renderDirigeant() {
   // Top clients
   const byClient = {};
   filtered.forEach(c=>{if(c.client){if(!byClient[c.client])byClient[c.client]=0;byClient[c.client]+=(parseFloat(c.prix)||0);}});
-  const topClients = Object.entries(byClient).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const tcEl = document.getElementById('dir-top-clients');
+  const topClients = Object.entries(byClient).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const tcEl = document.getElementById('dir-by-client');
   if(tcEl) tcEl.innerHTML = topClients.length ? topClients.map(([name,ca],i)=>`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <div style="width:22px;height:22px;border-radius:50%;background:${['var(--gold)','var(--muted2)','var(--orange)','var(--blue)','var(--purple)'][i]};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--black);flex-shrink:0">${i+1}</div>
+      <div style="width:22px;height:22px;border-radius:50%;background:${['var(--gold)','var(--muted2)','var(--orange)','var(--blue)','var(--purple)','var(--green)'][i]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">${i+1}</div>
       <div style="flex:1;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
       <div class="text-gold fw7 ff-syne" style="font-size:12px">${ca.toFixed(0)}€</div>
+    </div>`).join('') : '<div style="color:var(--muted);font-size:12px">Aucune donnée</div>';
+
+  // Top destinations
+  const byDest = {};
+  filtered.forEach(c=>{
+    const dest = (c.arrivee||c.duree||'').trim();
+    if(dest && dest!=='—'){if(!byDest[dest])byDest[dest]={nb:0,ca:0};byDest[dest].nb++;byDest[dest].ca+=(parseFloat(c.prix)||0);}
+  });
+  const topDest = Object.entries(byDest).sort((a,b)=>b[1].nb-a[1].nb).slice(0,6);
+  const tdEl = document.getElementById('dir-top-dest');
+  if(tdEl) tdEl.innerHTML = topDest.length ? topDest.map(([name,d],i)=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="width:22px;height:22px;border-radius:50%;background:${['var(--gold)','var(--muted2)','var(--orange)','var(--blue)','var(--purple)','var(--green)'][i]||'var(--muted)'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">${i+1}</div>
+      <div style="flex:1;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 ${name}</div>
+      <div style="font-size:11px;color:var(--muted)">${d.nb}×</div>
     </div>`).join('') : '<div style="color:var(--muted);font-size:12px">Aucune donnée</div>';
 
   // Chart mensuel
@@ -4776,8 +5081,13 @@ function renderClientPortal() {
   const cpName=document.getElementById('cp-company-name');const cpUser=document.getElementById('cp-user-name');
   if(cpName)cpName.textContent=societe||'Mon espace';if(cpUser)cpUser.textContent=SESSION.name;
   const myCourses=D.courses.filter(c=>{
-    const cn=(c.client||'').toUpperCase();const sn=(societe||'').toUpperCase();
-    return cn.includes(sn)||sn.includes(cn.split(' ')[0]);
+    const cn=(c.client||'').trim().toUpperCase();
+    const sn=(societe||'').trim().toUpperCase();
+    if(!cn||!sn) return false;
+    // Correspondance exacte d'abord
+    if(cn===sn) return true;
+    // Sinon le nom de société est contenu dans le client (mot entier)
+    return cn===sn || cn.startsWith(sn+' ') || cn.endsWith(' '+sn) || cn.includes(' '+sn+' ');
   });
   const active=myCourses.filter(c=>!['terminee','annulee','noshow','payee'].includes(c.statut));
   const done=myCourses.filter(c=>['terminee','payee'].includes(c.statut));
@@ -4797,6 +5107,16 @@ function renderClientPortal() {
         const timeline=`<div style="display:flex;align-items:center;margin-top:10px;overflow-x:auto;padding-bottom:2px">
           ${steps.map((s,i)=>{const done2=i<=currentIdx;const cur=i===currentIdx;return`<div style="display:flex;align-items:center;flex-shrink:0"><div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:${cur?12:8}px;height:${cur?12:8}px;border-radius:50%;background:${done2?color:'var(--border2)'};${cur?'box-shadow:0 0 0 3px '+color+'44':''}"></div><div style="font-size:8px;color:${done2?'var(--white2)':'var(--muted)'};white-space:nowrap;font-weight:${cur?700:400}">${s.l}</div></div>${i<steps.length-1?`<div style="width:18px;height:2px;background:${i<currentIdx?color:'var(--border2)'};flex-shrink:0;margin-bottom:12px"></div>`:''}</div>`;}).join('')}
         </div>`;
+        // Suivi GPS chauffeur — visible seulement entre "acceptée" et "déposé"
+        const trackingStatuses = ['acceptee','en_route','sur_place','onboard'];
+        const ch = D.chauffeurs.find(x=>(x.prenom+(x.nom?' '+x.nom:''))===c.chauffeur);
+        const canTrack = trackingStatuses.includes(c.statut) && ch && ch.gps && ch.gps.lat;
+        const trackBtn = canTrack ? `<a href="https://www.google.com/maps?q=${ch.gps.lat},${ch.gps.lng}" target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:8px;background:#00b4ff;border:none;border-radius:10px;padding:12px;text-decoration:none;margin-top:10px;box-shadow:0 4px 12px rgba(0,180,255,0.25)">
+          <span style="font-size:18px">📍</span>
+          <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff">Suivre mon chauffeur en direct</span>
+          <i class="fas fa-external-link-alt" style="color:rgba(255,255,255,0.8);font-size:11px"></i>
+        </a>` : (trackingStatuses.includes(c.statut) ? `<div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted);padding:8px;background:var(--card2);border-radius:8px">📍 En attente de la position du chauffeur...</div>` : '');
         return`<div style="background:${color}11;border:1px solid ${color}44;border-radius:var(--r-sm);padding:14px;margin-bottom:10px;border-left:4px solid ${color}">
           <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
             <div><div style="font-size:14px;font-weight:700">${dirIcon} ${date} à ${time}</div>
@@ -4804,7 +5124,7 @@ function renderClientPortal() {
               ${c.terminaux?`<div style="font-size:11px;color:var(--muted2)">📍 ${c.terminaux}</div>`:''}
             </div>
             <div style="text-align:right">${sBdg(c.statut)}<div style="font-size:11px;color:var(--muted2);margin-top:4px">${vehIco} ${c.chauffeur||'Assignation en cours...'}</div>${c.ref?`<div style="font-size:10px;color:var(--gold)">${c.ref}</div>`:''}</div>
-          </div>${timeline}
+          </div>${timeline}${trackBtn}
           ${c.createdByClient?`<div style="font-size:10px;color:var(--muted);margin-top:6px;border-top:1px solid ${color}22;padding-top:6px">Créé par ${c.createdByClient}</div>`:''}
         </div>`;
       }).join('');
@@ -4870,9 +5190,101 @@ window.submitClientBooking=async function(){
     return{harrivee,vol,terminal,refClient,prenom,nom,tel,present:true};
   }):[];
   closeMo('client-booking');showToast('Envoi en cours...');
-  await fbPush('courses',{type:'transfert',client:SESSION.societe||SESSION.name,datetime:dt,depart:dep,arrivee:arr,vehicule:document.getElementById('cb-veh').value,pax:parseInt(document.getElementById('cb-pax').value)||1,vol:document.getElementById('cb-vol').value,notes:document.getElementById('cb-notes').value,passagers,statut:'nouvelle',source:'client',createdByClient:SESSION.name,clientUser:SESSION.clientUser,createdAt:new Date().toISOString()});
-  await sendPushNotification('🆕 Demande client',`${SESSION.societe} — ${SESSION.name} — ${dep} → ${arr}`);
-  await loadAll();showToast('Demande envoyée ✓');
+  const pushResult = await fetch(`${FB_URL}/courses.json`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({type:'transfert',client:SESSION.societe||SESSION.name,datetime:dt,depart:dep,arrivee:arr,vehicule:document.getElementById('cb-veh').value,pax:parseInt(document.getElementById('cb-pax').value)||1,vol:document.getElementById('cb-vol').value,notes:document.getElementById('cb-notes').value,passagers,statut:'nouvelle',source:'client',createdByClient:SESSION.name,clientUser:SESSION.clientUser,createdAt:new Date().toISOString()})
+  });
+  const pushData = await pushResult.json();
+  const newId = pushData.name;
+
+  // Réservation immédiate ? → dispatch au plus proche
+  const isImmediate = document.getElementById('cb-immediate')?.checked;
+  await loadAll();
+  if(isImmediate && newId) {
+    showToast('🔍 Recherche du chauffeur le plus proche...');
+    // Géocoder l'adresse de départ pour calculer la vraie distance
+    const coords = await geocodeAddress(dep);
+    const assigned = await dispatchToNearest(newId, coords?.lat||null, coords?.lng||null);
+    if(assigned) {
+      showToast(`✓ Course attribuée à ${assigned} (le plus proche)`);
+      await loadAll();
+    } else {
+      showToast('Demande envoyée — aucun chauffeur dispo immédiatement', true);
+    }
+  } else {
+    await sendPushNotification('🆕 Demande client',`${SESSION.societe} — ${SESSION.name} — ${dep} → ${arr}`);
+    showToast('Demande envoyée ✓');
+  }
+};
+
+// ── GÉOCODAGE (adresse → coordonnées GPS) via OpenStreetMap ──
+async function geocodeAddress(address) {
+  if(!address) return null;
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address+', France')}`;
+    const r = await fetch(url, { headers: {'Accept-Language':'fr'} });
+    const data = await r.json();
+    if(data && data.length > 0) {
+      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    }
+  } catch(e) { console.log('Géocodage échoué:', e); }
+  return null;
+}
+
+// ── DISPATCH AU CHAUFFEUR LE PLUS PROCHE (réservation immédiate) ──
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+window.dispatchToNearest = async function(courseId, departLat, departLng) {
+  const course = D.courses.find(c=>c._id===courseId);
+  if(!course) return null;
+  const veh = course.vehicule||'berline';
+
+  // Chauffeurs disponibles avec GPS actif et véhicule compatible
+  const candidats = D.chauffeurs.filter(ch=>{
+    if(ch.statut==='indisponible') return false;
+    if(!ch.gps||!ch.gpsActive) return false;
+    const chVeh = ch.vehicule||'berline';
+    if(veh==='van'&&chVeh==='berline') return false;
+    if(veh==='sprinter'&&!['sprinter','bus'].includes(chVeh)) return false;
+    if(veh==='bus'&&chVeh!=='bus') return false;
+    // Pas de conflit
+    const name = ch.prenom+(ch.nom?' '+ch.nom:'');
+    return !detectConflict(name, course.datetime, courseId);
+  });
+
+  if(!candidats.length) return null;
+
+  // Trier par distance si on a les coordonnées de départ
+  if(departLat && departLng) {
+    candidats.sort((a,b)=>
+      distanceKm(departLat,departLng,a.gps.lat,a.gps.lng) -
+      distanceKm(departLat,departLng,b.gps.lat,b.gps.lng)
+    );
+  }
+
+  const nearest = candidats[0];
+  const name = nearest.prenom+(nearest.nom?' '+nearest.nom:'');
+  const dist = (departLat&&departLng) ? distanceKm(departLat,departLng,nearest.gps.lat,nearest.gps.lng).toFixed(1) : null;
+
+  await fbUpdate('courses', courseId, {
+    chauffeur: name,
+    statut: 'attribuee',
+    autoDispatched: true,
+    updatedAt: new Date().toISOString()
+  });
+  await addLog(`Auto-dispatch immédiat : "${course.client}" → ${name}${dist?' ('+dist+' km)':''}`);
+  await sendPushNotification(
+    '🚗 Course urgente — '+name,
+    `${course.client||''} | ${course.depart||''} → ${course.arrivee||''}${dist?' | '+dist+' km de vous':''}`,
+    'https://musakdogan-droid.github.io/Simplycab-'
+  );
+  return name;
 };
 
 function renderComptesClients(){
