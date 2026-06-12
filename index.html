@@ -22,7 +22,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="/Simplycab-/icon-192.png">
 <title>Black Limousine — Système VTC</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
 :root{
@@ -329,7 +329,7 @@ tr:last-child td{border-bottom:none}
     </div>
     <div class="lcard">
       <div class="lbody">
-        <div class="ltabs">
+        <div class="ltabs" id="login-tabs">
           <button class="ltab on" id="lt-admin" onclick="switchTab('admin')">Administrateur</button>
           <button class="ltab" id="lt-dispatch" onclick="switchTab('dispatch')">Dispatch</button>
           <button class="ltab" id="lt-chauffeur" onclick="switchTab('chauffeur')">Chauffeur PIN</button>
@@ -653,9 +653,35 @@ tr:last-child td{border-bottom:none}
 
       <!-- FACTURATION -->
       <div class="page" id="page-facturation">
+        <!-- GÉNÉRATEUR DE FACTURES -->
+        <div class="sec" style="margin-bottom:16px">
+          <div class="sec-h">
+            <div class="sec-t"><i class="fas fa-file-invoice-dollar"></i> Générer une facture</div>
+          </div>
+          <div style="padding:16px">
+            <div class="fg3" style="margin-bottom:14px">
+              <div class="fld"><label>Client</label>
+                <select id="inv-client"><option value="">— Choisir un client —</option></select>
+              </div>
+              <div class="fld"><label>Mois</label>
+                <select id="inv-month"></select>
+              </div>
+              <div class="fld"><label>Année</label>
+                <select id="inv-year"></select>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-p" onclick="previewInvoice()"><i class="fas fa-eye"></i> Aperçu</button>
+              <button class="btn btn-s" onclick="generateInvoicePDF()"><i class="fas fa-file-pdf"></i> Télécharger PDF</button>
+            </div>
+            <div id="inv-preview" style="margin-top:18px"></div>
+          </div>
+        </div>
+
+        <!-- LISTE DES COURSES À FACTURER -->
         <div class="sec">
           <div class="sec-h">
-            <div class="sec-t"><i class="fas fa-file-invoice-dollar"></i> Factures</div>
+            <div class="sec-t"><i class="fas fa-list"></i> Détail des courses</div>
             <div class="sec-a">
               <span class="bdg bdg-muted" id="fac-ht">HT : 0€</span>
               <span class="bdg bdg-gold" id="fac-ttc">TTC : 0€</span>
@@ -676,6 +702,13 @@ tr:last-child td{border-bottom:none}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div class="sec"><div class="sec-h"><div class="sec-t"><i class="fas fa-chart-bar"></i> CA par mois</div></div><div style="padding:16px;height:200px"><canvas id="chart-ca"></canvas></div></div>
           <div class="sec"><div class="sec-h"><div class="sec-t"><i class="fas fa-users"></i> Top chauffeurs</div></div><div style="padding:16px" id="rap-ch"></div></div>
+        </div>
+        <!-- STATS DÉTAILLÉES PAR CHAUFFEUR -->
+        <div class="sec" style="margin-top:16px">
+          <div class="sec-h"><div class="sec-t"><i class="fas fa-chart-line"></i> Statistiques par chauffeur</div></div>
+          <div class="tw"><table><thead><tr>
+            <th>Chauffeur</th><th>Courses</th><th>Terminées</th><th>No-show</th><th>Annulées</th><th>Ponctualité</th><th>CA généré</th>
+          </tr></thead><tbody id="tb-stats-ch"></tbody></table></div>
         </div>
       </div>
 
@@ -1342,6 +1375,14 @@ tr:last-child td{border-bottom:none}
       </div>
       <div class="fld"><label>Email facturation</label><input type="email" id="cl-email-fac" placeholder="compta@societe.com"></div>
 
+      <!-- MESSAGE SMS PERSONNALISÉ -->
+      <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:14px 0 10px">💬 Message SMS aux passagers</div>
+      <div class="fld">
+        <label>Message type pour ce client</label>
+        <textarea id="cl-sms-template" rows="5" placeholder="Hello [prenom], I am [chauffeur], your driver for your transfer to [destination]. I am waiting for you at the meeting point. To reach me: [tel]" style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:12px;outline:none;resize:vertical;line-height:1.5"></textarea>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px">Variables : <strong>[prenom]</strong> = prénom passager, <strong>[chauffeur]</strong> = nom chauffeur, <strong>[destination]</strong> = arrivée, <strong>[tel]</strong> = tél chauffeur</div>
+      </div>
+
       <!-- FACTURATION -->
       <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:14px 0 10px">💶 Facturation</div>
       <div class="fg3">
@@ -1495,10 +1536,93 @@ async function fbPush(path, data) {
   return res.name; // returns new key
 }
 
+// ══════════════════════════════════════════
+// FILE D'ATTENTE DE SYNCHRONISATION HORS-LIGNE
+// ══════════════════════════════════════════
+function getSyncQueue() {
+  try { return JSON.parse(localStorage.getItem('bl_sync_queue')||'[]'); }
+  catch(e) { return []; }
+}
+function saveSyncQueue(q) {
+  try { localStorage.setItem('bl_sync_queue', JSON.stringify(q)); } catch(e) {}
+}
+function queueAction(action) {
+  const q = getSyncQueue();
+  q.push({...action, queuedAt: new Date().toISOString()});
+  saveSyncQueue(q);
+  updateSyncBadge();
+}
+function updateSyncBadge() {
+  const q = getSyncQueue();
+  const el = document.getElementById('fb-status');
+  if(!el) return;
+  if(q.length > 0) {
+    el.innerHTML = `<span style="color:var(--orange);font-size:11px">⏳ ${q.length} en attente</span>`;
+  }
+}
+
+// Tenter de vider la file dès qu'on a du réseau
+async function flushSyncQueue() {
+  const q = getSyncQueue();
+  if(!q.length) return;
+  const remaining = [];
+  for(const action of q) {
+    try {
+      if(action.type === 'update') {
+        const r = await fetch(`${FB_URL}/${action.path}/${action.key}.json`, {
+          method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(action.data)
+        });
+        if(!r.ok) remaining.push(action);
+      } else if(action.type === 'push') {
+        const r = await fetch(`${FB_URL}/${action.path}.json`, {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(action.data)
+        });
+        if(!r.ok) remaining.push(action);
+      }
+    } catch(e) {
+      remaining.push(action); // toujours hors-ligne
+    }
+  }
+  saveSyncQueue(remaining);
+  if(remaining.length === 0 && q.length > 0) {
+    showToast(`✓ ${q.length} action(s) synchronisée(s)`);
+    await loadAll();
+  } else {
+    updateSyncBadge();
+  }
+}
+
+// Détecter le retour du réseau
+window.addEventListener('online', () => {
+  showToast('🌐 Connexion rétablie — synchronisation...');
+  flushSyncQueue();
+});
+window.addEventListener('offline', () => {
+  showToast('📴 Hors-ligne — vos actions seront synchronisées au retour', true);
+});
+
 async function fbUpdate(path, key, data) {
-  await fetch(`${FB_URL}/${path}/${key}.json`, {
-    method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
-  });
+  // Si hors-ligne, mettre en file d'attente
+  if(!navigator.onLine) {
+    queueAction({type:'update', path, key, data});
+    // Mettre à jour la donnée localement pour affichage immédiat
+    const item = D[path]?.find(x => x._id === key);
+    if(item) Object.assign(item, data);
+    showToast('📴 Enregistré hors-ligne — sync au retour réseau', true);
+    return;
+  }
+  try {
+    const r = await fetch(`${FB_URL}/${path}/${key}.json`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+    });
+    if(!r.ok) throw new Error('fetch failed');
+  } catch(e) {
+    // Échec réseau → mettre en file
+    queueAction({type:'update', path, key, data});
+    const item = D[path]?.find(x => x._id === key);
+    if(item) Object.assign(item, data);
+    showToast('📴 Enregistré hors-ligne — sync au retour réseau', true);
+  }
 }
 
 async function fbDelete(path, key) {
@@ -1539,9 +1663,31 @@ async function loadAll() {
     D.dispatch_accounts = dispatch_accounts;
     D.client_accounts = client_accounts;
     D.messages = messages;
+    // SAUVEGARDE HORS-LIGNE — garder une copie locale
+    try {
+      localStorage.setItem('bl_offline_cache', JSON.stringify({
+        courses: D.courses, chauffeurs: D.chauffeurs, clients: D.clients,
+        vehicules: D.vehicules, savedAt: new Date().toISOString()
+      }));
+    } catch(e) {}
     document.getElementById('fb-status').innerHTML = '<span style="color:var(--green);font-size:11px">● Firebase</span>';
     renderAll();
   } catch(e) {
+    // MODE HORS-LIGNE — charger depuis le cache local
+    try {
+      const cache = JSON.parse(localStorage.getItem('bl_offline_cache')||'null');
+      if(cache) {
+        D.courses = cache.courses||[];
+        D.chauffeurs = cache.chauffeurs||[];
+        D.clients = cache.clients||[];
+        D.vehicules = cache.vehicules||[];
+        const savedTime = cache.savedAt ? new Date(cache.savedAt).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
+        document.getElementById('fb-status').innerHTML = `<span style="color:var(--orange);font-size:11px">📴 Hors-ligne (${savedTime})</span>`;
+        renderAll();
+        showToast('Mode hors-ligne — données du dernier chargement', true);
+        return;
+      }
+    } catch(err) {}
     document.getElementById('fb-status').innerHTML = '<span style="color:var(--red);font-size:11px">✗ Erreur</span>';
     showToast('Erreur connexion Firebase', 'err');
   }
@@ -1549,7 +1695,7 @@ async function loadAll() {
 
 function renderAll() {
   renderDash(); renderDispatch(); renderChauffeurs(); renderClients();
-  renderTarifs(); renderFact(); renderVehicules(); renderMesCourses();
+  renderTarifs(); renderFact(); populateInvoiceSelects(); renderVehicules(); renderMesCourses();
   renderRapports(); renderHistorique(); renderPlanning(); renderComptes();
   renderConvList(); renderDirigeant(); renderReservations(); renderRevenus();
   renderAgenda(); renderComptesClients(); renderClientPortal();
@@ -1728,6 +1874,8 @@ function startApp() {
   startClock();
   startMsgRefresh();
   checkReserveMode();
+  // Vider la file d'attente hors-ligne si réseau dispo
+  if(navigator.onLine) setTimeout(flushSyncQueue, 2000);
 }
 
 // ── HELPERS ──
@@ -3419,7 +3567,7 @@ function renderClients() {
 }
 
 window.openClientModal = function(id) {
-  const fields = ['cl-nom','cl-commercial','cl-siret','cl-tva','cl-adresse','cl-cp','cl-ville','cl-pays','cl-contact','cl-poste','cl-tel','cl-email','cl-email-fac','cl-ref','cl-notes','cl-commission'];
+  const fields = ['cl-nom','cl-commercial','cl-siret','cl-tva','cl-adresse','cl-cp','cl-ville','cl-pays','cl-contact','cl-poste','cl-tel','cl-email','cl-email-fac','cl-ref','cl-notes','cl-commission','cl-sms-template'];
   fields.forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
   const pays = document.getElementById('cl-pays');if(pays)pays.value='France';
   document.getElementById('cl-edit-id').value = '';
@@ -3449,6 +3597,7 @@ window.openClientModal = function(id) {
     document.getElementById('cl-commission').value = c.commission||'';
     document.getElementById('cl-ref').value = c.ref||'';
     document.getElementById('cl-notes').value = c.notes||'';
+    document.getElementById('cl-sms-template').value = c.smsTemplate||'';
   }
   openMo('client');
 };
@@ -3477,6 +3626,7 @@ window.saveClient = async function() {
     commission: document.getElementById('cl-commission').value,
     ref: document.getElementById('cl-ref').value,
     notes: document.getElementById('cl-notes').value,
+    smsTemplate: document.getElementById('cl-sms-template').value,
     updatedAt: new Date().toISOString()
   };
   closeMo('client');
@@ -3556,6 +3706,210 @@ async function delClientTarifs(clientName){
   });
 }
 // ── FACTURATION ──
+// ══════════════════════════════════════════
+// FACTURATION MENSUELLE PAR CLIENT
+// ══════════════════════════════════════════
+function populateInvoiceSelects() {
+  const clSel = document.getElementById('inv-client');
+  const mSel = document.getElementById('inv-month');
+  const ySel = document.getElementById('inv-year');
+  if(!clSel || !mSel || !ySel) return;
+
+  // Clients (liste unique depuis les courses + clients enregistrés)
+  const clientNames = new Set();
+  D.clients.forEach(c => clientNames.add(c.commercial || c.nom));
+  D.courses.forEach(c => { if(c.client) clientNames.add(c.client); });
+  const sorted = [...clientNames].filter(Boolean).sort();
+  clSel.innerHTML = '<option value="">— Choisir un client —</option>' +
+    sorted.map(n => `<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+
+  // Mois
+  const mois = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const now = new Date();
+  mSel.innerHTML = mois.map((m,i)=>`<option value="${i}" ${i===now.getMonth()?'selected':''}>${m}</option>`).join('');
+
+  // Années
+  const year = now.getFullYear();
+  ySel.innerHTML = [year-1, year, year+1].map(y=>`<option value="${y}" ${y===year?'selected':''}>${y}</option>`).join('');
+}
+
+function getInvoiceCourses(clientName, month, year) {
+  return D.courses.filter(c => {
+    if(c.client !== clientName) return false;
+    if(!['terminee','facturee','payee'].includes(c.statut)) return false;
+    if(!c.datetime) return false;
+    const d = new Date(c.datetime);
+    return d.getMonth() === month && d.getFullYear() === year;
+  }).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+}
+
+function buildInvoiceData() {
+  const clientName = document.getElementById('inv-client').value;
+  const month = parseInt(document.getElementById('inv-month').value);
+  const year = parseInt(document.getElementById('inv-year').value);
+  if(!clientName) { showToast('Choisir un client', true); return null; }
+
+  const courses = getInvoiceCourses(clientName, month, year);
+  if(!courses.length) { showToast('Aucune course terminée pour cette période', true); return null; }
+
+  const clientObj = D.clients.find(c => (c.commercial===clientName) || (c.nom===clientName));
+  const mois = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+  let totalTTC = 0;
+  const lines = courses.map(c => {
+    const ttc = parseFloat(c.prix) || 0;
+    totalTTC += ttc;
+    const htv = ht(ttc);
+    return {
+      date: fdt(c.datetime),
+      trajet: `${c.depart||c.lieu||'—'} → ${c.arrivee||c.duree||'—'}`,
+      chauffeur: c.chauffeur||'—',
+      ref: c.ref||'',
+      ht: htv,
+      tva: ttc-htv,
+      ttc
+    };
+  });
+  const totalHT = ht(totalTTC);
+  const totalTVA = totalTTC - totalHT;
+  const numFacture = `BL-${year}-${String(month+1).padStart(2,'0')}-${(clientName.replace(/[^A-Z0-9]/gi,'').slice(0,4)||'CLI').toUpperCase()}`;
+
+  return { clientName, clientObj, month, year, moisLabel:mois[month], courses, lines, totalHT, totalTVA, totalTTC, numFacture };
+}
+
+window.previewInvoice = function() {
+  const inv = buildInvoiceData();
+  if(!inv) return;
+  const box = document.getElementById('inv-preview');
+  box.innerHTML = `
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;color:#111">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #c9a84c;padding-bottom:14px;margin-bottom:14px">
+        <div>
+          <div style="font-size:20px;font-weight:900;color:#c9a84c;letter-spacing:1px">BLACK LIMOUSINE</div>
+          <div style="font-size:11px;color:#666">by SimplyCab • SIREN 827 574 203</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:700">FACTURE</div>
+          <div style="font-size:12px;color:#666">${inv.numFacture}</div>
+          <div style="font-size:11px;color:#888">${inv.moisLabel} ${inv.year}</div>
+        </div>
+      </div>
+      <div style="background:#f8f7f4;border-radius:8px;padding:12px;margin-bottom:14px;border-left:4px solid #c9a84c">
+        <div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:700;margin-bottom:4px">Facturé à</div>
+        <div style="font-size:14px;font-weight:700">${inv.clientObj?.nom||inv.clientName}</div>
+        ${inv.clientObj?.adresse?`<div style="font-size:11px;color:#666">${inv.clientObj.adresse}, ${inv.clientObj.cp||''} ${inv.clientObj.ville||''}</div>`:''}
+        ${inv.clientObj?.siret?`<div style="font-size:11px;color:#888">SIRET : ${inv.clientObj.siret}</div>`:''}
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="background:#1a1a1a;color:#fff">
+          <th style="padding:7px;text-align:left">Date</th>
+          <th style="padding:7px;text-align:left">Trajet</th>
+          <th style="padding:7px;text-align:left">Chauffeur</th>
+          <th style="padding:7px;text-align:right">HT</th>
+          <th style="padding:7px;text-align:right">TTC</th>
+        </tr></thead>
+        <tbody>
+          ${inv.lines.map((l,i)=>`<tr style="border-bottom:1px solid #eee;background:${i%2?'#faf9f7':'#fff'}">
+            <td style="padding:6px">${l.date}</td>
+            <td style="padding:6px">${l.trajet}</td>
+            <td style="padding:6px">${l.chauffeur}</td>
+            <td style="padding:6px;text-align:right">${l.ht.toFixed(2)}€</td>
+            <td style="padding:6px;text-align:right;font-weight:600">${l.ttc.toFixed(2)}€</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top:14px;display:flex;justify-content:flex-end">
+        <div style="width:240px">
+          <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px"><span>Total HT</span><span>${inv.totalHT.toFixed(2)}€</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#666"><span>TVA 10%</span><span>${inv.totalTVA.toFixed(2)}€</span></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #c9a84c;font-size:15px;font-weight:800;color:#c9a84c"><span>Total TTC</span><span>${inv.totalTTC.toFixed(2)}€</span></div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:#666;margin-top:12px;text-align:center">${inv.courses.length} course(s) • ${inv.moisLabel} ${inv.year}</div>
+    </div>`;
+  box.scrollIntoView({behavior:'smooth', block:'nearest'});
+};
+
+window.generateInvoicePDF = function() {
+  const inv = buildInvoiceData();
+  if(!inv) return;
+  const cl = inv.clientObj;
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>${inv.numFacture}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;padding:40px;max-width:760px;margin:auto;color:#111;font-size:13px;line-height:1.6}
+    .header{display:flex;justify-content:space-between;margin-bottom:28px;padding-bottom:18px;border-bottom:3px solid #c9a84c}
+    .co{font-size:24px;font-weight:900;color:#c9a84c;letter-spacing:2px}
+    .cb{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+    .ca{font-size:11px;color:#555;margin-top:8px;line-height:1.5}
+    .fi{text-align:right}.fn{font-size:20px;font-weight:700;margin-bottom:4px}.fd{font-size:12px;color:#555}
+    .billto{background:#f8f7f4;border-radius:6px;padding:14px 18px;margin-bottom:22px;border-left:4px solid #c9a84c}
+    .st{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:6px}
+    table{width:100%;border-collapse:collapse;margin-bottom:18px}
+    th{background:#1a1a1a;color:#fff;padding:9px 11px;text-align:left;font-size:11px}
+    td{padding:8px 11px;border-bottom:1px solid #eee;font-size:11px}
+    tr:nth-child(even) td{background:#faf9f7}
+    .tot{display:flex;justify-content:flex-end}
+    .totbox{width:280px}
+    .totline{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+    .totfinal{display:flex;justify-content:space-between;padding:10px 0;border-top:2px solid #c9a84c;font-size:17px;font-weight:800;color:#c9a84c}
+    .foot{margin-top:36px;padding-top:16px;border-top:1px solid #ddd;font-size:10px;color:#888;line-height:1.6}
+    @media print{body{padding:20px}}
+  </style></head><body>
+    <div class="header">
+      <div>
+        <div class="co">BLACK LIMOUSINE</div>
+        <div class="cb">by SimplyCab</div>
+        <div class="ca">SimplyCab SASU<br>Meaux 77100<br>SIREN : 827 574 203<br>black-limousine.com</div>
+      </div>
+      <div class="fi">
+        <div class="fn">FACTURE</div>
+        <div class="fd">N° ${inv.numFacture}</div>
+        <div class="fd">Date : ${new Date().toLocaleDateString('fr-FR')}</div>
+        <div class="fd">Période : ${inv.moisLabel} ${inv.year}</div>
+      </div>
+    </div>
+    <div class="billto">
+      <div class="st">Facturé à</div>
+      <div style="font-size:15px;font-weight:700">${cl?.nom||inv.clientName}</div>
+      ${cl?.adresse?`<div>${cl.adresse}</div>`:''}
+      ${(cl?.cp||cl?.ville)?`<div>${cl?.cp||''} ${cl?.ville||''}</div>`:''}
+      ${cl?.siret?`<div style="color:#888;font-size:11px;margin-top:3px">SIRET : ${cl.siret}</div>`:''}
+      ${cl?.tva?`<div style="color:#888;font-size:11px">TVA : ${cl.tva}</div>`:''}
+    </div>
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Trajet</th><th>Chauffeur</th><th>Réf.</th>
+        <th style="text-align:right">HT</th><th style="text-align:right">TVA</th><th style="text-align:right">TTC</th>
+      </tr></thead>
+      <tbody>
+        ${inv.lines.map(l=>`<tr>
+          <td>${l.date}</td>
+          <td>${l.trajet}</td>
+          <td>${l.chauffeur}</td>
+          <td style="font-size:9px;color:#999">${l.ref}</td>
+          <td style="text-align:right">${l.ht.toFixed(2)}€</td>
+          <td style="text-align:right;color:#888">${l.tva.toFixed(2)}€</td>
+          <td style="text-align:right;font-weight:600">${l.ttc.toFixed(2)}€</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="tot"><div class="totbox">
+      <div class="totline"><span>Total HT</span><span>${inv.totalHT.toFixed(2)}€</span></div>
+      <div class="totline" style="color:#666"><span>TVA 10%</span><span>${inv.totalTVA.toFixed(2)}€</span></div>
+      <div class="totfinal"><span>Total TTC</span><span>${inv.totalTTC.toFixed(2)}€</span></div>
+    </div></div>
+    <div class="foot">
+      ${inv.courses.length} course(s) facturée(s) pour la période de ${inv.moisLabel} ${inv.year}.<br>
+      SimplyCab SASU au capital social — SIREN 827 574 203 — Meaux 77100.<br>
+      TVA sur les encaissements. Règlement à réception de facture. En cas de retard de paiement, des pénalités au taux légal seront appliquées (art. L441-10 du Code de commerce).
+    </div>
+    <script>window.onload=()=>{setTimeout(()=>window.print(),400)}<\/script>
+  </body></html>`);
+  w.document.close();
+};
+
 function renderFact() {
   const s=document.getElementById('fac-s')?.value||'';
   const list=D.courses.filter(c=>['terminee','facturee','payee'].includes(c.statut)&&(!s||c.statut===s));
@@ -3655,6 +4009,42 @@ function renderRapports() {
       <div class="text-gold fw7 ff-syne" style="font-size:12px">${ca.toFixed(0)}€</div>
     </div>`).join(''):'<div style="color:var(--muted);font-size:12px">Aucune donnée</div>';}
   setTimeout(drawBarChart, 100);
+
+  // STATS DÉTAILLÉES PAR CHAUFFEUR
+  const tbStats = document.getElementById('tb-stats-ch');
+  if(tbStats) {
+    const stats = {};
+    D.courses.forEach(c => {
+      if(!c.chauffeur) return;
+      if(!stats[c.chauffeur]) stats[c.chauffeur] = {total:0, terminee:0, noshow:0, annulee:0, ca:0, retards:0, aHeure:0};
+      const s = stats[c.chauffeur];
+      s.total++;
+      if(c.statut==='terminee'||c.statut==='payee'||c.statut==='facturee') { s.terminee++; s.ca += parseFloat(c.prix)||0; }
+      if(c.statut==='noshow') s.noshow++;
+      if(c.statut==='annulee') s.annulee++;
+      // Ponctualité : comparer heure prévue vs heure sur_place si dispo
+      if(c.heureSurPlace && c.datetime) {
+        const prevu = new Date(c.datetime).getTime();
+        const arrive = new Date(c.heureSurPlace).getTime();
+        if(arrive <= prevu + 5*60000) s.aHeure++; // 5 min de tolérance
+        else s.retards++;
+      }
+    });
+    const sorted = Object.entries(stats).sort((a,b)=>b[1].ca-a[1].ca);
+    tbStats.innerHTML = sorted.length ? sorted.map(([name, s])=>{
+      const ponctualite = (s.aHeure+s.retards)>0 ? Math.round((s.aHeure/(s.aHeure+s.retards))*100) : null;
+      const ponctColor = ponctualite===null?'var(--muted)':ponctualite>=90?'var(--green)':ponctualite>=70?'var(--orange)':'var(--red)';
+      return `<tr>
+        <td><strong style="font-size:12px">${name}</strong></td>
+        <td style="font-size:12px">${s.total}</td>
+        <td style="font-size:12px;color:var(--green)">${s.terminee}</td>
+        <td style="font-size:12px;color:${s.noshow?'var(--red)':'var(--muted)'}">${s.noshow}</td>
+        <td style="font-size:12px;color:${s.annulee?'var(--orange)':'var(--muted)'}">${s.annulee}</td>
+        <td style="font-size:12px;color:${ponctColor};font-weight:700">${ponctualite!==null?ponctualite+'%':'—'}</td>
+        <td class="text-gold fw7" style="font-size:12px">${s.ca.toFixed(0)}€</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Aucune donnée chauffeur</td></tr>';
+  }
 }
 
 // ── PLANNING ──
@@ -3825,7 +4215,7 @@ function renderMesCourses() {
       + '<div style="padding:16px">'
       // Time + vehicle
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
-      + '<div style="background:#f5f6f8;border-radius:10px;padding:8px 14px;text-align:center;min-width:70px"><div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:#111">'+time+'</div><div style="font-size:10px;color:#777">'+date+'</div></div>'
+      + '<div style="background:#f5f6f8;border-radius:10px;padding:8px 14px;text-align:center;min-width:70px"><div style="font-family:Inter,sans-serif;font-size:22px;font-weight:700;color:#111;letter-spacing:-0.5px">'+time+'</div><div style="font-size:10px;color:#777">'+date+'</div></div>'
       + '<div style="flex:1"><div style="font-size:12px;color:#777">Véhicule</div><div style="font-size:14px;font-weight:700">'+vehIco+' '+({berline:'Berline',van:'Van',sprinter:'Sprinter',bus:'Bus'}[c.vehicule]||'—')+' &bull; '+paxCount+' pax'+(terms?' &bull; '+terms:'')+'</div></div>'
       + '</div>'
       // Trajet
@@ -4791,14 +5181,29 @@ const TWILIO_FROM = '+14422005004';
 // Message templates by client
 function getSMSTemplate(clientName, chauffeurName, chauffeurTel, destination) {
   const client = (clientName||'').toUpperCase();
+
+  // 1. PRIORITÉ : message personnalisé du client
+  const clientObj = D.clients.find(c =>
+    (c.nom||'').toUpperCase() === client ||
+    (c.commercial||'').toUpperCase() === client ||
+    client.includes((c.commercial||'###').toUpperCase()) ||
+    client.includes((c.nom||'###').toUpperCase().split(' ')[0])
+  );
+  if(clientObj && clientObj.smsTemplate && clientObj.smsTemplate.trim()) {
+    return (prenom) => clientObj.smsTemplate
+      .replace(/\[prenom\]/gi, prenom||'')
+      .replace(/\[chauffeur\]/gi, chauffeurName||'')
+      .replace(/\[destination\]/gi, destination||'')
+      .replace(/\[tel\]/gi, chauffeurTel||'');
+  }
+
+  // 2. Sinon templates par défaut
   const isLVV = client.includes('LVV') || destination.toLowerCase().includes('vall');
-  const isDCGM = client.includes('DC_GM') || client.includes('DREAM') || client.includes('GRAND MAGIC') || client.includes('DREAM CASTLE');
 
   if(isLVV) {
     return (prenom) => `Dear ${prenom},\nI am ${chauffeurName}, your private chauffeur for your transfer to La Vallée Village.\nI am currently waiting for you at the hotel's main entrance.\nShould you need to reach me directly, please don't hesitate to contact me: ${chauffeurTel}\nI look forward to providing you with a smooth and comfortable journey.\nWarm regards,\n${chauffeurName}`;
   }
 
-  // Detect hotel/client name for message
   let dest = 'DUEMEA';
   if(client.includes('MSP')) dest = 'MSP';
   else if(client.includes('LVV')) dest = 'La Vallée Village';
@@ -4831,6 +5236,7 @@ async function sendTwilioSMS(to, body) {
 window.driverUpd = async function(id, statut, note) {
   const update = {updatedAt:new Date().toISOString()};
   if(statut) update.statut = statut;
+  if(statut === 'sur_place') update.heureSurPlace = new Date().toISOString();
   if(note && note.trim()) {
     const c = D.courses.find(x=>x._id===id);
     const existing = c?.notes||'';
@@ -4843,13 +5249,39 @@ window.driverUpd = async function(id, statut, note) {
   await loadAll();
   showToast(statut?'Statut mis à jour ✓':'Note ajoutée ✓');
 
-  // Si sur_place → proposer d'envoyer SMS aux passagers
+  // Si sur_place → demander si on envoie un SMS aux passagers
   if(statut === 'sur_place') {
     const c = D.courses.find(x=>x._id===id);
     if(c && c.passagers && c.passagers.length > 0) {
-      showSMSPopup(c);
+      askSendSMS(c);
     }
   }
+};
+
+window.askSendSMS = function(c) {
+  const present = c.passagers.filter(p=>p.present!==false).length;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:550;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:18px;width:380px;max-width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="padding:24px 22px;text-align:center">
+        <div style="font-size:46px;margin-bottom:12px">💬</div>
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#111;margin-bottom:8px">Envoyer un SMS aux passagers ?</div>
+        <div style="font-size:14px;color:#777;line-height:1.4">Prévenir ${present} passager(s) que vous êtes sur place</div>
+      </div>
+      <div style="display:flex;gap:10px;padding:0 22px 22px">
+        <button onclick="this.closest('div[style*=fixed]').remove()"
+          style="flex:1;background:#f0f2f5;border:none;border-radius:12px;padding:15px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#555;cursor:pointer">
+          Non, pas maintenant
+        </button>
+        <button onclick="this.closest('div[style*=fixed]').remove();showSMSPopup(window._smsCourse)"
+          style="flex:1;background:#22c55e;border:none;border-radius:12px;padding:15px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;cursor:pointer">
+          Oui, envoyer
+        </button>
+      </div>
+    </div>`;
+  window._smsCourse = c;
+  document.body.appendChild(ov);
 };
 
 window.showSMSPopup = function(c) {
@@ -4897,14 +5329,20 @@ window.showSMSPopup = function(c) {
               +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">'
               +'<div style="font-size:11px;color:#555;white-space:nowrap;width:60px">Prénom :</div>'
               +'<input type="text" id="sms-prenom-'+i+'" value="'+prenomVal+'" placeholder="Prénom" '
+              +'oninput="updateSMSPreview('+i+',\''+(c.client||'').replace(/\'/g,"")+'\',\''+SESSION.name.replace(/\'/g,"")+'\',\''+chauffeurTel+'\',\''+(c.arrivee||c.depart||'').replace(/\'/g,"")+'\')" '
               +'style="flex:1;background:#fff;border:1px solid '+(prenomVal?'#e0e3e8':'#f59e0b')+';border-radius:8px;padding:7px 10px;font-size:13px;color:#111;outline:none;font-weight:600">'
               +'</div>'
-              +'<div style="display:flex;gap:8px;align-items:center">'
+              +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">'
               +'<div style="font-size:11px;color:#555;white-space:nowrap;width:60px">Tél :</div>'
               +'<input type="tel" id="sms-tel-'+i+'" value="'+(telVal||'')+'" placeholder="+33612345678" '
               +'style="flex:1;background:#fff;border:1px solid '+(telVal?'#e0e3e8':'#f59e0b')+';border-radius:8px;padding:7px 10px;font-size:13px;color:#111;outline:none;font-weight:600">'
               +'</div>'
-              +((!prenomVal||!telVal)?'<div style="font-size:10px;color:#f59e0b;margin-top:5px">⚠️ Vérifier prénom et numéro avant envoi</div>':'')
+              +'<div style="display:flex;gap:8px;align-items:flex-start">'
+              +'<div style="font-size:11px;color:#555;white-space:nowrap;width:60px;margin-top:7px">Message :</div>'
+              +'<textarea id="sms-msg-'+i+'" rows="4" '
+              +'style="flex:1;background:#fffef5;border:1px solid #e0e3e8;border-radius:8px;padding:8px 10px;font-size:12px;color:#111;outline:none;resize:vertical;line-height:1.5;font-family:inherit">'+tpl(prenomVal).replace(/</g,'&lt;')+'</textarea>'
+              +'</div>'
+              +((!prenomVal||!telVal)?'<div style="font-size:10px;color:#f59e0b;margin-top:5px">⚠️ Vérifier prénom, numéro et message avant envoi</div>':'')
               +'</div>';
           }).join('')}
         </div>
@@ -4918,6 +5356,14 @@ window.showSMSPopup = function(c) {
       </div>
     </div>`;
   document.body.appendChild(ov);
+};
+
+window.updateSMSPreview = function(i, client, chauffeurName, chauffeurTel, destination) {
+  const prenomEl = document.getElementById('sms-prenom-'+i);
+  const msgEl = document.getElementById('sms-msg-'+i);
+  if(!prenomEl || !msgEl) return;
+  const tpl = getSMSTemplate(client, chauffeurName, chauffeurTel, destination);
+  msgEl.value = tpl(prenomEl.value.trim());
 };
 
 window.doSendSMSFromPopup = async function(count, client, destination, chauffeurName, chauffeurTel, overlay) {
@@ -4940,7 +5386,9 @@ window.doSendSMSFromPopup = async function(count, client, destination, chauffeur
     if(!tel.startsWith('+')) tel = '+' + tel;
     if(!tel.match(/^\+\d{8,15}$/)) { if(st){st.textContent='❌ Numéro invalide';st.style.color='var(--red)';}failed++;continue; }
 
-    const msg = tpl(prenom);
+    // Utiliser le message édité par le chauffeur
+    const msgEl = document.getElementById('sms-msg-'+i);
+    const msg = (msgEl?.value||'').trim() || tpl(prenom);
     const result = await sendTwilioSMS(tel, msg);
     if(result === true) {
       sent++;
@@ -5138,6 +5586,38 @@ function gp(name, btn) {
 window.gp=gp;window.loadAll=loadAll;window.renderDispatch=renderDispatch;window.renderClients=renderClients;window.renderFact=renderFact;window.updStatut=updStatut;window.delCourse=delCourse;window.updChauffStatut=updChauffStatut;window.delChauffeur=delChauffeur;window.delVehicule=delVehicule;window.delClient=delClient;window.delTarif=delTarif;window.delDispatch=delDispatch;
 
 function switchTab(t){document.querySelectorAll('.ltab').forEach(x=>x.classList.remove('on'));document.getElementById('lt-'+t).classList.add('on');['admin','dispatch','chauffeur','client'].forEach(p=>{const el=document.getElementById('pane-'+p);if(el)el.style.display=p===t?'block':'none';});}
+
+// Filtrer les connexions visibles selon l'URL (#dispatch, #client, #admin, défaut=chauffeur)
+function applyLoginMode() {
+  const hash = (location.hash||'').replace('#','').toLowerCase();
+  const tabs = document.getElementById('login-tabs');
+  const ltAdmin = document.getElementById('lt-admin');
+  const ltDispatch = document.getElementById('lt-dispatch');
+  const ltChauffeur = document.getElementById('lt-chauffeur');
+  const ltClient = document.getElementById('lt-client');
+  if(!tabs) return;
+
+  // Reset
+  [ltAdmin, ltDispatch, ltChauffeur, ltClient].forEach(t=>{if(t)t.style.display='';});
+
+  if(hash === 'admin') {
+    // Admin voit TOUTES les connexions
+    tabs.style.display = 'flex';
+    switchTab('admin');
+  } else if(hash === 'dispatch') {
+    tabs.style.display = 'none';
+    switchTab('dispatch');
+  } else if(hash === 'client') {
+    tabs.style.display = 'none';
+    switchTab('client');
+  } else {
+    // Par défaut → Chauffeur uniquement
+    tabs.style.display = 'none';
+    switchTab('chauffeur');
+  }
+}
+window.addEventListener('hashchange', applyLoginMode);
+applyLoginMode();
 window.switchTab=switchTab;
 
 function openMo(n){document.getElementById('mo-'+n).classList.add('on');}
