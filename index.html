@@ -5138,22 +5138,6 @@ function renderClientPortal() {
         const timeline=`<div style="display:flex;align-items:center;margin-top:10px;overflow-x:auto;padding-bottom:2px">
           ${steps.map((s,i)=>{const done2=i<=currentIdx;const cur=i===currentIdx;return`<div style="display:flex;align-items:center;flex-shrink:0"><div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:${cur?12:8}px;height:${cur?12:8}px;border-radius:50%;background:${done2?color:'var(--border2)'};${cur?'box-shadow:0 0 0 3px '+color+'44':''}"></div><div style="font-size:8px;color:${done2?'var(--white2)':'var(--muted)'};white-space:nowrap;font-weight:${cur?700:400}">${s.l}</div></div>${i<steps.length-1?`<div style="width:18px;height:2px;background:${i<currentIdx?color:'var(--border2)'};flex-shrink:0;margin-bottom:12px"></div>`:''}</div>`;}).join('')}
         </div>`;
-        // Suivi GPS chauffeur — visible seulement entre "acceptée" et "déposé"
-        const trackingStatuses = ['acceptee','en_route','sur_place','onboard'];
-        const chName = (c.chauffeur||'').trim().toLowerCase();
-        const ch = D.chauffeurs.find(x=>{
-          const full = (x.prenom+(x.nom?' '+x.nom:'')).trim().toLowerCase();
-          return full===chName || (x.prenom||'').trim().toLowerCase()===chName;
-        });
-        const hasGPS = ch && ch.gps && (ch.gps.lat || ch.gps.lat===0);
-        const canTrack = trackingStatuses.includes(c.statut) && hasGPS;
-        const gpsAge = ch && ch.gps && ch.gps.at ? Math.round((Date.now()-new Date(ch.gps.at).getTime())/60000) : null;
-        const trackBtn = canTrack ? `<a href="https://www.google.com/maps?q=${ch.gps.lat},${ch.gps.lng}" target="_blank"
-          style="display:flex;align-items:center;justify-content:center;gap:8px;background:#00b4ff;border:none;border-radius:10px;padding:12px;text-decoration:none;margin-top:10px;box-shadow:0 4px 12px rgba(0,180,255,0.25)">
-          <span style="font-size:18px">📍</span>
-          <span style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff">Suivre mon chauffeur en direct</span>
-          <i class="fas fa-external-link-alt" style="color:rgba(255,255,255,0.8);font-size:11px"></i>
-        </a>${gpsAge!==null&&gpsAge>2?`<div style="text-align:center;font-size:10px;color:var(--muted);margin-top:4px">Position il y a ${gpsAge} min</div>`:''}` : (trackingStatuses.includes(c.statut) ? `<div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted);padding:8px;background:var(--card2);border-radius:8px">📍 En attente de la position du chauffeur...</div>` : '');
         return`<div style="background:${color}11;border:1px solid ${color}44;border-radius:var(--r-sm);padding:14px;margin-bottom:10px;border-left:4px solid ${color}">
           <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
             <div><div style="font-size:14px;font-weight:700">${dirIcon} ${date} à ${time}</div>
@@ -5161,7 +5145,7 @@ function renderClientPortal() {
               ${c.terminaux?`<div style="font-size:11px;color:var(--muted2)">📍 ${c.terminaux}</div>`:''}
             </div>
             <div style="text-align:right">${sBdg(c.statut)}<div style="font-size:11px;color:var(--muted2);margin-top:4px">${vehIco} ${c.chauffeur||'Assignation en cours...'}</div>${c.ref?`<div style="font-size:10px;color:var(--gold)">${c.ref}</div>`:''}</div>
-          </div>${timeline}${trackBtn}
+          </div>${timeline}
           ${c.createdByClient?`<div style="font-size:10px;color:var(--muted);margin-top:6px;border-top:1px solid ${color}22;padding-top:6px">Créé par ${c.createdByClient}</div>`:''}
         </div>`;
       }).join('');
@@ -5346,10 +5330,10 @@ function initCarteChauffeurs() {
 
 function createCC() {
   ccMap = window.L.map('cc-map', {zoomControl:true, attributionControl:false}).setView([48.9606, 2.5889], 10);
-  window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19, subdomains: 'abcd'
+  window.L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=McFYT7ift0ED35g7Kc0B', {
+    maxZoom: 20, tileSize: 512, zoomOffset: -1, crossOrigin: true
   }).addTo(ccMap);
-  window.L.control.attribution({prefix:'© CartoDB © OSM'}).addTo(ccMap);
+  window.L.control.attribution({prefix:'© MapTiler © OSM'}).addTo(ccMap);
   refreshCarteChauffeurs();
   // Rafraîchir auto toutes les 15s
   if(ccInterval) clearInterval(ccInterval);
@@ -5504,7 +5488,7 @@ window.refreshClientMap = function() {
 
 function createCpMap() {
   cpMap = window.L.map('cp-map', {zoomControl:true, attributionControl:false}).setView([48.9606, 2.5889], 11);
-  window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom:19, subdomains:'abcd'}).addTo(cpMap);
+  window.L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=McFYT7ift0ED35g7Kc0B', {maxZoom:20, tileSize:512, zoomOffset:-1, crossOrigin:true}).addTo(cpMap);
   setTimeout(()=>cpMap.invalidateSize(), 200);
 }
 
@@ -5643,12 +5627,11 @@ function initLeafletMap() {
 function createMap() {
   leafletMap = window.L.map('live-map', {zoomControl:true, attributionControl:false}).setView([48.9606, 2.5889], 11);
   // Dark tile style — CartoDB Dark Matter
-  window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19,
-    subdomains: 'abcd'
+  window.L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=McFYT7ift0ED35g7Kc0B', {
+    maxZoom: 20, tileSize: 512, zoomOffset: -1, crossOrigin: true
   }).addTo(leafletMap);
   // Attribution petite
-  window.L.control.attribution({prefix:'© CartoDB © OSM'}).addTo(leafletMap);
+  window.L.control.attribution({prefix:'© MapTiler © OSM'}).addTo(leafletMap);
 }
 
 window.refreshLiveMap = async function() {
