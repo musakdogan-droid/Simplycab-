@@ -4642,12 +4642,16 @@ function startMsgRefresh() {
 
   // DISPATCH/ADMIN — détecter nouvelles courses créées (par clients ou réservations)
   if((SESSION.role==='dispatch'||SESSION.role==='admin') && !window._dispatchWatchInterval) {
-    window._lastDispatchCourseIds = new Set(D.courses.map(c=>c._id));
+    window._lastDispatchCourseIds = null; // null = pas encore initialisé
     window._dispatchWatchInterval = setInterval(async()=>{
       if(SESSION.role!=='dispatch'&&SESSION.role!=='admin') return;
       const courses = await fbGet('courses');
       const currentIds = new Set(courses.map(c=>c._id));
-      // Nouvelles courses créées par un client (createdByClient) ou sans chauffeur
+      // Premier passage : on mémorise sans alerter
+      if(window._lastDispatchCourseIds === null) {
+        window._lastDispatchCourseIds = currentIds;
+        return;
+      }
       const nouvelles = courses.filter(c=>
         !window._lastDispatchCourseIds.has(c._id) &&
         !['terminee','annulee','noshow','payee'].includes(c.statut)
@@ -4666,16 +4670,17 @@ function startMsgRefresh() {
 
   // CHAUFFEUR — détecter nouveaux transferts assignés + alerte sonore
   if(SESSION.role === 'chauffeur' && !window._driverWatchInterval) {
-    // Mémoriser les courses actuelles
-    window._lastDriverCourseIds = new Set(
-      D.courses.filter(c=>c.chauffeur===SESSION.name).map(c=>c._id)
-    );
+    window._lastDriverCourseIds = null; // null = pas encore initialisé
     window._driverWatchInterval = setInterval(async()=>{
       if(SESSION.role !== 'chauffeur') return;
       const courses = await fbGet('courses');
       const myCourses = courses.filter(c=>c.chauffeur===SESSION.name && !['terminee','annulee','noshow','payee'].includes(c.statut));
       const currentIds = new Set(myCourses.map(c=>c._id));
-      // Détecter les NOUVELLES courses
+      // Premier passage : mémoriser sans alerter
+      if(window._lastDriverCourseIds === null) {
+        window._lastDriverCourseIds = currentIds;
+        return;
+      }
       const nouvelles = myCourses.filter(c=>!window._lastDriverCourseIds.has(c._id));
       if(nouvelles.length > 0) {
         D.courses = courses.sort((a,b)=>new Date(b.datetime||0)-new Date(a.datetime||0));
@@ -4692,8 +4697,11 @@ function startMsgRefresh() {
 // Alerte sonore nouveau transfert
 function playNewCourseAlert() {
   try {
-    const ctx = new (window.AudioContext||window.webkitAudioContext)();
-    // Deux bips ascendants
+    const AC = window.AudioContext||window.webkitAudioContext;
+    if(!AC) return;
+    const ctx = new AC();
+    // Si le contexte est suspendu (pas encore d'interaction), ne pas forcer
+    if(ctx.state === 'suspended') { ctx.resume().catch(()=>{}); }
     [0, 0.18].forEach((delay, i)=>{
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -4706,8 +4714,7 @@ function playNewCourseAlert() {
       osc.start(ctx.currentTime+delay);
       osc.stop(ctx.currentTime+delay+0.16);
     });
-    // Vibration si supporté
-    if(navigator.vibrate) navigator.vibrate([200,100,200]);
+    if(navigator.vibrate) { try { navigator.vibrate([200,100,200]); } catch(e){} }
   } catch(e) {}
 }
 
