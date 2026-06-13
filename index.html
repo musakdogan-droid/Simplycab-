@@ -39,13 +39,23 @@
     messagingSenderId: "862420643161",
     appId: "1:862420643161:web:5ab64510bca4fcf028b048"
   };
-  try {
-    firebase.initializeApp(firebaseConfig);
-    window.fbAuth = firebase.auth();
-    console.log('Firebase Auth initialisé');
-  } catch(e) {
-    console.error('Erreur init Firebase Auth:', e);
+  function initFirebaseAuth() {
+    if (typeof firebase === 'undefined') {
+      // SDK pas encore chargé — réessayer dans 200ms
+      setTimeout(initFirebaseAuth, 200);
+      return;
+    }
+    try {
+      if (!firebase.apps || !firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      window.fbAuth = firebase.auth();
+      console.log('Firebase Auth initialisé ✓');
+    } catch(e) {
+      console.error('Erreur init Firebase Auth:', e);
+    }
   }
+  initFirebaseAuth();
 </script>
 <style>
 :root{
@@ -1780,7 +1790,11 @@ window.doAdminLogin = async function() {
   if (!pass) { err.textContent = 'Mot de passe requis'; return; }
 
   // NOUVELLE MÉTHODE : Firebase Authentication (email + mot de passe)
-  if (email && window.fbAuth) {
+  if (email) {
+    // Attendre que Firebase Auth soit prêt (jusqu'à 3 secondes)
+    let tries = 0;
+    while (!window.fbAuth && tries < 15) { await new Promise(r=>setTimeout(r,200)); tries++; }
+    if (!window.fbAuth) { err.textContent = 'Service d\'authentification non disponible. Vérifiez votre connexion.'; return; }
     try {
       await window.fbAuth.signInWithEmailAndPassword(email, pass);
       SESSION = { role:'admin', name:'Mustafa', uid:'admin', email };
