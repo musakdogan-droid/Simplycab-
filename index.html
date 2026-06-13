@@ -1699,8 +1699,9 @@ async function loadAll() {
       }));
     } catch(e) {}
     document.getElementById('fb-status').innerHTML = '<span style="color:var(--green);font-size:11px">● Firebase</span>';
-    renderAll();
+    try { renderAll(); } catch(re) { console.error('renderAll error:', re); }
   } catch(e) {
+    console.error('loadAll error:', e);
     // MODE HORS-LIGNE — charger depuis le cache local
     try {
       const cache = JSON.parse(localStorage.getItem('bl_offline_cache')||'null');
@@ -1722,12 +1723,13 @@ async function loadAll() {
 }
 
 function renderAll() {
-  renderDash(); renderDispatch(); renderChauffeurs(); renderClients();
-  renderTarifs(); renderFact(); populateInvoiceSelects(); renderVehicules(); renderMesCourses();
-  renderRapports(); renderHistorique(); renderPlanning(); renderComptes();
-  renderConvList(); renderDirigeant(); renderReservations(); renderRevenus();
-  renderAgenda(); renderComptesClients(); renderClientPortal();
-  updateBadges(); buildDriverSelects();
+  const fns = [renderDash, renderDispatch, renderChauffeurs, renderClients,
+    renderTarifs, renderFact, populateInvoiceSelects, renderVehicules, renderMesCourses,
+    renderRapports, renderHistorique, renderPlanning, renderComptes,
+    renderConvList, renderDirigeant, renderReservations, renderRevenus,
+    renderAgenda, renderComptesClients, renderClientPortal,
+    updateBadges, buildDriverSelects];
+  fns.forEach(fn => { try { fn(); } catch(e) { console.error(fn.name+' error:', e); } });
 }
 
 // ── AUTH ──
