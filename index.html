@@ -24,6 +24,29 @@
 <title>Black Limousine — Système VTC</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- Firebase Authentication (SDK compat — compatible avec le code actuel) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+  // Configuration Firebase (identifiants publics — protégés par les règles de sécurité)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBiXGNZnAsPRz4mp-mQ6UMu2XbXNnAutUA",
+    authDomain: "simplycab-58808.firebaseapp.com",
+    databaseURL: "https://simplycab-58808-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "simplycab-58808",
+    storageBucket: "simplycab-58808.firebasestorage.app",
+    messagingSenderId: "862420643161",
+    appId: "1:862420643161:web:5ab64510bca4fcf028b048"
+  };
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.fbAuth = firebase.auth();
+    console.log('Firebase Auth initialisé');
+  } catch(e) {
+    console.error('Erreur init Firebase Auth:', e);
+  }
+</script>
 <style>
 :root{
   --black:#ffffff;--dark:#f5f6f8;--card:#ffffff;--card2:#f0f2f5;--card3:#e8eaed;
@@ -340,8 +363,10 @@ tr:last-child td{border-bottom:none}
         <div id="pane-admin">
           <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px;color:#111">Connexion Admin</div>
           <div style="font-size:12px;color:#666;margin-bottom:20px">Accès complet — Mustafa Akdogan</div>
-          <div class="fld"><label>Mot de passe admin</label><input type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
+          <div class="fld"><label>Email</label><input type="email" id="l-email" placeholder="votre@email.com" autocomplete="username"></div>
+          <div class="fld"><label>Mot de passe admin</label><input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
           <button class="btn-login" onclick="doAdminLogin()">Se connecter →</button>
+          <div style="text-align:center;margin-top:10px"><a href="#" onclick="resetAdminPassword();return false;" style="font-size:12px;color:var(--gold);text-decoration:none">Mot de passe oublié ?</a></div>
           <div class="lerr" id="l-err"></div>
         </div>
         <div id="pane-dispatch" style="display:none">
@@ -1748,11 +1773,36 @@ function checkSession() {
 }
 
 window.doAdminLogin = async function() {
+  const email = (document.getElementById('l-email')?.value||'').trim();
   const pass = document.getElementById('l-pass').value;
   const err = document.getElementById('l-err');
   err.textContent = '';
   if (!pass) { err.textContent = 'Mot de passe requis'; return; }
-  // Check against Firebase stored password
+
+  // NOUVELLE MÉTHODE : Firebase Authentication (email + mot de passe)
+  if (email && window.fbAuth) {
+    try {
+      await window.fbAuth.signInWithEmailAndPassword(email, pass);
+      SESSION = { role:'admin', name:'Mustafa', uid:'admin', email };
+      sessionStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+      startApp();
+      return;
+    } catch(e) {
+      // Erreurs Firebase Auth claires
+      if(e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
+        err.textContent = 'Email ou mot de passe incorrect';
+      } else if(e.code === 'auth/invalid-email') {
+        err.textContent = 'Adresse email invalide';
+      } else if(e.code === 'auth/too-many-requests') {
+        err.textContent = 'Trop de tentatives. Réessayez plus tard.';
+      } else {
+        err.textContent = 'Erreur de connexion : ' + (e.message||e.code);
+      }
+      return;
+    }
+  }
+
+  // ANCIENNE MÉTHODE (secours, sans email) — sera retirée quand tout est migré
   try {
     const r = await fetch(`${FB_URL}/config/admin_pass.json`);
     const stored = await r.json();
@@ -1762,10 +1812,9 @@ window.doAdminLogin = async function() {
       sessionStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
       startApp();
     } else {
-      err.textContent = 'Mot de passe incorrect';
+      err.textContent = 'Mot de passe incorrect (saisissez votre email pour la nouvelle connexion sécurisée)';
     }
   } catch(e) {
-    // If Firebase not accessible, use default
     if (pass === DEFAULT_PASS) {
       SESSION = { role:'admin', name:'Mustafa', uid:'admin' };
       sessionStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
@@ -1773,6 +1822,22 @@ window.doAdminLogin = async function() {
     } else {
       err.textContent = 'Mot de passe incorrect';
     }
+  }
+};
+
+// Réinitialisation du mot de passe admin par email
+window.resetAdminPassword = async function() {
+  const email = (document.getElementById('l-email')?.value||'').trim();
+  const err = document.getElementById('l-err');
+  if(!email) { err.textContent = 'Saisissez votre email d\'abord'; return; }
+  if(!window.fbAuth) { err.textContent = 'Service non disponible'; return; }
+  try {
+    await window.fbAuth.sendPasswordResetEmail(email);
+    err.style.color = 'var(--green)';
+    err.textContent = '✓ Email de réinitialisation envoyé à ' + email;
+  } catch(e) {
+    err.style.color = '';
+    err.textContent = 'Erreur : ' + (e.message||e.code);
   }
 };
 
