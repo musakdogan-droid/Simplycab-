@@ -1590,6 +1590,7 @@ tr:last-child td{border-bottom:none}
         </select>
       </div>
       <div class="fld"><label>Identifiant *</label><input type="text" id="da-user" placeholder="dispatch01"></div>
+      <div class="fld"><label>Email * (pour connexion sécurisée)</label><input type="email" id="da-email" placeholder="sophie@black-limousine.com"></div>
       <div class="fld"><label>Nom complet</label><input type="text" id="da-nom" placeholder="Sophie Martin"></div>
       <div class="fld">
         <label id="da-pass-label">Mot de passe *</label>
@@ -1859,8 +1860,39 @@ window.doDispatchLogin = async function() {
   const user = document.getElementById('d-user').value.trim();
   const pass = document.getElementById('d-pass').value;
   const err = document.getElementById('d-err');
+  err.style.color = '';
   err.textContent = '';
   if (!user || !pass) { err.textContent = 'Identifiant et mot de passe requis'; return; }
+
+  // NOUVELLE MÉTHODE : si l'identifiant ressemble à un email → Firebase Auth
+  if (user.includes('@')) {
+    let tries = 0;
+    while (!window.fbAuth && tries < 15) { await new Promise(r=>setTimeout(r,200)); tries++; }
+    if (window.fbAuth) {
+      try {
+        await window.fbAuth.signInWithEmailAndPassword(user, pass);
+        // Récupérer le rôle depuis la base (le compte dispatch contient le rôle)
+        const accounts = await fbGet('dispatch_accounts');
+        const acc = accounts.find(a => (a.email||'').toLowerCase() === user.toLowerCase());
+        const role = acc && acc.role === 'admin' ? 'admin' : 'dispatch';
+        SESSION = { role, name: acc?.nom || user.split('@')[0], uid: 'dispatch_'+(acc?._id||user), email:user };
+        sessionStorage.setItem(ADMIN_KEY, JSON.stringify(SESSION));
+        startApp();
+        return;
+      } catch(e) {
+        if(e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
+          err.textContent = 'Email ou mot de passe incorrect';
+        } else if(e.code === 'auth/too-many-requests') {
+          err.textContent = 'Trop de tentatives. Réessayez plus tard.';
+        } else {
+          err.textContent = 'Erreur : ' + (e.message||e.code);
+        }
+        return;
+      }
+    }
+  }
+
+  // ANCIENNE MÉTHODE (secours, identifiant simple) — comptes pas encore migrés
   const accounts = await fbGet('dispatch_accounts');
   const found = accounts.find(a => a.user === user && a.pass === pass);
   if (found) {
@@ -6308,13 +6340,14 @@ window.openDispatchAccountModal = function(id) {
 window.saveDispatchAccount = async function() {
   const editId = document.getElementById('da-edit-id').value;
   const user = document.getElementById('da-user').value.trim();
+  const email = (document.getElementById('da-email')?.value||'').trim().toLowerCase();
   const pass = document.getElementById('da-pass').value.trim();
   const nom = document.getElementById('da-nom').value.trim();
   const role = document.getElementById('da-role')?.value || 'dispatch';
 
   if(editId) {
     // MODIFIER
-    const update = { nom, role, updatedAt: new Date().toISOString() };
+    const update = { nom, role, email, updatedAt: new Date().toISOString() };
     if(pass) {
       if(pass.length < 6){showToast('Mot de passe min. 6 caractères',true);return;}
       update.pass = pass;
@@ -6327,11 +6360,36 @@ window.saveDispatchAccount = async function() {
   } else {
     // CRÉER
     if(!user||!pass){showToast('Identifiant et mot de passe requis',true);return;}
+    if(!email||!email.includes('@')){showToast('Email valide requis pour la connexion sécurisée',true);return;}
     if(pass.length<6){showToast('Mot de passe min. 6 caractères',true);return;}
     if(D.dispatch_accounts.find(d=>d.user===user)){showToast('Identifiant déjà utilisé',true);return;}
+
+    // Créer le compte Firebase Auth via une instance secondaire
+    // (évite de déconnecter l'admin en cours)
+    let authCreated = false;
+    if(window.firebase && firebase.initializeApp) {
+      try {
+        const secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary_'+Date.now());
+        await secondaryApp.auth().createUserWithEmailAndPassword(email, pass);
+        await secondaryApp.auth().signOut();
+        await secondaryApp.delete();
+        authCreated = true;
+      } catch(e) {
+        if(e.code === 'auth/email-already-in-use') {
+          authCreated = true; // déjà créé, on continue
+        } else {
+          showToast('Erreur création compte sécurisé : '+(e.message||e.code), true);
+          return;
+        }
+      }
+    }
+
     closeMo('dispatch-account');
-    await fbPush('dispatch_accounts',{user,pass,nom,role,createdAt:new Date().toISOString()});
-    await addLog(`Compte ${role} créé : ${user}`);
+    // On stocke l'email (et plus le mot de passe en clair une fois Auth créé)
+    const accountData = {user, email, nom, role, createdAt:new Date().toISOString()};
+    if(!authCreated) accountData.pass = pass; // secours si Auth indispo
+    await fbPush('dispatch_accounts', accountData);
+    await addLog(`Compte ${role} créé : ${user} (${email})`);
     await loadAll();
     showToast(`Compte "${user}" (${role}) créé ✓`);
   }
