@@ -1161,9 +1161,10 @@ tr:last-child td{border-bottom:none}
         <div class="fld"><label>Véhicule</label>
           <select id="fc-veh" onchange="genRef();updatePaxMax();autoFillPrix()">
             <option value="berline">🚗 Berline (3 pax)</option>
-            <option value="van">🚐 Van (7 pax)</option>
-            <option value="sprinter">🚌 Sprinter (16 pax)</option>
+            <option value="van">🚐 Van (8 pax)</option>
+            <option value="sprinter">🚌 Sprinter (19 pax)</option>
             <option value="bus">🚍 Bus (35 pax)</option>
+            <option value="pmr">♿ Van PMR (4 pax)</option>
           </select>
         </div>
         <div class="fld"><label>Chauffeur</label>
@@ -1180,7 +1181,7 @@ tr:last-child td{border-bottom:none}
           <div class="fld"><label>Départ *</label><input type="text" id="fc-dep" placeholder="Ex: 15 rue de Rivoli, Paris"></div>
           <div class="fld"><label>Arrivée *</label><input type="text" id="fc-arr" placeholder="Ex: CDG Terminal 2E, Roissy" oninput="autoFillPrix()"></div>
         </div>
-
+        <div class="fld"><label>🧳 Nombre de bagages</label><input type="number" id="fc-bagages" value="0" min="0" max="60" placeholder="0"></div>
       </div>
 
       <div id="f-mad" style="display:none">
@@ -1342,6 +1343,15 @@ tr:last-child td{border-bottom:none}
         <div class="fld"><label>N° de vol</label><input type="text" id="cb-vol" placeholder="AF1234"></div>
         <div class="fld"><label>Nb passagers</label><input type="number" id="cb-pax" value="1" min="1" max="60"></div>
       </div>
+      <div class="fld"><label>🧳 Nombre de bagages</label><input type="number" id="cb-bagages" value="0" min="0" max="60" placeholder="0"></div>
+      <div class="fld"><label>Options spéciales</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px"><input type="checkbox" id="cb-opt-bebe" style="cursor:pointer"> 👶 Siège bébé</label>
+          <label style="display:flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px"><input type="checkbox" id="cb-opt-rehausseur" style="cursor:pointer"> 🧒 Réhausseur</label>
+          <label style="display:flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px"><input type="checkbox" id="cb-opt-pmr" style="cursor:pointer"> ♿ Fauteuil roulant</label>
+          <label style="display:flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px"><input type="checkbox" id="cb-opt-animal" style="cursor:pointer"> 🐕 Animal</label>
+        </div>
+      </div>
       <div class="fld"><label>Passagers (une ligne par personne)</label>
         <textarea id="cb-pax-notes" rows="4" placeholder="07:20 / TO3910 / 3 / R4N7XF3F5KF / Angela Bruciafreddo Italy +393491972346"
           style="width:100%;background:var(--dark);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px;color:var(--white);font-size:12px;outline:none;resize:vertical;font-family:'DM Sans',sans-serif"></textarea>
@@ -1379,7 +1389,7 @@ tr:last-child td{border-bottom:none}
           <input type="password" id="ch-pin" placeholder="••••••" maxlength="6">
           <div id="ch-pin-hint" style="display:none;font-size:10px;color:var(--muted);margin-top:3px">Laisser vide pour ne pas changer le code</div>
         </div>
-        <div class="fld"><label>Véhicule</label><select id="ch-veh"><option value="berline">🚗 Berline</option><option value="van">🚐 Van</option><option value="sprinter">🚌 Sprinter</option><option value="bus">🚍 Bus</option></select></div>
+        <div class="fld"><label>Véhicule</label><select id="ch-veh"><option value="berline">🚗 Berline</option><option value="van">🚐 Van</option><option value="sprinter">🚌 Sprinter</option><option value="bus">🚍 Bus</option><option value="pmr">♿ Van PMR</option></select></div>
       </div>
     </div>
     <div class="mo-f">
@@ -1401,7 +1411,7 @@ tr:last-child td{border-bottom:none}
       <div class="fg2"><div class="fld"><label>Marque *</label><input type="text" id="vh-marque" placeholder="Mercedes"></div><div class="fld"><label>Modèle</label><input type="text" id="vh-modele" placeholder="Classe E"></div></div>
       <div class="fg2"><div class="fld"><label>Immatriculation</label><input type="text" id="vh-immat" placeholder="AB-123-CD"></div><div class="fld"><label>Année</label><input type="number" id="vh-annee" placeholder="2024"></div></div>
       <div class="fg2">
-        <div class="fld"><label>Type</label><select id="vh-type"><option value="berline">Berline</option><option value="van">Van</option><option value="sprinter">Sprinter</option><option value="bus">Bus</option></select></div>
+        <div class="fld"><label>Type</label><select id="vh-type"><option value="berline">Berline</option><option value="van">Van</option><option value="sprinter">Sprinter</option><option value="bus">Bus</option><option value="pmr">Van PMR</option></select></div>
         <div class="fld"><label>Km</label><input type="number" id="vh-km" placeholder="0"></div>
       </div>
       <div class="fld"><label>Chauffeur</label><select id="vh-ch"><option value="">— Non assigné —</option></select></div>
@@ -1575,26 +1585,10 @@ tr:last-child td{border-bottom:none}
 // FIREBASE REST API — pas de SDK, fonctionne partout
 // ═══════════════════════════════════════════════════
 const FB_URL = 'https://simplycab-58808-default-rtdb.europe-west1.firebasedatabase.app';
-const TVA = 0.10;
+const ADMIN_KEY = 'simplycab_session';
+let SESSION = null;
+let D = { courses:[], chauffeurs:[], clients:[], tarifs:[], vehicules:[], logs:[], dispatch_accounts:[], client_accounts:[], messages:[] };
 
-// SOCIETE
-const SOC = {
-  nom:'SIMPLY CAB', brand:'Black Limousine by SimplyCab',
-  adresse:'28 rue Paul Barennes', cp:'77100', ville:'Meaux',
-  siret:'827 574 203 00028', tva_num:'FR55827574203',
-  ape:'4932Z', dirigeant:'Mustafa AKDOGAN', site:'black-limousine.com'
-};
-
-// ADMIN PASSWORD (stored in Firebase)
-const ADMIN_KEY = 'sc_admin_session';
-const DEFAULT_PASS = 'simplycab2024'; // changeable in params
-
-// STATE
-let D = { courses:[], chauffeurs:[], clients:[], tarifs:[], vehicules:[], logs:[], dispatch_accounts:[] };
-let SESSION = { role:null, name:null, uid:null };
-let curMonth = new Date();
-
-// ── FIREBASE REST ──
 async function fbGet(path) {
   const r = await fetch(`${FB_URL}/${path}.json`);
   const data = await r.json();
@@ -1607,19 +1601,14 @@ async function fbPush(path, data) {
     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
   });
   const res = await r.json();
-  return res.name; // returns new key
+  return res.name;
 }
 
-// ══════════════════════════════════════════
-// FILE D'ATTENTE DE SYNCHRONISATION HORS-LIGNE
-// ══════════════════════════════════════════
+// ── FILE D'ATTENTE DE SYNCHRONISATION HORS-LIGNE ──
 function getSyncQueue() {
-  try { return JSON.parse(localStorage.getItem('bl_sync_queue')||'[]'); }
-  catch(e) { return []; }
+  try { return JSON.parse(localStorage.getItem('bl_sync_queue')||'[]'); } catch(e) { return []; }
 }
-function saveSyncQueue(q) {
-  try { localStorage.setItem('bl_sync_queue', JSON.stringify(q)); } catch(e) {}
-}
+function saveSyncQueue(q) { try { localStorage.setItem('bl_sync_queue', JSON.stringify(q)); } catch(e) {} }
 function queueAction(action) {
   const q = getSyncQueue();
   q.push({...action, queuedAt: new Date().toISOString()});
@@ -1629,13 +1618,8 @@ function queueAction(action) {
 function updateSyncBadge() {
   const q = getSyncQueue();
   const el = document.getElementById('fb-status');
-  if(!el) return;
-  if(q.length > 0) {
-    el.innerHTML = `<span style="color:var(--orange);font-size:11px">⏳ ${q.length} en attente</span>`;
-  }
+  if(el && q.length > 0) el.innerHTML = `<span style="color:var(--orange);font-size:11px">⏳ ${q.length} en attente</span>`;
 }
-
-// Tenter de vider la file dès qu'on a du réseau
 async function flushSyncQueue() {
   const q = getSyncQueue();
   if(!q.length) return;
@@ -1643,55 +1627,33 @@ async function flushSyncQueue() {
   for(const action of q) {
     try {
       if(action.type === 'update') {
-        const r = await fetch(`${FB_URL}/${action.path}/${action.key}.json`, {
-          method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(action.data)
-        });
+        const r = await fetch(`${FB_URL}/${action.path}/${action.key}.json`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(action.data)});
         if(!r.ok) remaining.push(action);
       } else if(action.type === 'push') {
-        const r = await fetch(`${FB_URL}/${action.path}.json`, {
-          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(action.data)
-        });
+        const r = await fetch(`${FB_URL}/${action.path}.json`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(action.data)});
         if(!r.ok) remaining.push(action);
       }
-    } catch(e) {
-      remaining.push(action); // toujours hors-ligne
-    }
+    } catch(e) { remaining.push(action); }
   }
   saveSyncQueue(remaining);
-  if(remaining.length === 0 && q.length > 0) {
-    showToast(`✓ ${q.length} action(s) synchronisée(s)`);
-    await loadAll();
-  } else {
-    updateSyncBadge();
-  }
+  if(remaining.length === 0 && q.length > 0) { showToast(`✓ ${q.length} action(s) synchronisée(s)`); await loadAll(); }
+  else updateSyncBadge();
 }
-
-// Détecter le retour du réseau
-window.addEventListener('online', () => {
-  showToast('🌐 Connexion rétablie — synchronisation...');
-  flushSyncQueue();
-});
-window.addEventListener('offline', () => {
-  showToast('📴 Hors-ligne — vos actions seront synchronisées au retour', true);
-});
+window.addEventListener('online', () => { showToast('🌐 Connexion rétablie — synchronisation...'); flushSyncQueue(); });
+window.addEventListener('offline', () => { showToast('📴 Hors-ligne — vos actions seront synchronisées au retour', true); });
 
 async function fbUpdate(path, key, data) {
-  // Si hors-ligne, mettre en file d'attente
   if(!navigator.onLine) {
     queueAction({type:'update', path, key, data});
-    // Mettre à jour la donnée localement pour affichage immédiat
     const item = D[path]?.find(x => x._id === key);
     if(item) Object.assign(item, data);
     showToast('📴 Enregistré hors-ligne — sync au retour réseau', true);
     return;
   }
   try {
-    const r = await fetch(`${FB_URL}/${path}/${key}.json`, {
-      method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
-    });
+    const r = await fetch(`${FB_URL}/${path}/${key}.json`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
     if(!r.ok) throw new Error('fetch failed');
   } catch(e) {
-    // Échec réseau → mettre en file
     queueAction({type:'update', path, key, data});
     const item = D[path]?.find(x => x._id === key);
     if(item) Object.assign(item, data);
@@ -1703,23 +1665,14 @@ async function fbDelete(path, key) {
   try {
     const url = key ? `${FB_URL}/${path}/${key}.json` : `${FB_URL}/${path}.json`;
     const r = await fetch(url, {method:'DELETE', headers:{'Content-Type':'application/json'}});
-    if(!r.ok) {
-      const err = await r.text();
-      console.error('fbDelete error:', r.status, err);
-      return false;
-    }
-    return true;
-  } catch(e) {
-    console.error('fbDelete exception:', e);
-    return false;
-  }
+    return r.ok;
+  } catch(e) { console.error('fbDelete:', e); return false; }
 }
 
 async function fbDel(path) {
   await fetch(`${FB_URL}/${path}.json`, {method:'DELETE'});
 }
 
-// ── LOAD ALL ──
 async function loadAll() {
   try {
     document.getElementById('fb-status').innerHTML = '<span style="color:var(--orange);font-size:11px">⏳</span>';
@@ -2002,6 +1955,8 @@ function startApp() {
   checkReserveMode();
   // Vider la file d'attente hors-ligne si réseau dispo
   if(navigator.onLine) setTimeout(flushSyncQueue, 2000);
+  // Suivi des vols : vérification MANUELLE uniquement (bouton dans la fiche course)
+  // La vérification automatique est désactivée pour économiser les requêtes API
 }
 
 // ── HELPERS ──
@@ -2012,7 +1967,7 @@ function fdt(dt) {
   const d = new Date(dt);
   return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',timeZone:'Europe/Paris'}) + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Paris'});
 }
-function vI(v) { return {berline:'🚗 Berline',van:'🚐 Van',sprinter:'🚌 Sprinter',bus:'🚍 Bus'}[v]||'🚗 Berline'; }
+function vI(v) { return {berline:'🚗 Berline',van:'🚐 Van',sprinter:'🚌 Sprinter',bus:'🚍 Bus',pmr:'♿ Van PMR'}[v]||'🚗 Berline'; }
 function sBdg(s) {
   const m = {
     nouvelle:['bdg-purple','🆕 Nouvelle'],en_attente:['bdg-orange','⏳ En attente'],
@@ -2070,7 +2025,7 @@ function buildDrvDrop(dropId, filter) {
       const name=d.prenom+(d.nom?' '+d.nom:'');
       const av=name.slice(0,2).toUpperCase();
       const statut=d.statut==='disponible'?'<span style="font-size:9px;color:var(--green)">●</span>':'<span style="font-size:9px;color:var(--red)">●</span>';
-      return `<div class="drv-opt" onmousedown="selDrv('${dropId}','${name}')"><div class="av">${av}</div>${statut} ${name} <span style="font-size:10px;color:var(--muted);margin-left:4px">${{berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[d.vehicule]||''}</span></div>`;
+      return `<div class="drv-opt" onmousedown="selDrv('${dropId}','${name}')"><div class="av">${av}</div>${statut} ${name} <span style="font-size:10px;color:var(--muted);margin-left:4px">${{berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍',pmr:'♿'}[d.vehicule]||''}</span></div>`;
     })
   ].join('');
 }
@@ -2519,7 +2474,7 @@ function renderAgenda() {
   list.innerHTML = legendHtml + courses.map(c => {
     const color = getClientColor(c.client, c);
     const time = c.datetime?.slice(11,16)||'—';
-    const vehL = {berline:'B',van:'V',sprinter:'SP',bus:'BU'}[c.vehicule]||'B';
+    const vehL = {berline:'B',van:'V',sprinter:'SP',bus:'BU',pmr:'PMR'}[c.vehicule]||'B';
     const pax = c.passagers?.length || c.pax || 1;
     const terms = c.terminaux ? c.terminaux.replace(/CDG/g,'') : '';
     const info = getClientInfo(c.client);
@@ -2551,7 +2506,7 @@ window.viewCourseDetail = function(id) {
   const color = getClientColor(c.client, c);
   const time = c.datetime?.slice(11,16)||'—';
   const dateStr = c.datetime ? new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',timeZone:'Europe/Paris'}) : '';
-  const vehL = {berline:'B',van:'V',sprinter:'SP',bus:'BU'}[c.vehicule]||'B';
+  const vehL = {berline:'B',van:'V',sprinter:'SP',bus:'BU',pmr:'PMR'}[c.vehicule]||'B';
   const pax = c.passagers?.length || c.pax || 1;
   const terms = c.terminaux ? c.terminaux.replace(/CDG/g,'') : '';
   const info = getClientInfo(c.client);
@@ -2612,6 +2567,25 @@ window.viewCourseDetail = function(id) {
         <div style="font-size:30px;color:#5f6368;flex-shrink:0">🔄</div>
         <div>${sBdg(c.statut)}</div>
       </div>
+
+      <!-- Véhicule + passagers + bagages -->
+      <div style="display:flex;align-items:flex-start;gap:16px;margin-top:22px">
+        <div style="font-size:30px;color:#5f6368;flex-shrink:0">${{berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍',pmr:'♿'}[c.vehicule]||'🚗'}</div>
+        <div style="font-size:30px;color:#222;line-height:1.3">${vI(c.vehicule)} · 👤 ${c.pax||c.passagers?.length||1} pax${c.bags||c.bagages?' · 🧳 '+(c.bags||c.bagages)+' bagage'+((c.bags||c.bagages)>1?'s':''):''}</div>
+      </div>
+      ${c.options&&c.options.length?`
+      <div style="display:flex;align-items:flex-start;gap:16px;margin-top:14px">
+        <div style="font-size:30px;color:#5f6368;flex-shrink:0">⭐</div>
+        <div style="font-size:26px;color:#d97706;line-height:1.3;font-weight:600">${c.options.join(' · ')}</div>
+      </div>`:''}
+      ${c.vol?`
+      <div style="display:flex;align-items:flex-start;gap:16px;margin-top:14px">
+        <div style="font-size:30px;color:#5f6368;flex-shrink:0">✈️</div>
+        <div style="flex:1">
+          <div style="font-size:30px;color:#222;line-height:1.3">Vol ${c.vol}</div>
+          <a href="https://www.flightradar24.com/data/flights/${encodeURIComponent((c.vol||'').replace(/\s+/g,'').toLowerCase())}" target="_blank" style="display:inline-block;margin-top:8px;background:#0891b2;border:none;border-radius:10px;padding:10px 16px;font-size:20px;color:#fff;cursor:pointer;font-weight:600;text-decoration:none">✈️ Suivre le vol en direct →</a>
+        </div>
+      </div>`:''}
 
       <!-- Description passagers -->
       ${paxLines?`
@@ -2758,7 +2732,7 @@ window.geSearchChauffeur = function(query) {
   box.style.display = 'block';
   box.innerHTML = matches.map(ch => {
     const name = ch.prenom+(ch.nom?' '+ch.nom:'');
-    const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[ch.vehicule]||'🚗';
+    const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍',pmr:'♿'}[ch.vehicule]||'🚗';
     const dispo = ch.statut !== 'indisponible';
     const av = name.split(' ').map(n=>n[0]||'').join('').slice(0,2).toUpperCase();
     return '<div onclick="geSelectChauffeur(\''+name.replace(/'/g,"\\'")+'\')" '
@@ -3064,7 +3038,7 @@ window.autoDispatch = function(courseId) {
         ${disponibles.map(ch=>{
           const name = ch.prenom+(ch.nom?' '+ch.nom:'');
           const todayCourses = D.courses.filter(c=>c.chauffeur===name&&new Date(c.datetime).toDateString()===dt.toDateString()).length;
-          const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[ch.vehicule]||'🚗';
+          const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍',pmr:'♿'}[ch.vehicule]||'🚗';
           const av = name.split(' ').map(n=>n[0]||'').join('').slice(0,2).toUpperCase();
           return `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:#f8f9fa;border-radius:12px;margin-bottom:8px;cursor:pointer;border:2px solid transparent;transition:all 0.15s"
             onmouseover="this.style.borderColor='#b8860b'" onmouseout="this.style.borderColor='transparent'"
@@ -3132,7 +3106,7 @@ window.openCourseModal = function() {
 
 // ── PASSAGERS ──
 let paxCounter = 0;
-const PAX_CAP = {berline:3,van:7,sprinter:16,bus:35};
+const PAX_CAP = {berline:3,van:8,sprinter:19,bus:35,pmr:4};
 
 window.updatePaxMax = function() {
   const veh = document.getElementById('fc-veh').value;
@@ -3140,7 +3114,28 @@ window.updatePaxMax = function() {
   const count = document.querySelectorAll('.pax-row').length;
   const warn = document.getElementById('pax-cap-warn');
   if(warn) warn.style.display = count >= max ? 'inline' : 'none';
+  autoSelectVehicle(count);
 };
+
+// Sélection auto du véhicule selon le nombre de passagers
+function autoSelectVehicle(count) {
+  const sel = document.getElementById('fc-veh');
+  if(!sel) return;
+  const current = sel.value;
+  // Déterminer le véhicule minimum nécessaire
+  let needed;
+  if(count <= 3) needed = 'berline';
+  else if(count <= 8) needed = 'van';
+  else if(count <= 19) needed = 'sprinter';
+  else needed = 'bus';
+  // Ne descendre en gamme que si nécessaire (ne pas rétrograder un choix manuel plus grand)
+  const order = {berline:0, van:1, sprinter:2, bus:3};
+  if(order[needed] > order[current]) {
+    sel.value = needed;
+    const labels = {berline:'Berline', van:'Van', sprinter:'Sprinter', bus:'Bus', pmr:'Van PMR'};
+    showToast(`🚗 Passé en ${labels[needed]} (${count} passagers)`);
+  }
+}
 
 function parsePaxLine(line) {
   // Format: H.Arrivée/Vol/Terminal/Réf/Nom Prénom/Téléphone
@@ -3159,10 +3154,13 @@ function parsePaxLine(line) {
 }
 
 window.addPax = function() {
+  const rows = document.querySelectorAll('.pax-row');
+  const newCount = rows.length + 1;
+  // Augmenter le véhicule automatiquement si besoin
+  autoSelectVehicle(newCount);
   const veh = document.getElementById('fc-veh').value;
   const max = PAX_CAP[veh]||3;
-  const rows = document.querySelectorAll('.pax-row');
-  if(rows.length >= max) { showToast(`Capacité max ${max} pax`,true); return; }
+  if(newCount > max) { showToast(`Capacité max ${max} pax (Bus)`,true); return; }
   paxCounter++;
   const id = paxCounter;
   const list = document.getElementById('pax-list');
@@ -3384,7 +3382,7 @@ window.saveCourse = async function() {
     duree: type==='mad'?document.getElementById('fc-duree').value:'',
     vehicule: document.getElementById('fc-veh').value,
     pax: passagers.length,
-    bags: 0,
+    bags: parseInt(document.getElementById('fc-bagages')?.value)||0,
     chauffeur: ch,
     prix, prixChauffeur, marge,
     payMode: document.getElementById('fc-pay-mode')?.value||'simplycab',
@@ -4280,7 +4278,7 @@ function showMorningRecap(courses) {
         ${courses.map((c,i)=>{
           const time = c.datetime?.slice(11,16)||'—';
           const color = getClientColor(c.client,c);
-          const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+          const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍',pmr:'♿'}[c.vehicule]||'🚗';
           return `<div style="display:flex;align-items:center;gap:12px;padding:12px;background:#f8f9fa;border-radius:12px;margin-bottom:8px;border-left:4px solid ${color}">
             <div style="font-family:Inter,sans-serif;font-size:18px;font-weight:700;color:#111;min-width:50px;letter-spacing:-0.5px">${time}</div>
             <div style="flex:1">
@@ -4364,7 +4362,7 @@ function renderMesCourses() {
 
   container.innerHTML = active.map(c=>{
     const flow = STATUT_FLOW[c.statut];
-    const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+    const vehIco = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍',pmr:'♿'}[c.vehicule]||'🚗';
     const paxCount = c.passagers ? c.passagers.filter(p=>p.present!==false).length : (c.pax||1);
     const time = c.datetime ? c.datetime.slice(11,16) : '';
     const date = c.datetime ? new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',timeZone:'Europe/Paris'}) : '';
@@ -4381,6 +4379,9 @@ function renderMesCourses() {
 
     // Passagers button
     const paxBtn = (c.passagers && c.passagers.length) ? '<button onclick="viewPax(\''+c._id+'\')" style="width:100%;background:#f0f2f5;border:1px solid #e0e3e8;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:14px;text-align:left"><span style="font-size:18px">&#128101;</span><div><div style="font-size:13px;font-weight:700;color:#111">'+paxCount+' passager'+(paxCount>1?'s':'')+'</div><div style="font-size:11px;color:#777">'+c.passagers.slice(0,2).map(p=>p.prenom+' '+p.nom).join(', ')+(c.passagers.length>2?'...':'')+'</div></div><i class="fas fa-chevron-right" style="margin-left:auto;color:#aaa;font-size:12px"></i></button>' : '';
+
+    // Lien de suivi du vol (Flightradar24 — gratuit, pas de requête API)
+    const flightBtn = c.vol ? '<a href="https://www.flightradar24.com/data/flights/'+encodeURIComponent(c.vol.replace(/\s+/g,'').toLowerCase())+'" target="_blank" style="width:100%;background:#e0f7fa;border:1px solid #0891b2;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:14px;text-align:left;text-decoration:none;box-sizing:border-box"><span style="font-size:18px">&#9992;&#65039;</span><div><div style="font-size:13px;font-weight:700;color:#0891b2">Vol '+c.vol+'</div><div style="font-size:11px;color:#0891b2">Toucher pour suivre le vol en direct</div></div><i class="fas fa-external-link-alt" style="margin-left:auto;color:#0891b2;font-size:12px"></i></a>' : '';
 
     // Notes
     const notesHtml = c.notes ? '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400e"><i class="fas fa-info-circle"></i> '+c.notes.replace(/\n/g,'<br>')+'</div>' : '';
@@ -4426,6 +4427,7 @@ function renderMesCourses() {
       + '<div style="display:flex;align-items:flex-start;gap:10px"><div style="width:10px;height:10px;border-radius:3px;background:#e05c5c;flex-shrink:0;margin-top:4px"></div><div><div style="font-size:10px;color:#999;font-weight:600;text-transform:uppercase">Destination</div><div style="font-size:14px;font-weight:700;color:#111;margin-top:2px">'+(c.arrivee||c.duree||'—')+'</div></div></div>'
       + '</div>'
       + paxBtn
+      + flightBtn
       + wazeBtn
       + notesHtml
       + actionHtml
@@ -5179,7 +5181,7 @@ function renderClientPortal() {
     else {
       activeList.innerHTML=active.sort((a,b)=>a.datetime?.localeCompare(b.datetime||'')||0).map(c=>{
         const color=getClientColor(c.client,c);const dirIcon=getDirectionIcon(c);
-        const vehIco={berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+        const vehIco={berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍',pmr:'♿'}[c.vehicule]||'🚗';
         const time=c.datetime?.slice(11,16)||'—';
         const date=c.datetime?new Date(c.datetime).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',timeZone:'Europe/Paris'}):'—';
         const steps=[{k:'nouvelle',l:'Demande'},{k:'attribuee',l:'Assignée'},{k:'acceptee',l:'Acceptée'},{k:'en_route',l:'En route'},{k:'sur_place',l:'Sur place'},{k:'onboard',l:'À bord'},{k:'depose',l:'Déposé'},{k:'terminee',l:'Terminée'}];
@@ -5217,7 +5219,7 @@ function renderClientPortal() {
   if(typeof refreshClientMap==='function') refreshClientMap();
 }
 
-window.openClientBooking=function(){const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());document.getElementById('cb-dt').value=now.toISOString().slice(0,16);['cb-dep','cb-arr','cb-vol','cb-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('cb-pax').value=1;document.getElementById('cb-pax-notes').value='';openMo('client-booking');};
+window.openClientBooking=function(){const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());document.getElementById('cb-dt').value=now.toISOString().slice(0,16);['cb-dep','cb-arr','cb-vol','cb-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('cb-pax').value=1;document.getElementById('cb-bagages').value=0;['cb-opt-bebe','cb-opt-rehausseur','cb-opt-pmr','cb-opt-animal'].forEach(id=>{const el=document.getElementById(id);if(el)el.checked=false;});document.getElementById('cb-pax-notes').value='';openMo('client-booking');};
 
 window.submitClientBooking=async function(){
   const dep=document.getElementById('cb-dep').value.trim();const arr=document.getElementById('cb-arr').value.trim();const dt=document.getElementById('cb-dt').value;
@@ -5262,10 +5264,19 @@ window.submitClientBooking=async function(){
     const nom=parts.slice(1).join(' ');
     return{harrivee,vol,terminal,refClient,prenom,nom,tel,present:true};
   }):[];
+  const options = [];
+  if(document.getElementById('cb-opt-bebe')?.checked) options.push('Siège bébé');
+  if(document.getElementById('cb-opt-rehausseur')?.checked) options.push('Réhausseur');
+  if(document.getElementById('cb-opt-pmr')?.checked) options.push('Fauteuil roulant');
+  if(document.getElementById('cb-opt-animal')?.checked) options.push('Animal');
+  let vehChoisi = document.getElementById('cb-veh').value;
+  // Fauteuil roulant → forcer Van PMR
+  if(document.getElementById('cb-opt-pmr')?.checked) vehChoisi = 'pmr';
+
   closeMo('client-booking');showToast('Envoi en cours...');
   const pushResult = await fetch(`${FB_URL}/courses.json`, {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({type:'transfert',client:SESSION.societe||SESSION.name,datetime:dt,depart:dep,arrivee:arr,vehicule:document.getElementById('cb-veh').value,pax:parseInt(document.getElementById('cb-pax').value)||1,vol:document.getElementById('cb-vol').value,notes:document.getElementById('cb-notes').value,passagers,statut:'nouvelle',source:'client',createdByClient:SESSION.name,clientUser:SESSION.clientUser,createdAt:new Date().toISOString()})
+    body: JSON.stringify({type:'transfert',client:SESSION.societe||SESSION.name,datetime:dt,depart:dep,arrivee:arr,vehicule:vehChoisi,pax:parseInt(document.getElementById('cb-pax').value)||1,bagages:parseInt(document.getElementById('cb-bagages').value)||0,options,vol:document.getElementById('cb-vol').value,notes:document.getElementById('cb-notes').value,passagers,statut:'nouvelle',source:'client',createdByClient:SESSION.name,clientUser:SESSION.clientUser,createdAt:new Date().toISOString()})
   });
   const pushData = await pushResult.json();
   const newId = pushData.name;
@@ -5437,7 +5448,7 @@ window.refreshCarteChauffeurs = async function() {
   const bounds = [];
   active.forEach(c=>{
     const name = c.prenom+(c.nom?' '+c.nom:'');
-    const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+    const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍',pmr:'♿'}[c.vehicule]||'🚗';
     const course = D.courses.find(x=>x.chauffeur===name&&['en_route','sur_place','onboard','acceptee'].includes(x.statut));
     const statusColor = course ? '#f0934a' : (c.statut==='indisponible'?'#e74c3c':'#2ecc8a');
     const gpsAge = c.gps.at ? Math.round((Date.now()-new Date(c.gps.at).getTime())/60000) : null;
@@ -5531,7 +5542,7 @@ window.refreshClientMap = function() {
   const bounds = [];
   tracked.forEach(({ch, course})=>{
     const name = ch.prenom+(ch.nom?' '+ch.nom:'');
-    const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[ch.vehicule]||'🚗';
+    const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍',pmr:'♿'}[ch.vehicule]||'🚗';
     const gpsAge = ch.gps.at ? Math.round((Date.now()-new Date(ch.gps.at).getTime())/60000) : null;
     const statusLabels = {acceptee:'En route vers vous',en_route:'En route vers vous',sur_place:'Arrivé au point de rendez-vous',onboard:'Trajet en cours'};
 
@@ -5790,7 +5801,7 @@ window.refreshLiveMap = async function() {
   // Add/update markers
   active.forEach(c=>{
     const name = c.prenom+(c.nom?' '+c.nom:'');
-    const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+    const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍',pmr:'♿'}[c.vehicule]||'🚗';
     const course = D.courses.find(x=>x.chauffeur===name&&['en_route','sur_place','onboard','acceptee'].includes(x.statut));
     const statusColor = c.statut==='disponible'?'#2ecc8a':'#f0934a';
     const vehSize = {berline:'32px',van:'36px',sprinter:'40px',bus:'44px'}[c.vehicule]||'32px';
@@ -5846,7 +5857,7 @@ window.refreshLiveMap = async function() {
   if(list) {
     list.innerHTML = active.length ? active.map(c=>{
       const name = c.prenom+(c.nom?' '+c.nom:'');
-      const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍'}[c.vehicule]||'🚗';
+      const vehIcon = {berline:'🚗',van:'🚐',sprinter:'🚌',bus:'🚍',pmr:'♿'}[c.vehicule]||'🚗';
       const updAgo = c.gpsUpdated ? Math.round((new Date()-new Date(c.gpsUpdated))/1000) : '?';
       const course = D.courses.find(x=>x.chauffeur===name&&['en_route','sur_place','onboard','acceptee'].includes(x.statut));
       return `<div onclick="leafletMap&&leafletMap.setView([${c.gps.lat},${c.gps.lng}],15)" style="margin-bottom:10px;padding:8px;background:var(--card2);border-radius:var(--r-xs);cursor:pointer;border:1px solid var(--border);transition:border-color 0.2s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
